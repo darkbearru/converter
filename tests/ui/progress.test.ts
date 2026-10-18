@@ -8,6 +8,10 @@ import { formatBytes } from '../../src/shared/format';
 
 const jobs = fixtures as unknown as Record<string, JobSnapshot>;
 describe('Раздельные этапы задания', () => {
+  it('не выдаёт последнюю скорость завершённого файла за текущую', () => {
+    render(DownloadProgress, { props: { progress: jobs.converting.download } });
+    expect(screen.queryByText('2 МиБ/с')).not.toBeInTheDocument();
+  });
   it('обозначает завершённую конвертацию значением 100 для доступности', () => {
     render(ConversionProgress, { props: { progress: jobs.succeeded.conversion } });
     expect(screen.getByRole('progressbar', { name: 'Конвертация' })).toHaveAttribute(

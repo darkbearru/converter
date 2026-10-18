@@ -2,6 +2,14 @@ import type { JobState, Stage, StageProgress, TransferState } from './contracts'
 
 const integer = new Intl.NumberFormat('ru-RU');
 export const formatCount = (value: number) => integer.format(value);
+function noun(value: number, forms: [string, string, string]): string {
+  const last = Math.abs(value) % 100;
+  return forms[
+    last >= 11 && last <= 14 ? 2 : last % 10 === 1 ? 0 : last % 10 >= 2 && last % 10 <= 4 ? 1 : 2
+  ];
+}
+export const formatQuantity = (value: number, forms: [string, string, string]) =>
+  `${formatCount(value)} ${noun(value, forms)}`;
 export function formatBytes(value: number): string {
   if (!Number.isFinite(value) || value < 0) return '—';
   const units = ['Б', 'КиБ', 'МиБ', 'ГиБ', 'ТиБ'];
@@ -48,7 +56,15 @@ export const transferLabels: Record<TransferState, string> = {
 };
 export function stageCounter(stage: StageProgress): string {
   const format = stage.unit === 'bytes' ? formatBytes : formatCount;
-  const unit = stage.unit === 'entries' ? ' ключей' : stage.unit === 'resources' ? ' ресурсов' : '';
+  const count = stage.total ?? stage.completed;
+  const unit =
+    stage.unit === 'resources'
+      ? ` ${noun(count, ['ресурс', 'ресурса', 'ресурсов'])}`
+      : stage.unit === 'entries' && stage.stage === 'read'
+        ? ` ${noun(count, ['статья', 'статьи', 'статей'])}`
+        : stage.unit === 'entries' && ['sort', 'write_mdx'].includes(stage.stage)
+          ? ` ${noun(count, ['ключ', 'ключа', 'ключей'])}`
+          : '';
   return `${format(stage.completed)}${stage.total !== null ? ` из ${format(stage.total)}` : ''}${unit}`;
 }
 export function errorMessage(error: unknown): string {

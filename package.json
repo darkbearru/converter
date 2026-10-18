@@ -12,14 +12,19 @@
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest",
     "tauri": "tauri",
-    "format": "prettier --write src tests/ui *.json *.ts index.html",
-    "format:check": "prettier --check src tests/ui *.json *.ts index.html"
+    "dev:harness": "vite --host 127.0.0.1 --port 1421 --strictPort",
+    "test:e2e": "playwright test",
+    "check:contracts": "node scripts/check-contracts.mjs",
+    "format": "prettier --write src tests/ui \"scripts/**/*.mjs\" *.json *.ts index.html src-tauri/*.json src-tauri/capabilities/*.json",
+    "format:check": "prettier --check src tests/ui \"scripts/**/*.mjs\" *.json *.ts index.html src-tauri/*.json src-tauri/capabilities/*.json",
+    "capture:ui": "node scripts/capture-ui.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",
     "vue": "^3.5.44"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@tauri-apps/cli": "^2.12.3",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/vue": "^8.1.0",

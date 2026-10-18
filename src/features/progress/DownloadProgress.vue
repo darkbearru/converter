@@ -51,7 +51,7 @@ const state = computed(() => {
         <li v-for="(file, index) in progress.files" :key="file.source_id">
           <div class="file-line">
             <span>Файл {{ index + 1 }} · {{ transferLabels[file.state] }}</span
-            ><span v-if="file.bytes_per_second !== null"
+            ><span v-if="file.state === 'downloading' && file.bytes_per_second !== null"
               >{{ formatBytes(file.bytes_per_second) }}/с</span
             >
           </div>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ExportSnapshot, ResultInfo } from '../../shared/contracts';
-import { formatBytes, formatCount } from '../../shared/format';
+import { formatBytes, formatQuantity } from '../../shared/format';
 defineProps<{ result: ResultInfo; exportState: ExportSnapshot; busy: boolean }>();
 defineEmits<{ open: []; export: [] }>();
 </script>
@@ -8,9 +8,9 @@ defineEmits<{ open: []; export: [] }>();
   <section class="result-panel" aria-labelledby="result-title">
     <h3 id="result-title">Результат</h3>
     <p class="muted">
-      {{ formatCount(result.summary.source_articles) }} статей ·
-      {{ formatCount(result.summary.output_keys) }} ключей ·
-      {{ formatCount(result.summary.resources) }} ресурсов
+      {{ formatQuantity(result.summary.source_articles, ['статья', 'статьи', 'статей']) }} ·
+      {{ formatQuantity(result.summary.output_keys, ['ключ', 'ключа', 'ключей']) }} ·
+      {{ formatQuantity(result.summary.resources, ['ресурс', 'ресурса', 'ресурсов']) }}
     </p>
     <ul class="file-list">
       <li v-for="file in result.files" :key="file.name">

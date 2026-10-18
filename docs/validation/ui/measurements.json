@@ -1,0 +1,66 @@
+[
+  {
+    "engine": "chromium",
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "documentWidth": 1280,
+    "documentHeight": 800,
+    "h3": {
+      "size": "16px",
+      "color": "rgb(32, 39, 49)"
+    },
+    "phasePadding": "24px 0px",
+    "download": "100",
+    "conversion": "25"
+  },
+  {
+    "engine": "chromium",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "documentWidth": 390,
+    "documentHeight": 870,
+    "h3": {
+      "size": "16px",
+      "color": "rgb(32, 39, 49)"
+    },
+    "phasePadding": "24px 0px",
+    "download": "100",
+    "conversion": "25"
+  },
+  {
+    "engine": "webkit",
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "documentWidth": 1280,
+    "documentHeight": 800,
+    "h3": {
+      "size": "16px",
+      "color": "rgb(32, 39, 49)"
+    },
+    "phasePadding": "24px 0px",
+    "download": "100",
+    "conversion": "25"
+  },
+  {
+    "engine": "webkit",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "documentWidth": 390,
+    "documentHeight": 869,
+    "h3": {
+      "size": "16px",
+      "color": "rgb(32, 39, 49)"
+    },
+    "phasePadding": "24px 0px",
+    "download": "100",
+    "conversion": "25"
+  }
+]

@@ -142,8 +142,14 @@ async function submit() {
       <div v-if="mode === 'files'" class="field-stack">
         <button type="button" @click="pick('dictionaries')">Выбрать словари</button>
         <p class="hint">
-          {{ formats.map((f) => f.name).join(', ') || 'DSL' }} · .dsl, .dsl.dz или ZIP. Можно
-          выбрать несколько.
+          {{ formats.map((f) => f.name).join(', ') || 'DSL' }} ·
+          {{
+            formats
+              .flatMap((f) => f.extensions)
+              .map((ext) => `.${ext}`)
+              .join(', ') || '.dsl, .dsl.dz'
+          }}
+          или ZIP. Можно выбрать несколько.
         </p>
         <ul v-if="sources.length" class="file-list">
           <li v-for="file in sources" :key="file.import_id">

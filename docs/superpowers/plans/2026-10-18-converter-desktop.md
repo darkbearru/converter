@@ -111,7 +111,7 @@
 
 **Interfaces:** Harness implements NativeBridge из C2; scripted scenarios выдаются теми же JSON DTO, в том числе старой generation. Scripts: `test:e2e` запускает Playwright; `test` — Vitest, `typecheck` — vue-tsc/tsc, `build` — production frontend, `tauri` — CLI Tauri. Harness не попадает в production dist.
 
-- [ ] **Step 1:** Установить Playwright как dev-dependency, настроить test:e2e script и нужные test browsers. Написать failing browser tests: local ready, URL downloading→paused→resumed→conversion→ready, unknown total, old event, длинное русское название и несколько страниц diagnostics. Проверить видимые independent statuses:
+- [x] **Step 1:** Установить Playwright как dev-dependency, настроить test:e2e script и нужные test browsers. Написать failing browser tests: local ready, URL downloading→paused→resumed→conversion→ready, unknown total, old event, длинное русское название и несколько страниц diagnostics. Проверить видимые independent statuses:
 
   ```ts
   await expect(page.getByRole('progressbar', { name: 'Скачивание' })).toHaveAttribute('aria-valuenow', '100');
@@ -119,10 +119,10 @@
   await expect(page.getByText('Готово', { exact: true })).toHaveCount(0); // conversion ещё идёт
   ```
 
-- [ ] **Step 2:** Run `npm run test:e2e`; ожидается FAIL на отсутствующем harness/scenarios. Затем реализовать test harness и минимально исправить обнаруженные UI-сбои. Не добавлять production network mocks.
-- [ ] **Step 3:** Run `npm test -- --run`, `npm run typecheck`, `npm run test:e2e`; PASS для desktop 1280×800 и mobile 390×844, keyboard-only сценария, reduced motion и крупного текста. Chromium/WebKit покрывают frontend; это не подтверждение реального iOS/macOS приложения.
-- [ ] **Step 4:** В `docs/validation/desktop-ui.md` сохранить результаты, скриншоты двух прогрессов и ограничения покрытия. Verify production dist не содержит harness/fixture/URL tokens.
-- [ ] **Step 5:** Commit `test: проверить прогресс и сценарии интерфейса`.
+- [x] **Step 2:** Run `npm run test:e2e`; ожидается FAIL на отсутствующем harness/scenarios. Затем реализовать test harness и минимально исправить обнаруженные UI-сбои. Не добавлять production network mocks.
+- [x] **Step 3:** Run `npm test -- --run`, `npm run typecheck`, `npm run test:e2e`; PASS для desktop 1280×800 и mobile 390×844, keyboard-only сценария, reduced motion и крупного текста. Chromium/WebKit покрывают frontend; это не подтверждение реального iOS/macOS приложения.
+- [x] **Step 4:** В `docs/validation/desktop-ui.md` сохранить результаты, скриншоты двух прогрессов и ограничения покрытия. Verify production dist не содержит harness/fixture/URL tokens.
+- [x] **Step 5:** Commit `test: проверить прогресс и сценарии интерфейса`.
 
 ## Task 5: C5 — Сборки macOS/Windows и воспроизводимая проверка
 
