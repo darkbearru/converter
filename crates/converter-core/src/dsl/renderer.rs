@@ -15,6 +15,7 @@ pub struct RenderedArticle {
     pub html: String,
     pub resource_keys: Vec<String>,
     pub diagnostics: Vec<Diagnostic>,
+    pub uses_abbreviations: bool,
 }
 
 pub fn render_article(
@@ -64,6 +65,7 @@ pub(super) fn render_with_context(
             html: String::new(),
             resource_keys: Vec::new(),
             diagnostics,
+            uses_abbreviations: !wanted.is_empty(),
         },
     };
     renderer.write("<link rel=\"stylesheet\" href=\"converter.css\"><article class=\"dsl-article\"><header class=\"dsl-headword\">")?;
@@ -104,6 +106,8 @@ impl Renderer<'_> {
             code: code.into(),
             message,
             source_location: None,
+            severity: DiagnosticSeverity::Warning,
+            occurrences: 1,
         });
     }
     fn nodes(&mut self, nodes: &[Node]) -> Result<()> {
@@ -123,6 +127,8 @@ impl Renderer<'_> {
                     argument: arg,
                     children,
                 } => match name.as_str() {
+                    // Явно разрешённые служебные обёртки сохраняют видимое содержимое.
+                    "!trs" | "trs" | "!trn" => self.nodes(children)?,
                     "ref" => {
                         let plain = markup::plain(children);
                         let target = argument(arg, "target").map_or_else(
@@ -167,10 +173,12 @@ impl Renderer<'_> {
                                 escape_html(title)
                             ))?;
                         } else {
-                            self.warning(
-                                "missing_abbreviation",
-                                format!("Не найдено сокращение: {}", text.trim()),
-                            );
+                            if self.bundle.abbreviations.is_some() {
+                                self.warning(
+                                    "missing_abbreviation",
+                                    format!("Не найдено сокращение: {}", text.trim()),
+                                );
+                            }
                             self.write("<abbr class=\"dsl-abbreviation\">")?;
                         }
                         self.nodes(children)?;

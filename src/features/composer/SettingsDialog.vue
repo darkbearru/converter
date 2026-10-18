@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, useId } from 'vue';
 import Dialog from 'primevue/dialog';
+import { dialogCloseButtonProps } from '../../shared/ui/dialog';
 import Select from 'primevue/select';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
@@ -49,6 +50,7 @@ async function resources(purpose: 'resources' | 'resource_directory') {
 </script>
 <template>
   <Dialog
+    :close-button-props="dialogCloseButtonProps"
     :visible="visible"
     modal
     header="Настройки конвертации"
@@ -56,7 +58,7 @@ async function resources(purpose: 'resources' | 'resource_directory') {
     @update:visible="emit('update:visible', $event)"
   >
     <template #closeicon><Icon name="close" /></template>
-    <div class="dialog-fields">
+    <div class="dialog-fields" tabindex="-1" autofocus>
       <div class="field-stack">
         <label :id="`${id}-encoding-label`" :for="`${id}-encoding`">Кодировка DSL</label
         ><Select

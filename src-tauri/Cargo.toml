@@ -19,10 +19,15 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
+tauri-plugin-clipboard-manager = "2"
 converter-app = { path = "../crates/converter-app" }
 converter-core = { path = "../crates/converter-core" }
 serde.workspace = true
 tokio.workspace = true
+url.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
 
 [lints]
 workspace = true

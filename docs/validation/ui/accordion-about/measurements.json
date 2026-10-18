@@ -1,0 +1,466 @@
+[
+  {
+    "name": "dialog-small-light",
+    "engine": "chromium",
+    "colorScheme": "light",
+    "viewport": {
+      "width": 540,
+      "height": 400
+    },
+    "errors": [],
+    "documentWidth": 540,
+    "documentHeight": 400,
+    "warningIcon": {
+      "x": 458,
+      "y": 65,
+      "width": 16,
+      "height": 16
+    },
+    "closeButton": {
+      "x": 479,
+      "y": 41,
+      "width": 24,
+      "height": 24
+    },
+    "supportColor": "rgb(249, 97, 51)",
+    "closeFocused": false,
+    "messages": [
+      {
+        "color": "rgb(133, 77, 14)",
+        "severity": "p-message p-component p-message-warn"
+      }
+    ],
+    "canvas": "rgb(250, 250, 250)",
+    "text": "rgb(63, 63, 70)",
+    "composer": {
+      "x": 16,
+      "y": 282.59375,
+      "width": 508,
+      "height": 101.40625
+    },
+    "workspace": {
+      "x": 0,
+      "y": 46,
+      "width": 540,
+      "height": 354
+    },
+    "workspacePaddingBottom": "16px",
+    "history": {
+      "x": 16,
+      "y": 46,
+      "width": 508,
+      "height": 236.59375
+    },
+    "jobPanels": {
+      "x": 16,
+      "y": 46,
+      "width": 508,
+      "height": 236.59375
+    },
+    "stack": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    },
+    "dialog": {
+      "x": 16,
+      "y": 24,
+      "width": 508,
+      "height": 352
+    },
+    "diagnosticsList": {
+      "x": 37,
+      "y": 111,
+      "width": 466,
+      "height": 178
+    },
+    "historyContentInset": "8px",
+    "diagnosticsMessages": 0,
+    "diagnosticsRows": 2,
+    "diagnosticsLink": [
+      {
+        "color": "rgb(133, 77, 14)",
+        "underline": "dotted",
+        "tag": "A"
+      }
+    ],
+    "toolbar": [
+      {
+        "label": "Добавить ссылку",
+        "x": 454,
+        "y": 290.59375,
+        "width": 24,
+        "height": 24,
+        "iconWidth": 24,
+        "iconHeight": 24,
+        "border": "0px",
+        "gap": "12px"
+      },
+      {
+        "label": "Настройки конвертации",
+        "x": 490,
+        "y": 290.59375,
+        "width": 24,
+        "height": 24,
+        "iconWidth": 24,
+        "iconHeight": 24,
+        "border": "0px",
+        "gap": "12px"
+      }
+    ],
+    "historyActions": [
+      {
+        "label": "Открыть папку",
+        "x": 26,
+        "y": 272,
+        "width": 107.859375,
+        "height": 34,
+        "color": "rgb(82, 82, 91)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "label": "Сохранить копию",
+        "x": 139.859375,
+        "y": 272,
+        "width": 124.03125,
+        "height": 34,
+        "color": "rgb(82, 82, 91)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "label": "Повторить",
+        "x": 269.890625,
+        "y": 272,
+        "width": 81.703125,
+        "height": 34,
+        "color": "rgb(82, 82, 91)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "label": "Удалить",
+        "x": 357.59375,
+        "y": 272,
+        "width": 66.84375,
+        "height": 34,
+        "color": "rgb(185, 28, 28)",
+        "background": "rgba(0, 0, 0, 0)"
+      }
+    ],
+    "dialogButtons": [
+      {
+        "label": "",
+        "color": "rgb(82, 82, 91)",
+        "background": "rgba(0, 0, 0, 0)",
+        "dialogBackground": "rgb(255, 255, 255)"
+      },
+      {
+        "label": "Закрыть",
+        "color": "rgb(82, 82, 91)",
+        "background": "rgba(0, 0, 0, 0)",
+        "dialogBackground": "rgb(255, 255, 255)"
+      }
+    ],
+    "progress": []
+  },
+  {
+    "name": "groups-dark",
+    "engine": "webkit",
+    "colorScheme": "dark",
+    "viewport": {
+      "width": 740,
+      "height": 500
+    },
+    "errors": [],
+    "documentWidth": 740,
+    "documentHeight": 500,
+    "warningIcon": {
+      "x": 658,
+      "y": 65,
+      "width": 16,
+      "height": 16
+    },
+    "closeButton": null,
+    "supportColor": "rgb(249, 97, 51)",
+    "closeFocused": false,
+    "messages": [
+      {
+        "color": "rgb(234, 179, 8)",
+        "severity": "p-message p-component p-message-warn"
+      }
+    ],
+    "canvas": "rgb(9, 9, 11)",
+    "text": "rgb(255, 255, 255)",
+    "composer": {
+      "x": 16,
+      "y": 323,
+      "width": 708,
+      "height": 161
+    },
+    "workspace": {
+      "x": 0,
+      "y": 46,
+      "width": 740,
+      "height": 454
+    },
+    "workspacePaddingBottom": "16px",
+    "history": {
+      "x": 16,
+      "y": 46,
+      "width": 708,
+      "height": 277
+    },
+    "jobPanels": {
+      "x": 16,
+      "y": 46,
+      "width": 708,
+      "height": 277
+    },
+    "stack": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    },
+    "dialog": null,
+    "diagnosticsList": null,
+    "historyContentInset": "8px",
+    "diagnosticsMessages": 0,
+    "diagnosticsRows": 0,
+    "diagnosticsLink": [
+      {
+        "color": "rgb(234, 179, 8)",
+        "underline": "dotted",
+        "tag": "A"
+      }
+    ],
+    "toolbar": [
+      {
+        "label": "Добавить ссылку",
+        "x": 654,
+        "y": 331,
+        "width": 24,
+        "height": 24,
+        "iconWidth": 24,
+        "iconHeight": 24,
+        "border": "0px",
+        "gap": "12px"
+      },
+      {
+        "label": "Настройки конвертации",
+        "x": 690,
+        "y": 331,
+        "width": 24,
+        "height": 24,
+        "iconWidth": 24,
+        "iconHeight": 24,
+        "border": "0px",
+        "gap": "12px"
+      }
+    ],
+    "historyActions": [
+      {
+        "label": "Открыть папку",
+        "x": 26,
+        "y": 250,
+        "width": 107.859375,
+        "height": 34,
+        "color": "rgb(161, 161, 170)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "label": "Сохранить копию",
+        "x": 139.859375,
+        "y": 250,
+        "width": 124.03125,
+        "height": 34,
+        "color": "rgb(161, 161, 170)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "label": "Повторить",
+        "x": 269.890625,
+        "y": 250,
+        "width": 81.703125,
+        "height": 34,
+        "color": "rgb(161, 161, 170)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "label": "Удалить",
+        "x": 357.59375,
+        "y": 250,
+        "width": 66.84375,
+        "height": 34,
+        "color": "rgb(248, 113, 113)",
+        "background": "rgba(0, 0, 0, 0)"
+      }
+    ],
+    "dialogButtons": [],
+    "progress": []
+  },
+  {
+    "name": "dialog-dark",
+    "engine": "webkit",
+    "colorScheme": "dark",
+    "viewport": {
+      "width": 740,
+      "height": 500
+    },
+    "errors": [],
+    "documentWidth": 740,
+    "documentHeight": 500,
+    "warningIcon": {
+      "x": 658,
+      "y": 65,
+      "width": 16,
+      "height": 16
+    },
+    "closeButton": {
+      "x": 585,
+      "y": 42,
+      "width": 24,
+      "height": 24
+    },
+    "supportColor": "rgb(249, 97, 51)",
+    "closeFocused": false,
+    "messages": [
+      {
+        "color": "rgb(234, 179, 8)",
+        "severity": "p-message p-component p-message-warn"
+      }
+    ],
+    "canvas": "rgb(9, 9, 11)",
+    "text": "rgb(255, 255, 255)",
+    "composer": {
+      "x": 16,
+      "y": 323,
+      "width": 708,
+      "height": 161
+    },
+    "workspace": {
+      "x": 0,
+      "y": 46,
+      "width": 740,
+      "height": 454
+    },
+    "workspacePaddingBottom": "16px",
+    "history": {
+      "x": 16,
+      "y": 46,
+      "width": 708,
+      "height": 277
+    },
+    "jobPanels": {
+      "x": 16,
+      "y": 46,
+      "width": 708,
+      "height": 277
+    },
+    "stack": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    },
+    "dialog": {
+      "x": 110,
+      "y": 25,
+      "width": 520,
+      "height": 450
+    },
+    "diagnosticsList": {
+      "x": 131,
+      "y": 112,
+      "width": 478,
+      "height": 276
+    },
+    "historyContentInset": "8px",
+    "diagnosticsMessages": 0,
+    "diagnosticsRows": 2,
+    "diagnosticsLink": [
+      {
+        "color": "rgb(255, 255, 255)",
+        "underline": "dotted",
+        "tag": "A"
+      }
+    ],
+    "toolbar": [
+      {
+        "label": "Добавить ссылку",
+        "x": 654,
+        "y": 331,
+        "width": 24,
+        "height": 24,
+        "iconWidth": 24,
+        "iconHeight": 24,
+        "border": "0px",
+        "gap": "12px"
+      },
+      {
+        "label": "Настройки конвертации",
+        "x": 690,
+        "y": 331,
+        "width": 24,
+        "height": 24,
+        "iconWidth": 24,
+        "iconHeight": 24,
+        "border": "0px",
+        "gap": "12px"
+      }
+    ],
+    "historyActions": [
+      {
+        "label": "Открыть папку",
+        "x": 26,
+        "y": 250,
+        "width": 107.859375,
+        "height": 34,
+        "color": "rgb(161, 161, 170)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "label": "Сохранить копию",
+        "x": 139.859375,
+        "y": 250,
+        "width": 124.03125,
+        "height": 34,
+        "color": "rgb(161, 161, 170)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "label": "Повторить",
+        "x": 269.890625,
+        "y": 250,
+        "width": 81.703125,
+        "height": 34,
+        "color": "rgb(161, 161, 170)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "label": "Удалить",
+        "x": 357.59375,
+        "y": 250,
+        "width": 66.84375,
+        "height": 34,
+        "color": "rgb(248, 113, 113)",
+        "background": "rgba(0, 0, 0, 0)"
+      }
+    ],
+    "dialogButtons": [
+      {
+        "label": "",
+        "color": "rgb(161, 161, 170)",
+        "background": "rgba(0, 0, 0, 0)",
+        "dialogBackground": "rgb(24, 24, 27)"
+      },
+      {
+        "label": "Закрыть",
+        "color": "rgb(161, 161, 170)",
+        "background": "rgba(0, 0, 0, 0)",
+        "dialogBackground": "rgb(24, 24, 27)"
+      }
+    ],
+    "progress": []
+  }
+]

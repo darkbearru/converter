@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import Dialog from 'primevue/dialog';
+import Message from 'primevue/message';
+import { dialogCloseButtonProps } from './shared/ui/dialog';
 import bookIcon from '../book.svg';
 import Button from 'primevue/button';
 import type {
@@ -10,8 +12,9 @@ import type {
   NativeBridge,
 } from './shared/contracts';
 import { nativeBridge } from './shared/native';
-import { isActive } from './shared/format';
+import { errorMessage, isActive } from './shared/format';
 import Icon from './shared/ui/Icon.vue';
+import ProblemReportButton from './shared/ui/ProblemReportButton.vue';
 import { createJobStore } from './features/jobs/store';
 import SourceComposer from './features/composer/SourceComposer.vue';
 import CompletedHistory from './features/jobs/CompletedHistory.vue';
@@ -25,6 +28,21 @@ const props = defineProps<{ bridge?: NativeBridge }>();
 const bridge = props.bridge ?? nativeBridge;
 const store = createJobStore(bridge);
 const { error } = store;
+const openingSupport = ref(false);
+const supportError = ref('');
+const issueError = ref('');
+async function openSupportPage() {
+  if (openingSupport.value) return;
+  openingSupport.value = true;
+  supportError.value = '';
+  try {
+    await bridge.openSupportPage();
+  } catch (e) {
+    supportError.value = errorMessage(e);
+  } finally {
+    openingSupport.value = false;
+  }
+}
 const jobs = computed(() => Object.values(store.jobs));
 const active = computed(() =>
   jobs.value.filter(
@@ -117,8 +135,22 @@ async function save(update: JobOptionsUpdate) {
         <img class="app-logo" :src="bookIcon" alt="" width="40" height="36" />
         <h1>Converter</h1>
       </div>
-      <span class="app-caption">DSL → MDX + MDD</span>
+      <div class="app-header-actions">
+        <span class="app-caption">DSL → MDX + MDD</span>
+        <Button
+          class="icon-button support-button"
+          text
+          aria-label="Поддержать разработчика"
+          title="Поддержать разработчика"
+          :disabled="openingSupport"
+          @click="openSupportPage"
+          ><Icon name="cash"
+        /></Button>
+        <ProblemReportButton :bridge="bridge" @error="issueError = $event" />
+      </div>
     </header>
+    <p v-if="supportError" class="app-error error-message" role="alert">{{ supportError }}</p>
+    <p v-if="issueError" class="app-error error-message" role="alert">{{ issueError }}</p>
     <main class="conversion-workspace" id="main-content">
       <div v-if="history.length || active.length" class="job-panels">
         <CompletedHistory
@@ -154,6 +186,7 @@ async function save(update: JobOptionsUpdate) {
       @dismiss="dismissAdditional"
     />
     <Dialog
+      :close-button-props="dialogCloseButtonProps"
       :visible="Boolean(deleting)"
       modal
       header="Удалить из истории"
@@ -185,26 +218,31 @@ async function save(update: JobOptionsUpdate) {
       </template>
     </Dialog>
     <Dialog
+      :close-button-props="dialogCloseButtonProps"
       :visible="Boolean(detail)"
       modal
       :header="detail?.display_name"
       class="app-dialog task-dialog"
       @update:visible="!$event && (selected = null)"
-      ><template #closeicon><Icon name="close" /></template
-      ><template v-if="detail"
-        ><p v-if="detail.error" role="alert" class="error-message">{{ detail.error.message }}</p>
+      ><template #closeicon><Icon name="close" /></template>
+      <div v-if="detail" class="dialog-fields" tabindex="-1" autofocus>
+        <Message v-if="detail.error" severity="error">{{ detail.error.message }}</Message>
         <JobSettings
           v-if="detail.state === 'awaiting_input'"
           :key="detail.id"
           :job="detail"
           :bridge="bridge"
           :busy="Boolean(store.pending[detail.id])"
-          @save="save" /><DownloadProgress :progress="detail.download" /><ConversionProgress
-          :progress="detail.conversion" /><DiagnosticsList
+          @save="save"
+        /><DownloadProgress :progress="detail.download" /><ConversionProgress
+          :progress="detail.conversion"
+        /><DiagnosticsList
           :key="detail.id"
           :id="detail.id"
           :count="detail.diagnostic_count"
-          :bridge="bridge" /></template
+          :bridge="bridge"
+          :severity="detail.error ? 'error' : 'warn'"
+        /></div
     ></Dialog>
   </div>
 </template>

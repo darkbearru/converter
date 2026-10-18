@@ -24,6 +24,7 @@ pub struct ReadSummary {
 pub struct SourceRelationships {
     pub title: String,
     pub external_dictionaries: Vec<String>,
+    pub source_articles: u64,
 }
 
 pub trait EntrySink {

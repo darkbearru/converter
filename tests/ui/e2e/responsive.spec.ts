@@ -32,7 +32,7 @@ test('панель занимает свободное место и уступ�
   expect(many.composer / many.available).toBeCloseTo(0.3, 2);
   expect(many.history / many.available).toBeCloseTo(0.7, 2);
   await page.locator('.p-accordionheader').first().click();
-  await expect(page.locator('.result-path').first()).toBeVisible();
+  await expect(page.locator('.result-panel').first()).toBeVisible();
   expect((await sizes()).composer / many.available).toBeCloseTo(0.3, 2);
   await page.setViewportSize({ width: 540, height: 400 });
   const small = await sizes();

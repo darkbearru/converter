@@ -52,6 +52,7 @@ pub fn convert_to_staging_with_registry(
         .prefix("conversion-")
         .tempdir_in(&ctx.scratch_dir)?;
     let report = ReportLog::create(&working.path().join("diagnostics.jsonl"))?;
+    let notifications = ReportLog::notifications(&report, ctx);
     let mut ctx = ReportLog::context(&report, ctx);
     ctx.scratch_dir = working.path().to_owned();
     let mut prefix = Vec::new();
@@ -150,6 +151,7 @@ pub fn convert_to_staging_with_registry(
         &ctx,
     )?;
     ctx.control.check()?;
+    notifications.finish()?;
     directory.keep = true;
     Ok(artifacts)
 }

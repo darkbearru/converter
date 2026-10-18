@@ -53,4 +53,20 @@ pub struct Diagnostic {
     pub code: String,
     pub message: String,
     pub source_location: Option<SourceLocation>,
+    #[serde(default)]
+    pub severity: DiagnosticSeverity,
+    #[serde(default = "single_occurrence")]
+    pub occurrences: u64,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DiagnosticSeverity {
+    Info,
+    #[default]
+    Warning,
+}
+
+fn single_occurrence() -> u64 {
+    1
 }

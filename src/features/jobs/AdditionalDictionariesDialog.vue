@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Dialog from 'primevue/dialog';
+import { dialogCloseButtonProps } from '../../shared/ui/dialog';
 import Button from 'primevue/button';
 import Icon from '../../shared/ui/Icon.vue';
 import type { AdditionalDictionariesOffer } from '../../shared/contracts';
@@ -17,6 +18,7 @@ function close() {
 </script>
 <template>
   <Dialog
+    :close-button-props="dialogCloseButtonProps"
     :visible="Boolean(offer)"
     modal
     header="Другие словари в архиве"

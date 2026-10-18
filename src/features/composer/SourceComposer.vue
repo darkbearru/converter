@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, useId, watch } fro
 import FileUpload from 'primevue/fileupload';
 import ProgressBar from 'primevue/progressbar';
 import Dialog from 'primevue/dialog';
+import { dialogCloseButtonProps, focusDialogOpener } from '../../shared/ui/dialog';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import Icon from '../../shared/ui/Icon.vue';
@@ -26,7 +27,14 @@ const error = ref('');
 const linkDialog = ref(false);
 const settingsDialog = ref(false);
 const url = ref('');
-const sha = ref('');
+const pasting = ref(false);
+const clipboardError = ref('');
+let clipboardRequest = 0;
+watch(linkDialog, () => {
+  clipboardRequest++;
+  clipboardError.value = '';
+  pasting.value = false;
+});
 const remoteId = ref<string | null>(null);
 const terminal = ['succeeded', 'succeeded_with_warnings', 'cancelled', 'failed', 'interrupted'];
 const remote = computed(
@@ -37,6 +45,12 @@ const remote = computed(
 const transferring = computed(() => Boolean(remote.value && remote.value.state !== 'ready'));
 const ready = computed(() => files.value.length > 0 || remote.value?.state === 'ready');
 const progress = computed(() => remote.value?.download);
+const downloadPercent = computed(() => {
+  const percent = progress.value?.percent;
+  return percent === null || percent === undefined
+    ? undefined
+    : Math.round(Math.min(100, Math.max(0, percent)));
+});
 watch(
   () => remote.value?.id,
   () => {
@@ -131,28 +145,47 @@ function draft(source: SourceInput, prepareOnly: boolean) {
   };
 }
 async function download() {
-  if (busy.value || remote.value) return;
+  if (busy.value || pasting.value || remote.value) return;
   error.value = '';
   busy.value = true;
   try {
     const source: SourceInput = {
       kind: 'remote',
       url: directUrl(url.value),
-      expected_sha256: sha.value.trim().toLowerCase() || null,
+      expected_sha256: null,
     };
-    if (source.expected_sha256 && !/^[a-f0-9]{64}$/.test(source.expected_sha256))
-      throw new Error('SHA-256 должен содержать 64 шестнадцатеричных символа');
     const job = await props.bridge.createJob(draft(source, true));
     emit('snapshot', job);
     remoteId.value = job.id;
     files.value = [];
     linkDialog.value = false;
     url.value = '';
-    sha.value = '';
   } catch (e) {
     error.value = errorMessage(e);
   } finally {
     busy.value = false;
+  }
+}
+async function pasteUrl() {
+  if (busy.value || pasting.value) return;
+  const request = ++clipboardRequest;
+  const previousUrl = url.value;
+  clipboardError.value = '';
+  pasting.value = true;
+  try {
+    const text = (await props.bridge.readClipboardText()).trim();
+    if (request !== clipboardRequest || url.value !== previousUrl) return;
+    if (!text) {
+      clipboardError.value = 'В буфере обмена нет текста. Скопируйте ссылку и повторите.';
+      return;
+    }
+    url.value = text;
+    error.value = '';
+  } catch {
+    if (request === clipboardRequest)
+      clipboardError.value = 'Не удалось прочитать буфер обмена. Вставьте ссылку с клавиатуры.';
+  } finally {
+    if (request === clipboardRequest) pasting.value = false;
   }
 }
 async function convert() {
@@ -268,6 +301,7 @@ async function transferAction() {
             rounded
             :disabled="busy || Boolean(remote)"
             @click="
+              focusDialogOpener($event);
               error = '';
               linkDialog = true;
             "
@@ -280,7 +314,10 @@ async function transferAction() {
             text
             rounded
             :disabled="busy"
-            @click="settingsDialog = true"
+            @click="
+              focusDialogOpener($event);
+              settingsDialog = true;
+            "
             ><Icon name="settings"
           /></Button>
         </div>
@@ -289,8 +326,8 @@ async function transferAction() {
         <div v-if="transferring && remote && progress" class="source-transfer">
           <ProgressBar
             aria-label="Скачивание"
-            :mode="progress.percent === null ? 'indeterminate' : 'determinate'"
-            :value="progress.percent ?? undefined"
+            :mode="downloadPercent === undefined ? 'indeterminate' : 'determinate'"
+            :value="downloadPercent"
           />
           <div class="transfer-caption" role="status">
             <span v-if="progress.total_bytes === null">Общий размер неизвестен</span>
@@ -379,6 +416,7 @@ async function transferAction() {
       {{ remote.error.message }}
     </p>
     <Dialog
+      :close-button-props="dialogCloseButtonProps"
       v-model:visible="linkDialog"
       modal
       header="Скачать словарь"
@@ -386,20 +424,33 @@ async function transferAction() {
       ><template #closeicon><Icon name="close" /></template>
       <form id="source-link-form" class="dialog-fields" @submit.prevent="download">
         <div class="field-stack">
-          <label :for="`${id}-url`">Ссылка на словарь</label
-          ><InputText
-            :id="`${id}-url`"
-            v-model="url"
-            type="url"
-            required
-            autofocus
-            placeholder="https://example.org/dictionary.zip"
-          />
+          <label :for="`${id}-url`">Ссылка на словарь</label>
+          <div class="url-input-control">
+            <InputText
+              :id="`${id}-url`"
+              v-model="url"
+              type="url"
+              required
+              autofocus
+              placeholder="https://example.org/dictionary.zip"
+              :aria-describedby="clipboardError ? `${id}-clipboard-error` : undefined"
+              @update:model-value="clipboardError = ''"
+            /><Button
+              type="button"
+              class="icon-button paste-url"
+              text
+              aria-label="Вставить из буфера обмена"
+              title="Вставить из буфера обмена"
+              :disabled="busy || pasting"
+              :aria-busy="pasting"
+              @click="pasteUrl"
+              ><Icon name="paste"
+            /></Button>
+          </div>
         </div>
-        <div class="field-stack">
-          <label :for="`${id}-sha`">SHA-256 (необязательно)</label
-          ><InputText :id="`${id}-sha`" v-model="sha" autocomplete="off" />
-        </div>
+        <p v-if="clipboardError" :id="`${id}-clipboard-error`" role="alert" class="error-message">
+          {{ clipboardError }}
+        </p>
         <p v-if="error" role="alert" class="error-message">{{ error }}</p>
       </form>
       <template #footer
@@ -407,6 +458,7 @@ async function transferAction() {
           type="submit"
           form="source-link-form"
           label="Скачать"
+          :disabled="pasting"
           :loading="busy" /></template
     ></Dialog>
     <SettingsDialog

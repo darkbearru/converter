@@ -13,6 +13,9 @@ import play from '../../assets/icons/131__play.svg';
 import pause from '../../assets/icons/132__pause.svg';
 import stop from '../../assets/icons/133__stop.svg';
 import folder from '../../assets/icons/139__open file.svg';
+import paste from '../../assets/icons/paste_icon.svg';
+import cash from '../../assets/icons/126__cash.svg';
+import mail from '../../assets/icons/049__mail.svg';
 const icons = {
   chevron,
   close,
@@ -27,6 +30,9 @@ const icons = {
   pause,
   stop,
   folder,
+  paste,
+  cash,
+  mail,
 };
 const props = defineProps<{ name: keyof typeof icons; label?: string }>();
 const mask = computed(() => `url("${icons[props.name]}")`);

@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import { useId } from 'vue';
 import type { ExportSnapshot, ResultInfo } from '../../shared/contracts';
 import { formatBytes, formatQuantity } from '../../shared/format';
 defineProps<{ result: ResultInfo; exportState: ExportSnapshot }>();
-const titleId = useId();
 </script>
 <template>
-  <section class="result-panel" :aria-labelledby="titleId">
-    <h3 :id="titleId">Результат</h3>
+  <section class="result-panel" aria-label="Результат конвертации">
     <p class="muted">
       {{ formatQuantity(result.summary.source_articles, ['статья', 'статьи', 'статей']) }} ·
       {{ formatQuantity(result.summary.output_keys, ['ключ', 'ключа', 'ключей']) }} ·

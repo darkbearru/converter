@@ -23,6 +23,7 @@ function bridge() {
       startJob: vi.fn(async () => snapshot),
       updateJob: vi.fn(async () => snapshot),
       cancelJob: vi.fn(async () => ({ ...snapshot, state: 'cancelled' })),
+      readClipboardText: vi.fn(async () => ' https://example.org/словарь.zip\n'),
       onSourceDrop: vi.fn(async (callback) => {
         drop = callback;
         return () => {};
@@ -32,6 +33,65 @@ function bridge() {
   };
 }
 describe('Нижняя панель источника', () => {
+  it('вставляет ссылку из нативного буфера и ждёт команды скачать', async () => {
+    const { native } = bridge();
+    render(SourceComposer, { props: { bridge: native, jobs: [] } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Добавить ссылку' }));
+    expect(screen.queryByLabelText('SHA-256 (необязательно)')).not.toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'Вставить из буфера обмена' }));
+    await waitFor(() =>
+      expect(screen.getByLabelText('Ссылка на словарь')).toHaveValue(
+        'https://example.org/словарь.zip',
+      ),
+    );
+    expect(native.createJob).not.toHaveBeenCalled();
+    await fireEvent.click(screen.getByRole('button', { name: 'Скачать' }));
+    await waitFor(() =>
+      expect(native.createJob).toHaveBeenCalledWith(
+        expect.objectContaining({
+          source: {
+            kind: 'remote',
+            url: 'https://example.org/%D1%81%D0%BB%D0%BE%D0%B2%D0%B0%D1%80%D1%8C.zip',
+            expected_sha256: null,
+          },
+        }),
+      ),
+    );
+  });
+  it.each(['empty', 'unavailable'])(
+    'сохраняет введённую ссылку при проблеме буфера: %s',
+    async (failure) => {
+      const { native } = bridge();
+      if (failure === 'empty') vi.mocked(native.readClipboardText).mockResolvedValue(' \n ');
+      else
+        vi.mocked(native.readClipboardText).mockRejectedValue(new Error('Clipboard unavailable'));
+      render(SourceComposer, { props: { bridge: native, jobs: [] } });
+      await fireEvent.click(screen.getByRole('button', { name: 'Добавить ссылку' }));
+      await fireEvent.update(
+        screen.getByLabelText('Ссылка на словарь'),
+        'https://example.org/old.dsl',
+      );
+      await fireEvent.click(screen.getByRole('button', { name: 'Вставить из буфера обмена' }));
+      expect(
+        await screen.findByText(
+          failure === 'empty'
+            ? 'В буфере обмена нет текста. Скопируйте ссылку и повторите.'
+            : 'Не удалось прочитать буфер обмена. Вставьте ссылку с клавиатуры.',
+        ),
+      ).toBeVisible();
+      expect(screen.getByLabelText('Ссылка на словарь')).toHaveValue('https://example.org/old.dsl');
+      expect(native.createJob).not.toHaveBeenCalled();
+    },
+  );
+  it('округляет видимый процент скачивания до целого', () => {
+    const { native } = bridge();
+    const job = structuredClone(fixtures.downloading) as JobSnapshot;
+    job.prepare_only = true;
+    job.download.percent = 37.456;
+    render(SourceComposer, { props: { bridge: native, jobs: [job] } });
+    expect(screen.getByRole('progressbar', { name: 'Скачивание' })).toHaveTextContent('37%');
+    expect(screen.queryByText('37.456%')).not.toBeInTheDocument();
+  });
   it('сохраняет прежние ресурсы готового задания при добавлении новых после перезапуска', async () => {
     const { native } = bridge();
     const job = {

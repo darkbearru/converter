@@ -47,6 +47,9 @@ fn parse_parts(
     while let Some(ch) = chars.next() {
         match ch {
             '\\' => text.push(chars.next().ok_or_else(invalid)?),
+            // В несортируемой части скобки служат видимой пунктуацией,
+            // например item{(}s{)}; они не образуют поисковые варианты.
+            '(' | ')' if stop == Some('}') => text.push(ch),
             ')' | '}' => {
                 if Some(ch) != stop {
                     return Err(invalid());

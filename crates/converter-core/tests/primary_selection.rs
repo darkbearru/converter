@@ -50,6 +50,54 @@ fn основной_выбирается_по_связям_а_разговорн
 }
 
 #[test]
+fn небольшой_справочник_по_ссылке_не_становится_основным() -> Result<(), Box<dyn std::error::Error>>
+{
+    let temp = tempfile::tempdir()?;
+    let input = bundles(
+        temp.path(),
+        &[
+            (
+                "Universal",
+                "[ref dict=\"Grammar\"]word[/ref]\nsecond\n body",
+            ),
+            ("Grammar", "Grammar help"),
+        ],
+    );
+    assert!(
+        select_primary_dictionary(
+            &input,
+            &ReadOptions::default(),
+            &RunContext::new(temp.path().join("scratch"))
+        )?
+        .is_none()
+    );
+    Ok(())
+}
+
+#[test]
+fn независимый_большой_словарь_не_меняет_основной_связанной_пары()
+-> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let input = bundles(
+        temp.path(),
+        &[
+            ("Index", "[ref dict=\"Main\"]word[/ref]"),
+            ("Main", "Body"),
+            ("Other", "Other\nsecond\n body"),
+        ],
+    );
+    let selection = select_primary_dictionary(
+        &input,
+        &ReadOptions::default(),
+        &RunContext::new(temp.path().join("scratch")),
+    )?
+    .ok_or("Основной")?;
+    assert_eq!(selection.main_title, "Main");
+    assert_eq!(selection.independent_ids, ["2"]);
+    Ok(())
+}
+
+#[test]
 fn неоднозначные_пакеты_сохраняют_ручной_выбор() -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     for sources in [

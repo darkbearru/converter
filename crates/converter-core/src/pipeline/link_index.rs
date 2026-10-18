@@ -78,6 +78,8 @@ impl LinkIndex {
             emit(Diagnostic {
                 code: "missing_reference".into(),
                 message: format!("Не найдена статья для ссылки: {target}"),
+                severity: DiagnosticSeverity::Warning,
+                occurrences: 1,
                 source_location: Some(SourceLocation {
                     source: source.into(),
                     line,

@@ -5,7 +5,73 @@ use converter_app::{
 };
 use converter_core::formats::{FormatDescriptor, FormatRegistry};
 use tauri::{AppHandle, State};
+use tauri_plugin_clipboard_manager::ClipboardExt;
 use tauri_plugin_opener::OpenerExt;
+
+#[tauri::command]
+pub fn read_clipboard_text(app: AppHandle) -> AppResult<String> {
+    app.clipboard().read_text().map_err(|_| {
+        AppError::new(
+            "clipboard_unavailable",
+            "Не удалось прочитать текст из буфера обмена. Вставьте ссылку с клавиатуры.",
+        )
+    })
+}
+
+#[tauri::command]
+pub fn open_support_page(app: AppHandle) -> AppResult<()> {
+    app.opener()
+        .open_url("https://pay.cloudtips.ru/p/7e782291", None::<&str>)
+        .map_err(|_| AppError::new("open_failed", "Не удалось открыть страницу поддержки"))
+}
+
+#[tauri::command]
+pub async fn open_issue(
+    app: AppHandle,
+    state: State<'_, NativeState>,
+    id: Option<String>,
+) -> AppResult<()> {
+    let manager = state.manager.clone();
+    let version = app.package_info().version.to_string();
+    let url = tauri::async_runtime::spawn_blocking(move || {
+        let job = id
+            .as_deref()
+            .map(|id| {
+                manager
+                    .list()?
+                    .into_iter()
+                    .find(|job| job.id == id)
+                    .ok_or_else(|| AppError::new("job_not_found", "Задание не найдено"))
+            })
+            .transpose()?;
+        // Ошибка чтения журнала не должна мешать сообщить о самой проблеме.
+        let diagnostics = job
+            .as_ref()
+            .and_then(|job| manager.diagnostics(&job.id, 0, 20).ok())
+            .map(|page| page.items)
+            .unwrap_or_default();
+        crate::issue_report::issue_url(
+            &version,
+            std::env::consts::OS,
+            std::env::consts::ARCH,
+            job.as_ref(),
+            &diagnostics,
+        )
+    })
+    .await
+    .map_err(|_| {
+        AppError::new(
+            "issue_report_failed",
+            "Не удалось подготовить сообщение. Повторите попытку.",
+        )
+    })??;
+    app.opener().open_url(url, None::<&str>).map_err(|_| {
+        AppError::new(
+            "open_failed",
+            "Не удалось открыть браузер. Повторите попытку.",
+        )
+    })
+}
 
 fn snapshot(state: &NativeState, id: &str) -> AppResult<JobSnapshot> {
     state

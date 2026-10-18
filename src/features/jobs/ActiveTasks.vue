@@ -3,6 +3,7 @@ import { nextTick, ref, watch } from 'vue';
 import ProgressBar from 'primevue/progressbar';
 import Button from 'primevue/button';
 import Icon from '../../shared/ui/Icon.vue';
+import { focusDialogOpener } from '../../shared/ui/dialog';
 import type { JobSnapshot } from '../../shared/contracts';
 import { stageLabels, stateLabels } from '../../shared/format';
 const props = defineProps<{ jobs: JobSnapshot[]; pending: Record<string, boolean> }>();
@@ -59,7 +60,10 @@ function label(job: JobSnapshot) {
         text
         :label="job.display_name"
         :title="`${job.display_name} — ${label(job)}`"
-        @click="$emit('details', job.id)"
+        @click="
+          focusDialogOpener($event);
+          $emit('details', job.id);
+        "
       />
       <div class="task-progress">
         <ProgressBar

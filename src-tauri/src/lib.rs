@@ -1,5 +1,6 @@
 mod commands;
 mod events;
+mod issue_report;
 mod storage;
 use converter_app::{JobManager, storage::desktop::DesktopStorage};
 use std::sync::{
@@ -35,6 +36,7 @@ pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .setup(|app| {
             let root = app.path().app_data_dir()?;
             let storage = Arc::new(DesktopStorage::open(root.clone())?);
@@ -44,6 +46,9 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            commands::read_clipboard_text,
+            commands::open_support_page,
+            commands::open_issue,
             commands::list_formats,
             commands::get_jobs,
             commands::pick_sources,

@@ -100,6 +100,8 @@ impl Parser<'_> {
                 self.sink.diagnostic(Diagnostic {
                     code: "unknown_directive".into(),
                     message: format!("Неизвестная директива: {text}"),
+                    severity: DiagnosticSeverity::Warning,
+                    occurrences: 1,
                     source_location: Some(SourceLocation {
                         source: self.source.into(),
                         line: line.number,

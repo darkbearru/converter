@@ -13,6 +13,9 @@ async function call<T>(command: string, args?: Record<string, unknown>): Promise
   return invoke<T>(command, args);
 }
 export const nativeBridge: NativeBridge = {
+  readClipboardText: () => call('read_clipboard_text'),
+  openSupportPage: () => call('open_support_page'),
+  openIssue: (id) => call('open_issue', { id: id ?? null }),
   listFormats: () => call('list_formats'),
   pickSources: (purpose) => call('pick_sources', { purpose }),
   pickOutput: () => call('pick_output'),

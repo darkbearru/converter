@@ -102,6 +102,14 @@ pub fn select_primary_dictionary_with_registry(
         return Ok(None);
     }
     let main = candidates[0];
+    // Ссылка из большого словаря может вести в небольшой справочник, а не в
+    // головной словарь. В таком случае сохраняем явный выбор пользователя.
+    if (0..bundles.len()).any(|index| {
+        (incoming[index] > 0 || !edges[index].is_empty())
+            && relationships[index].source_articles > relationships[main].source_articles
+    }) {
+        return Ok(None);
+    }
     Ok(Some(PrimaryDictionarySelection {
         main_id: bundles[main].main.id.clone(),
         main_title: relationships[main].title.clone(),

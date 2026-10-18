@@ -94,6 +94,11 @@ h3 {
   color: var(--muted);
   font-size: 11px;
 }
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 .conversion-workspace {
   --history-max-share: 70%;
   flex: 1;
@@ -127,7 +132,7 @@ h3 {
   background: transparent;
 }
 .completed-history .p-accordioncontent-content {
-  padding: 2px 10px 16px;
+  padding: 8px 10px 16px;
 }
 .history-file {
   min-width: 0;
@@ -136,7 +141,9 @@ h3 {
   white-space: nowrap;
   flex: 1;
 }
-.history-warning {
+.app-icon.history-warning {
+  width: 16px;
+  height: 16px;
   color: var(--p-primary-600);
 }
 .history-chevron {
@@ -226,6 +233,37 @@ h3 {
   padding: 0;
   flex-shrink: 0;
   color: var(--muted);
+}
+.icon-button.support-button.p-button,
+.icon-button.support-button.p-button:is(:hover, :active),
+.icon-button.issue-button.p-button,
+.icon-button.issue-button.p-button:is(:hover, :active):not(:disabled),
+.icon-button.paste-url.p-button,
+.icon-button.paste-url.p-button:is(:hover, :active) {
+  width: 24px;
+  height: 24px;
+  border: 0 solid transparent;
+  background: transparent;
+  box-shadow: none;
+}
+.icon-button.support-button.p-button,
+.icon-button.support-button.p-button:is(:hover, :active) {
+  color: var(--accent);
+}
+.icon-button.support-button .app-icon,
+.icon-button.issue-button .app-icon,
+.icon-button.paste-url .app-icon {
+  width: 16px;
+  height: 16px;
+}
+.icon-button.paste-url .app-icon {
+  mask-size: contain;
+}
+.icon-button.paste-url.p-button:hover:not(:disabled) {
+  color: var(--text);
+}
+.icon-button.issue-button.p-button:hover:not(:disabled) {
+  color: var(--text);
 }
 .app-icon {
   display: inline-block;
@@ -442,6 +480,8 @@ h3 {
   color: var(--success);
 }
 .app-dialog {
+  --close-button-size: 24px;
+  --close-icon-size: 16px;
   width: min(520px, calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
 }
@@ -459,6 +499,9 @@ h3 {
 }
 .app-dialog .p-dialog-footer {
   padding: 12px 20px 16px;
+}
+.app-dialog [tabindex='-1'][autofocus]:focus {
+  outline: none;
 }
 .dialog-fields,
 .field-stack,
@@ -489,6 +532,18 @@ h3 {
   width: 100%;
   min-width: 0;
   font-size: 13px;
+}
+.url-input-control {
+  position: relative;
+}
+.url-input-control .p-inputtext {
+  padding-inline-end: 40px;
+}
+.url-input-control .paste-url {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 .button-row {
   display: flex;
@@ -573,25 +628,6 @@ h3 {
   gap: 8px;
   font-variant-numeric: tabular-nums;
 }
-.result-path.p-button {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  text-align: left;
-  padding: 4px 0;
-  max-width: 100%;
-  font-size: 12px;
-  color: var(--p-text-color);
-}
-.result-path .p-button-label {
-  overflow-wrap: anywhere;
-  font-weight: 450;
-  min-width: 0;
-}
-.result-path .app-icon {
-  width: 24px;
-  height: 24px;
-}
 .diagnostics {
   margin-top: 10px;
   font-size: 12px;
@@ -610,11 +646,22 @@ h3 {
   border-bottom: 1px solid var(--border);
   overflow-wrap: anywhere;
 }
+.diagnostic-list-preview > li {
+  padding: 4px 0;
+  border-bottom: 0;
+}
+.diagnostics .p-message-text {
+  width: 100%;
+  font-size: inherit;
+}
+.diagnostics .p-message .hint {
+  color: inherit;
+}
 .diagnostic-location {
   color: var(--muted);
 }
 .diagnostics-more {
-  color: var(--muted);
+  color: inherit;
   text-decoration: underline dotted;
   text-underline-offset: 3px;
 }
@@ -622,16 +669,14 @@ h3 {
   color: var(--text);
 }
 .diagnostics-dialog {
-  --close-button-size: 24px;
-  --close-icon-size: 16px;
   height: calc(100dvh - 48px);
 }
-.diagnostics-dialog .p-dialog-close-button.p-button {
+.app-dialog .p-dialog-close-button.p-button {
   width: var(--close-button-size);
   height: var(--close-button-size);
   padding: 0;
 }
-.diagnostics-dialog .p-dialog-close-button .app-icon {
+.app-dialog .p-dialog-close-button .app-icon {
   width: var(--close-icon-size);
   height: var(--close-icon-size);
 }

@@ -118,6 +118,7 @@ impl DictionaryReader for DslReader {
             articles: 0,
             warnings: 0,
             abbreviations: abbreviations::AbbreviationCache::default(),
+            missing_abbreviations_reported: false,
         };
         let mut summary = parser::parse_raw(bundle, &encoding, &mut rendered, ctx)?;
         summary.warnings += rendered.warnings;
@@ -141,6 +142,7 @@ struct RenderSink<'a> {
     articles: u64,
     warnings: u64,
     abbreviations: abbreviations::AbbreviationCache,
+    missing_abbreviations_reported: bool,
 }
 
 impl parser::AstSink for RenderSink<'_> {
@@ -172,7 +174,28 @@ impl parser::AstSink for RenderSink<'_> {
             self.ctx,
             &mut self.abbreviations,
         )?;
-        self.warnings += rendered.diagnostics.len() as u64;
+        if rendered.uses_abbreviations
+            && self.bundle.abbreviations.is_none()
+            && !self.missing_abbreviations_reported
+        {
+            self.sink.diagnostic(Diagnostic {
+                code: "missing_abbreviations_file".into(),
+                message: "Файл сокращений не предоставлен: пометы сохранены без расшифровок".into(),
+                source_location: Some(SourceLocation {
+                    source: self.bundle.main.display_name.clone(),
+                    line: ast.source_line,
+                }),
+                severity: DiagnosticSeverity::Info,
+                occurrences: 1,
+            })?;
+            self.missing_abbreviations_reported = true;
+        }
+        self.warnings += rendered
+            .diagnostics
+            .iter()
+            .filter(|diagnostic| diagnostic.severity == DiagnosticSeverity::Warning)
+            .map(|diagnostic| diagnostic.occurrences)
+            .sum::<u64>();
         for diagnostic in rendered.diagnostics {
             self.sink.diagnostic(diagnostic)?;
         }

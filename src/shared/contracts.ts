@@ -166,6 +166,9 @@ export interface Diagnostic {
   code: string;
   message: string;
   source_location: { source: string; line: number } | null;
+  // В сохранённых журналах ранних версий этих полей нет.
+  severity?: 'info' | 'warning';
+  occurrences?: number;
 }
 export interface DiagnosticPage {
   items: Diagnostic[];
@@ -174,6 +177,9 @@ export interface DiagnosticPage {
 }
 export type SourcePurpose = 'dictionaries' | 'resources' | 'resource_directory';
 export interface NativeBridge {
+  readClipboardText(): Promise<string>;
+  openSupportPage(): Promise<void>;
+  openIssue(id?: string): Promise<void>;
   listFormats(): Promise<FormatDescriptor[]>;
   pickSources(purpose: SourcePurpose): Promise<ImportedSourceInfo[]>;
   pickOutput(): Promise<OutputChoice | null>;

@@ -47,6 +47,18 @@ test('кнопки ссылки и настроек не рисуют рамку
   await page.keyboard.press(
     browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab',
   );
+  await expect(
+    page.getByRole('button', { name: 'Поддержать разработчика', exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press(
+    browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab',
+  );
+  await expect(
+    page.getByRole('banner').getByRole('button', { name: 'Сообщить о проблеме', exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press(
+    browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab',
+  );
   const link = page.getByRole('button', { name: 'Добавить ссылку', exact: true });
   await expect(link).toBeFocused();
   await expect
@@ -88,4 +100,34 @@ test('крестик предупреждений компактный и зак
   await close.click();
   await expect(dialog).toBeHidden();
   await expect(link).toBeFocused();
+});
+
+test('диалоги открываются без фокуса на крестике и сохраняют закрытие с клавиатуры', async ({
+  page,
+}) => {
+  const cases = [
+    { scenario: '', trigger: 'Добавить ссылку' },
+    { scenario: '', trigger: 'Настройки конвертации' },
+    { scenario: 'additional', trigger: null },
+    { scenario: 'succeeded', trigger: 'Удалить' },
+    { scenario: 'converting', trigger: 'main.dsl' },
+  ];
+  for (const item of cases) {
+    await page.goto(screenUrl(item.scenario));
+    if (item.scenario === 'succeeded') await page.locator('.p-accordionheader').click();
+    if (item.trigger) await page.getByRole('button', { name: item.trigger, exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog).not.toHaveClass(/p-dialog-enter/);
+    const close = dialog.locator('.p-dialog-close-button');
+    await expect(close).not.toBeFocused();
+    expect(await dialog.evaluate((el) => el.contains(document.activeElement))).toBe(true);
+    const bounds = await close.boundingBox();
+    expect(bounds!.width).toBe(24);
+    expect(bounds!.height).toBe(24);
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    if (item.trigger)
+      await expect(page.getByRole('button', { name: item.trigger, exact: true })).toBeFocused();
+  }
 });

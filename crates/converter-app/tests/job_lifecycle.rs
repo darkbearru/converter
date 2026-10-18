@@ -322,7 +322,7 @@ async fn отчет_содержит_происхождение_без_url_то�
             .join("conversion-report.json"),
     )?;
     let report: serde_json::Value = serde_json::from_str(&text)?;
-    assert_eq!(report["application"]["version"], "0.1.0");
+    assert_eq!(report["application"]["version"], env!("CARGO_PKG_VERSION"));
     assert_eq!(report["sources"][0]["bytes"], bytes);
     assert_eq!(
         report["sources"][0]["sha256"].as_str().expect("hash").len(),

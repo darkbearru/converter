@@ -98,6 +98,23 @@ export function createHarness(scenario: string | null) {
     job.result!.summary.warnings = 28173;
     jobs.set(currentId, job);
   }
+  if (scenario === 'failed') {
+    const job = copy(samples.succeeded);
+    job.state = 'failed';
+    job.display_name = 'Dictionary.dsl';
+    job.result = null;
+    job.error = { code: 'invalid_markup', message: 'Нарушена структура статьи: не закрыта ссылка' };
+    job.diagnostic_count = 1;
+    jobs.set(currentId, job);
+  }
+  if (scenario === 'grouped-warnings') {
+    const job = copy(samples.succeeded);
+    job.state = 'succeeded_with_warnings';
+    job.display_name = 'Dictionary.dsl';
+    job.diagnostic_count = 2;
+    job.result!.summary.warnings = 2;
+    jobs.set(currentId, job);
+  }
   if (scenario?.startsWith('additional')) {
     const job = copy(samples.converting);
     job.display_name = 'UniversalChRu.dsl.dz';
@@ -127,6 +144,11 @@ export function createHarness(scenario: string | null) {
     jobs.set(currentId, job);
   }
   const bridge: NativeBridge = {
+    async readClipboardText() {
+      return 'https://example.org/pasted.dsl';
+    },
+    async openSupportPage() {},
+    async openIssue() {},
     async listFormats() {
       return [
         { id: 'dsl', name: 'Lingvo DSL', extensions: ['dsl', 'dsl.dz'], supports_resources: true },
@@ -261,10 +283,16 @@ export function createHarness(scenario: string | null) {
       return {
         items: Array.from({ length: Math.max(0, end - offset) }, (_, index) => ({
           code: 'test_warning',
+          severity: 'warning',
+          occurrences: scenario === 'grouped-warnings' && offset + index === 0 ? 1234 : 1,
           message:
-            scenario === 'warning'
-              ? 'Не найдена статья для ссылки: 儿'
-              : `Предупреждение ${offset + index + 1}${offset + index === 0 ? ': <img src=x onerror=alert(1)>' : ''}`,
+            scenario === 'grouped-warnings'
+              ? offset + index === 0
+                ? 'Отсутствует ресурс: voice.wav'
+                : 'Не найдено сокращение: rare.'
+              : scenario === 'warning'
+                ? 'Не найдена статья для ссылки: 儿'
+                : `Предупреждение ${offset + index + 1}${offset + index === 0 ? ': <img src=x onerror=alert(1)>' : ''}`,
           source_location: { source: 'Словарь.dsl', line: offset + index + 10 },
         })),
         next_offset: end < total ? end : null,

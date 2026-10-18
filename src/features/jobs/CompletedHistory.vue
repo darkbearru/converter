@@ -1,16 +1,19 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import Accordion from 'primevue/accordion';
 import AccordionPanel from 'primevue/accordionpanel';
 import AccordionHeader from 'primevue/accordionheader';
 import AccordionContent from 'primevue/accordioncontent';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
+import Message from 'primevue/message';
+import { dialogCloseButtonProps, focusDialogOpener } from '../../shared/ui/dialog';
 import Icon from '../../shared/ui/Icon.vue';
+import ProblemReportButton from '../../shared/ui/ProblemReportButton.vue';
 import ResultPanel from '../results/ResultPanel.vue';
 import DiagnosticsList from '../results/DiagnosticsList.vue';
 import type { JobSnapshot, NativeBridge } from '../../shared/contracts';
-import { errorMessage, stateLabels } from '../../shared/format';
+import { stateLabels } from '../../shared/format';
 const props = defineProps<{
   jobs: JobSnapshot[];
   bridge: NativeBridge;
@@ -25,41 +28,8 @@ defineEmits<{
 }>();
 const expanded = ref<string[]>([]);
 const diagnosticsId = ref<string | null>(null);
+const reportErrors = ref<Record<string, string>>({});
 const diagnosticsJob = computed(() => props.jobs.find((job) => job.id === diagnosticsId.value));
-const paths = reactive<Record<string, string>>({});
-const pathErrors = reactive<Record<string, string>>({});
-const resultIds = new Map<string, string>();
-watch(
-  () =>
-    expanded.value
-      .map((id) => `${id}:${props.jobs.find((job) => job.id === id)?.result?.id ?? ''}`)
-      .join('|'),
-  async () => {
-    await Promise.all(
-      expanded.value.map(async (id) => {
-        const job = props.jobs.find((item) => item.id === id);
-        const resultId = job?.result?.id;
-        if (resultIds.get(id) === resultId) return;
-        delete paths[id];
-        delete pathErrors[id];
-        if (!resultId) {
-          resultIds.delete(id);
-          return;
-        }
-        resultIds.set(id, resultId);
-        try {
-          const path = await props.bridge.getResultPath(id);
-          if (resultIds.get(id) === resultId) paths[id] = path;
-        } catch (e) {
-          if (resultIds.get(id) === resultId) {
-            pathErrors[id] = errorMessage(e);
-            resultIds.delete(id);
-          }
-        }
-      }),
-    );
-  },
-);
 function warning(job: JobSnapshot) {
   return (
     job.had_errors ||
@@ -86,18 +56,26 @@ function warning(job: JobSnapshot) {
               :class="{ 'is-open': expanded.includes(job.id) }" /></template
         ></AccordionHeader>
         <AccordionContent>
-          <p class="history-status">{{ stateLabels[job.state] }}</p>
-          <p v-if="job.error" class="error-message" role="alert">{{ job.error.message }}</p>
+          <p
+            v-if="!['succeeded', 'succeeded_with_warnings'].includes(job.state)"
+            class="history-status"
+          >
+            {{ stateLabels[job.state] }}
+          </p>
+          <ResultPanel v-if="job.result" :result="job.result" :export-state="job.export" />
+          <Message v-if="job.error" severity="error">{{ job.error.message }}</Message>
           <DiagnosticsList
             v-if="job.diagnostic_count && expanded.includes(job.id)"
             :key="`${job.id}:${job.run_id}`"
             :id="job.id"
             :count="job.diagnostic_count"
             :bridge="bridge"
+            :severity="
+              job.error || ['failed', 'interrupted'].includes(job.state) ? 'error' : 'warn'
+            "
             preview
             @show-all="diagnosticsId = job.id"
           />
-          <ResultPanel v-if="job.result" :result="job.result" :export-state="job.export" />
           <div class="history-actions" role="group" aria-label="Действия с конвертацией">
             <Button
               v-if="job.result?.can_open"
@@ -121,7 +99,10 @@ function warning(job: JobSnapshot) {
               severity="secondary"
               outlined
               :disabled="pending[job.id]"
-              @click="$emit('repair', job.id)"
+              @click="
+                focusDialogOpener($event);
+                $emit('repair', job.id);
+              "
             />
             <Button
               v-else
@@ -136,25 +117,26 @@ function warning(job: JobSnapshot) {
               severity="danger"
               outlined
               :disabled="pending[job.id] || job.export.status === 'running'"
-              @click="$emit('remove', job.id)"
+              @click="
+                focusDialogOpener($event);
+                $emit('remove', job.id);
+              "
+            />
+            <ProblemReportButton
+              :bridge="bridge"
+              :job-id="job.id"
+              :disabled="pending[job.id]"
+              @error="reportErrors[job.id] = $event"
             />
           </div>
-          <Button
-            v-if="paths[job.id]"
-            class="result-path"
-            text
-            :label="paths[job.id]"
-            :aria-label="`Открыть папку ${paths[job.id]}`"
-            @click="$emit('open', job.id)"
-            ><template #icon><Icon name="folder" /></template
-          ></Button>
-          <p v-if="pathErrors[job.id]" class="error-message" role="alert">
-            {{ pathErrors[job.id] }}
-          </p>
+          <Message v-if="reportErrors[job.id]" severity="error" role="alert">{{
+            reportErrors[job.id]
+          }}</Message>
         </AccordionContent>
       </AccordionPanel>
     </Accordion>
     <Dialog
+      :close-button-props="dialogCloseButtonProps"
       :id="diagnosticsJob ? `diagnostics-${diagnosticsJob.id}` : undefined"
       :visible="Boolean(diagnosticsJob)"
       modal
@@ -164,7 +146,12 @@ function warning(job: JobSnapshot) {
     >
       <template #closeicon><Icon name="close" /></template>
       <template v-if="diagnosticsJob">
-        <p class="diagnostics-filename muted" :title="diagnosticsJob.display_name">
+        <p
+          class="diagnostics-filename muted"
+          tabindex="-1"
+          autofocus
+          :title="diagnosticsJob.display_name"
+        >
           {{ diagnosticsJob.display_name }}
         </p>
         <DiagnosticsList
@@ -172,6 +159,11 @@ function warning(job: JobSnapshot) {
           :id="diagnosticsJob.id"
           :count="diagnosticsJob.diagnostic_count"
           :bridge="bridge"
+          :severity="
+            diagnosticsJob.error || ['failed', 'interrupted'].includes(diagnosticsJob.state)
+              ? 'error'
+              : 'warn'
+          "
           expanded
         />
       </template>

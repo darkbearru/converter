@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import Message from 'primevue/message';
 import Paginator, { type PageState } from 'primevue/paginator';
 import type { DiagnosticPage, NativeBridge } from '../../shared/contracts';
 import { errorMessage, formatCount, formatQuantity } from '../../shared/format';
@@ -7,6 +8,7 @@ const props = defineProps<{
   id: string;
   count: number;
   bridge: NativeBridge;
+  severity?: 'warn' | 'error';
   preview?: boolean;
   expanded?: boolean;
 }>();
@@ -92,38 +94,52 @@ function showAll(event: MouseEvent) {
     </button>
     <div v-if="isOpen || preview" class="diagnostics-body" :aria-busy="busy">
       <div v-if="error">
-        <p role="alert" class="error-message">{{ error }}</p>
+        <Message severity="error">{{ error }}</Message>
         <button type="button" class="diagnostics-retry" @click="load">Повторить чтение</button>
       </div>
       <p v-else-if="busy" role="status" class="muted">Чтение журнала…</p>
       <p v-else-if="!page.items.length" class="muted">
         {{ count ? 'Не удалось найти записи журнала.' : 'Предупреждений нет.' }}
       </p>
-      <ol v-else class="diagnostic-list" :start="offset + 1">
+      <ol
+        v-else
+        class="diagnostic-list"
+        :class="{ 'diagnostic-list-preview': preview }"
+        :start="offset + 1"
+      >
         <li
           v-for="(item, index) in preview ? page.items.slice(0, 1) : page.items"
           :key="`${offset}-${index}`"
         >
-          <p>
-            <span>{{ item.message }}</span
-            >{{ ' '
-            }}<a
-              v-if="preview && count > 1"
-              :href="`#diagnostics-${id}`"
-              :aria-controls="`diagnostics-${id}`"
-              aria-haspopup="dialog"
-              class="diagnostics-more"
-              @click.prevent="showAll"
-            >
-              (ещё
-              {{
-                formatQuantity(count - 1, ['предупреждение', 'предупреждения', 'предупреждений'])
-              }})</a
-            >
-          </p>
-          <span v-if="item.source_location" class="hint"
-            >{{ item.source_location.source }}, строка {{ item.source_location.line }}</span
+          <component
+            :is="preview ? Message : 'div'"
+            :severity="preview ? (severity ?? 'warn') : undefined"
           >
+            <p>
+              <span>{{ item.message }}</span
+              >{{ ' '
+              }}<a
+                v-if="preview && count > 1"
+                :href="`#diagnostics-${id}`"
+                :aria-controls="`diagnostics-${id}`"
+                aria-haspopup="dialog"
+                class="diagnostics-more"
+                @click.prevent="showAll"
+              >
+                (ещё
+                {{
+                  formatQuantity(count - 1, ['предупреждение', 'предупреждения', 'предупреждений'])
+                }})</a
+              >
+            </p>
+            <p v-if="(item.occurrences ?? 1) > 1" class="hint">
+              Встречается {{ formatQuantity(item.occurrences ?? 1, ['раз', 'раза', 'раз']) }}.
+            </p>
+            <span v-if="item.source_location" class="hint"
+              >{{ (item.occurrences ?? 1) > 1 ? 'Первое упоминание: ' : ''
+              }}{{ item.source_location.source }}, строка {{ item.source_location.line }}</span
+            >
+          </component>
         </li>
       </ol>
       <Paginator

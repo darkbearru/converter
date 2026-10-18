@@ -1,5 +1,5 @@
 use super::references::inline_text;
-use crate::model::{ConverterError, Diagnostic, Result, RunContext};
+use crate::model::{ConverterError, Diagnostic, DiagnosticSeverity, Result, RunContext};
 
 pub(super) fn token_end(text: &str) -> Option<usize> {
     // Апостроф здесь является именем тега ударения, а не кавычкой аргумента.
@@ -81,6 +81,9 @@ fn known(name: &str) -> bool {
             | "m"
             | "p"
             | "trn"
+            | "!trs"
+            | "trs"
+            | "!trn"
             | "ex"
             | "com"
             | "sup"
@@ -96,9 +99,25 @@ fn known(name: &str) -> bool {
 }
 
 fn formatting(name: &str) -> bool {
+    // Служебные обёртки не меняют отображение: их можно переносить вместе
+    // с оформлением, не разрывая ссылки, ресурсы и абзацы.
     matches!(
         name,
-        "b" | "i" | "u" | "c" | "trn" | "ex" | "com" | "sup" | "sub" | "t" | "lang" | "'" | "*"
+        "b" | "i"
+            | "u"
+            | "c"
+            | "trn"
+            | "!trs"
+            | "trs"
+            | "!trn"
+            | "ex"
+            | "com"
+            | "sup"
+            | "sub"
+            | "t"
+            | "lang"
+            | "'"
+            | "*"
     )
 }
 
@@ -231,6 +250,8 @@ impl MarkupParser<'_> {
                             code: "unknown_tag".into(),
                             message: format!("Неизвестный тег сохранён как текст: [{raw}]"),
                             source_location: None,
+                            severity: DiagnosticSeverity::Warning,
+                            occurrences: 1,
                         });
                     }
                     continue;
@@ -255,7 +276,9 @@ impl MarkupParser<'_> {
                         .iter()
                         .any(|frame| frame.source_position > frames[matching].source_position);
                     if crossed
-                        && ((!formatting(&frames[matching].name) && frames[matching].name != "p")
+                        && ((!formatting(&frames[matching].name)
+                            && frames[matching].name != "p"
+                            && normalized(&frames[matching].name) != "m")
                             || frames[matching + 1..]
                                 .iter()
                                 .any(|frame| !formatting(&frame.name)))
@@ -279,6 +302,8 @@ impl MarkupParser<'_> {
                                 "Восстановлено пересечение тегов оформления перед [{raw}]"
                             ),
                             source_location: None,
+                            severity: DiagnosticSeverity::Info,
+                            occurrences: 1,
                         });
                     }
                     continue;
@@ -289,9 +314,9 @@ impl MarkupParser<'_> {
                         "Слишком глубокая вложенность тегов DSL",
                     ));
                 }
-                // Сокращение остаётся одним узлом даже при закрытии внешнего оформления
-                // внутри [p]. Переносим только активные стили, сохраняя порядок исходных тегов.
-                let reopen = if name == "p" {
+                // Сокращение и абзац остаются цельными узлами, даже если внутри них
+                // закрывается внешнее оформление. Переносим только активные стили.
+                let reopen = if name == "p" || normalized(&name) == "m" {
                     let start = frames
                         .iter()
                         .rposition(|frame| !formatting(&frame.name))

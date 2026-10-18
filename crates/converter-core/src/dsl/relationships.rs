@@ -78,9 +78,10 @@ pub(super) fn inspect(
         names: BTreeSet::new(),
         ctx,
     };
-    parser::parse_raw(bundle, &encoding, &mut references, ctx)?;
+    let summary = parser::parse_raw(bundle, &encoding, &mut references, ctx)?;
     Ok(SourceRelationships {
         title: meta.title,
         external_dictionaries: references.names.into_iter().collect(),
+        source_articles: summary.source_articles,
     })
 }

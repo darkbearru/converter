@@ -65,6 +65,11 @@ const ConverterPreset = definePreset(Aura, {
     },
   },
   components: {
+    message: {
+      colorScheme: {
+        light: { warn: { color: '{yellow.800}' } },
+      },
+    },
     button: {
       colorScheme: {
         light: {

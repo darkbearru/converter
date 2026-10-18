@@ -3,6 +3,43 @@ import { fireEvent, render, screen } from '@testing-library/vue';
 import DiagnosticsList from '../../src/features/results/DiagnosticsList.vue';
 import type { DiagnosticPage, NativeBridge } from '../../src/shared/contracts';
 
+it('группа показывает число употреблений отдельно от количества предупреждений', async () => {
+  const native = {
+    readDiagnostics: async () => ({
+      items: [
+        {
+          code: 'missing_resource',
+          message: 'Отсутствует ресурс: voice.wav',
+          severity: 'warning',
+          occurrences: 1234,
+          source_location: { source: 'test.dsl', line: 7 },
+        },
+      ],
+      total: 2,
+      next_offset: 1,
+    }),
+  } as unknown as NativeBridge;
+  render(DiagnosticsList, { props: { id: 'job', count: 2, bridge: native, preview: true } });
+  expect(await screen.findByText('Отсутствует ресурс: voice.wav')).toBeVisible();
+  expect(screen.getByText(/Встречается 1\s234 раза/)).toBeVisible();
+  expect(screen.getByText(/Первое упоминание: test.dsl, строка 7/)).toBeVisible();
+  expect(screen.getByRole('link', { name: '(ещё 1 предупреждение)' })).toBeVisible();
+});
+
+it('старый журнал без счётчика употреблений остаётся читаемым', async () => {
+  const native = {
+    readDiagnostics: async () => ({
+      items: [{ code: 'test', message: 'Старая запись', source_location: null }],
+      total: 1,
+      next_offset: null,
+    }),
+  } as unknown as NativeBridge;
+  render(DiagnosticsList, { props: { id: 'legacy', count: 1, bridge: native, expanded: true } });
+  expect(await screen.findByText('Старая запись')).toBeVisible();
+  expect(screen.getByText('Старая запись').closest('.p-message')).not.toBeInTheDocument();
+  expect(screen.queryByText(/Встречается/)).not.toBeInTheDocument();
+});
+
 it('ошибка чтения полного журнала предлагает повтор', async () => {
   const native = {
     readDiagnostics: vi
@@ -18,7 +55,7 @@ it('ошибка чтения полного журнала предлагает
   expect(await screen.findByRole('alert')).toHaveTextContent('Не удалось прочитать журнал');
   await fireEvent.click(screen.getByRole('button', { name: 'Повторить чтение' }));
   expect(await screen.findByText('Запись восстановлена')).toBeVisible();
-  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.queryByText('Не удалось прочитать журнал')).not.toBeInTheDocument();
   expect(native.readDiagnostics).toHaveBeenLastCalledWith('job', 0, 50);
 });
 

@@ -279,6 +279,45 @@ fn пересекающиеся_сокращения_остаются_целым
 }
 
 #[test]
+fn оформление_продолжается_через_границы_абзацев() -> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let bundle = InputBundle {
+        main: prepared(&temp.path().join("main.dsl")),
+        abbreviations: None,
+        resources: vec![],
+    };
+    let result = render_article(
+        &article("[m1][c][com]первый[/m]\n[m2][i]второй[/com][/c][/i] конец[/m]"),
+        &bundle,
+        &ReadOptions::default(),
+    )?;
+    assert_eq!(result.html.matches("первый").count(), 1);
+    assert_eq!(result.html.matches("второй").count(), 1);
+    assert_eq!(result.html.matches(" конец").count(), 1);
+    assert!(result.html.contains("dsl-indent-1"));
+    assert!(result.html.contains("dsl-indent-2"));
+    assert_eq!(result.html.matches("dsl-comment").count(), 3);
+    assert!(
+        result
+            .diagnostics
+            .iter()
+            .any(|d| d.code == "repaired_markup")
+    );
+    let result = render_article(
+        &article(
+            "[c][com][lang id=1049]вступление\n[m1][p][i]суффикс[/lang][/com][/c][/i][/p][/m]",
+        ),
+        &bundle,
+        &ReadOptions::default(),
+    )?;
+    assert_eq!(result.html.matches("вступление").count(), 1);
+    assert_eq!(result.html.matches("суффикс").count(), 1);
+    assert_eq!(result.html.matches("<abbr").count(), 1);
+    assert!(result.html.contains("dsl-indent-1"));
+    Ok(())
+}
+
+#[test]
 fn ударение_сохраняет_букву_и_цель_ссылки_без_служебных_маркеров()
 -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;

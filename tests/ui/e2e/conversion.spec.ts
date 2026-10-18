@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { screenUrl, step } from './helpers';
-test('выбранный файл ожидает запуска, затем попадает в историю с активным путём', async ({
+test('выбранный файл ожидает запуска, затем попадает в историю с открытием папки', async ({
   page,
 }) => {
   await page.goto(screenUrl());
@@ -52,9 +52,7 @@ test('выбранный файл ожидает запуска, затем по
   await page.locator('.p-accordionheader').click();
   await expect(page.getByText('dictionary.mdx', { exact: true })).toBeVisible();
   await expect(page.getByText('dictionary.mdd', { exact: true })).toBeVisible();
-  await page
-    .getByRole('button', { name: 'Открыть папку /Словари/Англо-русский-converted', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Открыть папку', exact: true }).click();
   await page.getByRole('button', { name: 'Сохранить копию', exact: true }).click();
   await expect(page.getByText('Копия сохранена. Файлов: 3.', { exact: true })).toBeVisible();
 });

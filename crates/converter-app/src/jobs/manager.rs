@@ -447,6 +447,16 @@ impl JobManager {
         update: impl FnOnce(&mut StoredJob),
     ) -> AppResult<Option<JobSnapshot>> {
         let mut runtime = self.inner.runtime.lock().map_err(|_| lock_error())?;
+        self.mutate_locked(&mut runtime, id, expected, force, update)
+    }
+    fn mutate_locked(
+        &self,
+        runtime: &mut Runtime,
+        id: &str,
+        expected: Option<(u64, &str)>,
+        force: bool,
+        update: impl FnOnce(&mut StoredJob),
+    ) -> AppResult<Option<JobSnapshot>> {
         let mut job = runtime
             .jobs
             .get(id)
@@ -933,56 +943,71 @@ impl JobManager {
         run: &str,
         event: CoreEvent,
     ) -> AppResult<bool> {
-        let job = self.job(id)?;
+        // Проверка запуска, запись журнала и обновление состояния атомарны
+        // относительно отмены и повторного запуска. Порядок блокировок: runtime → journals.
+        let mut runtime = self.inner.runtime.lock().map_err(|_| lock_error())?;
+        let job = runtime
+            .jobs
+            .get(id)
+            .ok_or_else(|| AppError::new("job_not_found", "Задание не найдено"))?;
         if job.snapshot.generation != generation
             || job.snapshot.run_id != run
             || state::success(job.snapshot.state)
-            || matches!(
-                job.snapshot.state,
-                JobState::Cancelled | JobState::Interrupted
-            )
+            || job.snapshot.state == JobState::Interrupted
         {
             return Ok(false);
         }
-        if let CoreEvent::Diagnostic(diagnostic) = &event
-            && let Some(journal) = self
-                .inner
-                .journals
-                .lock()
-                .map_err(|_| lock_error())?
-                .get(id)
+        let cancelled = job.snapshot.state == JobState::Cancelled;
+        if cancelled
+            && (!matches!(&event, CoreEvent::Diagnostic(diagnostic)
+                if diagnostic.severity == DiagnosticSeverity::Warning)
+                || !runtime.controls.contains_key(id))
         {
-            let mut out = journal.lock().map_err(|_| lock_error())?;
-            serde_json::to_writer(&mut *out, diagnostic)?;
-            out.write_all(b"\n")?;
+            return Ok(false);
+        }
+        if let CoreEvent::Diagnostic(diagnostic) = &event {
+            let journals = self.inner.journals.lock().map_err(|_| lock_error())?;
+            if let Some(journal) = journals.get(id) {
+                let mut out = journal.lock().map_err(|_| lock_error())?;
+                serde_json::to_writer(&mut *out, diagnostic)?;
+                out.write_all(b"\n")?;
+            } else if cancelled {
+                return Ok(false);
+            }
         }
         let terminal = matches!(event, CoreEvent::StageCompleted(_));
-        self.mutate(id, Some((generation, run)), terminal, |job| match event {
-            CoreEvent::Diagnostic(_) => job.snapshot.diagnostic_count += 1,
-            CoreEvent::Progress(progress) | CoreEvent::StageCompleted(progress) => {
-                job.snapshot.state = match progress.stage {
-                    ConversionStage::Inspect => JobState::Inspecting,
-                    ConversionStage::Validate => JobState::Validating,
-                    ConversionStage::Publish => JobState::Publishing,
-                    _ => JobState::Converting,
-                };
-                job.snapshot.conversion.status = ConversionStatus::Running;
-                job.snapshot.conversion.current = Some(progress.clone());
-                if terminal {
-                    if let Some(old) = job
-                        .snapshot
-                        .conversion
-                        .completed_stages
-                        .iter_mut()
-                        .find(|p| p.stage == progress.stage)
-                    {
-                        *old = progress;
-                    } else {
-                        job.snapshot.conversion.completed_stages.push(progress);
+        self.mutate_locked(
+            &mut runtime,
+            id,
+            Some((generation, run)),
+            terminal,
+            |job| match event {
+                CoreEvent::Diagnostic(_) => job.snapshot.diagnostic_count += 1,
+                CoreEvent::Progress(progress) | CoreEvent::StageCompleted(progress) => {
+                    job.snapshot.state = match progress.stage {
+                        ConversionStage::Inspect => JobState::Inspecting,
+                        ConversionStage::Validate => JobState::Validating,
+                        ConversionStage::Publish => JobState::Publishing,
+                        _ => JobState::Converting,
+                    };
+                    job.snapshot.conversion.status = ConversionStatus::Running;
+                    job.snapshot.conversion.current = Some(progress.clone());
+                    if terminal {
+                        if let Some(old) = job
+                            .snapshot
+                            .conversion
+                            .completed_stages
+                            .iter_mut()
+                            .find(|p| p.stage == progress.stage)
+                        {
+                            *old = progress;
+                        } else {
+                            job.snapshot.conversion.completed_stages.push(progress);
+                        }
                     }
                 }
-            }
-        })?;
+            },
+        )?;
         Ok(true)
     }
     pub fn diagnostics(&self, id: &str, offset: u64, limit: u32) -> AppResult<DiagnosticPage> {

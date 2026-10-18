@@ -80,7 +80,7 @@ test('ссылка с пунктирным подчёркиванием откр
   await expect(link).toBeFocused();
 });
 
-test('предупреждение видно сразу, четыре действия помещаются в строку, удаление подтверждается', async ({
+test('предупреждение видно сразу, пять действий помещаются в строку, удаление подтверждается', async ({
   page,
 }) => {
   await page.goto(screenUrl('warning'));
@@ -111,8 +111,15 @@ test('предупреждение видно сразу, четыре дейс�
     const buttons = page
       .getByRole('group', { name: 'Действия с конвертацией' })
       .getByRole('button');
-    await expect(buttons).toHaveCount(4);
-    await expect(buttons).toHaveText(['Открыть папку', 'Сохранить копию', 'Повторить', 'Удалить']);
+    await expect(buttons).toHaveCount(5);
+    await expect(buttons).toHaveText([
+      'Открыть папку',
+      'Сохранить копию',
+      'Повторить',
+      'Удалить',
+      '',
+    ]);
+    await expect(buttons.last()).toHaveAccessibleName('Сообщить о проблеме');
     const colors = await buttons.evaluateAll((els) =>
       els.map((el) =>
         getComputedStyle(el)
@@ -121,13 +128,13 @@ test('предупреждение видно сразу, четыре дейс�
           .map(Number),
       ),
     );
-    for (const channels of colors.slice(0, 3))
+    for (const channels of [...colors.slice(0, 3), colors[4]!])
       expect(Math.max(...channels) - Math.min(...channels)).toBeLessThanOrEqual(16);
     expect(colors[3]![0]! - colors[3]![1]!).toBeGreaterThan(40);
     const rects = await buttons.evaluateAll((els) =>
       els.map((el) => {
         const r = el.getBoundingClientRect();
-        return { top: r.top, right: r.right };
+        return { top: r.top + r.height / 2, right: r.right };
       }),
     );
     expect(
