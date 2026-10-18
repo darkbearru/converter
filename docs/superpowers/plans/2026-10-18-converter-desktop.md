@@ -69,7 +69,7 @@
 
 **Interfaces:** Consumes Rust snapshots from C1. `NativeBridge` exposes `listFormats`, `pickSources`, `pickOutput`, `createJob`, `startJob`, `pauseDownload`, `resumeDownload`, `cancelJob`, `updateJob`, `getJobs`, `readDiagnostics`, `exportResult`, `onJobEvent`; concrete arguments map to C1/C3. `createJobStore(bridge: NativeBridge)` exposes `jobs`, `mergeSnapshot(snapshot)`, `dispose()` and action methods. Компоненты прогресса принимают только соответствующий progress object; не запрашивают файлы/сеть сами.
 
-- [ ] **Step 1:** В tests задать русские сценарии и Rust-compatible JSON fixtures:
+- [x] **Step 1:** В tests задать русские сценарии и Rust-compatible JSON fixtures:
 
   ```ts
   expect(screen.getByRole('progressbar', { name: 'Скачивание' })).toHaveAttribute('aria-valuenow', '50');
@@ -79,10 +79,10 @@
   ```
 
   Сценарии: download 50% + conversion not started; download completed остаётся при conversion running; unknown total не имеет aria-valuenow/процента; локальный файл не рисует ложные 0%; pause/restart reason; два remote файла с одним unknown; counter больше 4 GiB форматируется без 32-битного overflow. Получать fixtures из C1 example `export_contract_fixtures` и сравнивать с checked-in JSON.
-- [ ] **Step 2:** Run `npm test -- --run tests/ui/progress.test.ts tests/ui/job_store.test.ts tests/ui/source_form.test.ts`; ожидается FAIL на отсутствующих компонентах. Перед запуском установить Vue/Vite/TypeScript/Vitest/Test Utils/testing-library для Vue, jsdom и jest-dom; настроить jsdom и `@testing-library/jest-dom/vitest` через setup.ts и зафиксировать lockfile. Не писать реализацию до фиксации отрицательного результата теста, а не ошибки отсутствующего test runner.
-- [ ] **Step 3:** Реализовать адаптивный русский UI: формы files/URL, SHA optional, resource URL, output/options; очередь, отдельные прогрессы, результат и постраничный журнал. Store слушает events до initial snapshot и merge по generation/sequence. Для неопределённого total отсутствует значение progress; conversion показывает текущий stage/unit и completed stages, не взвешенный общий процент. Кнопка «Продолжить» относится к download. Применить актуальные CSS/style и frontend-polish навыки на этапе UI-реализации; не добавлять словарный редактор/браузер.
-- [ ] **Step 4:** Run Step 2, затем `npm run typecheck`; PASS. Формы явно показывают ошибки URL/кодировки/assignment без показа runtime identifiers; keyboard/focus и текстовые статусы доступны без цвета. Нет HTML-вставки из diagnostics.
-- [ ] **Step 5:** Commit `feat: показать очередь и раздельный прогресс в Vue`.
+- [x] **Step 2:** Run `npm test -- --run tests/ui/progress.test.ts tests/ui/job_store.test.ts tests/ui/source_form.test.ts`; ожидается FAIL на отсутствующих компонентах. Перед запуском установить Vue/Vite/TypeScript/Vitest/Test Utils/testing-library для Vue, jsdom и jest-dom; настроить jsdom и `@testing-library/jest-dom/vitest` через setup.ts и зафиксировать lockfile. Не писать реализацию до фиксации отрицательного результата теста, а не ошибки отсутствующего test runner.
+- [x] **Step 3:** Реализовать адаптивный русский UI: формы files/URL, SHA optional, resource URL, output/options; очередь, отдельные прогрессы, результат и постраничный журнал. Store слушает events до initial snapshot и merge по generation/sequence. Для неопределённого total отсутствует значение progress; conversion показывает текущий stage/unit и completed stages, не взвешенный общий процент. Кнопка «Продолжить» относится к download. Применить актуальные CSS/style и frontend-polish навыки на этапе UI-реализации; не добавлять словарный редактор/браузер.
+- [x] **Step 4:** Run Step 2, затем `npm run typecheck`; PASS. Формы явно показывают ошибки URL/кодировки/assignment без показа runtime identifiers; keyboard/focus и текстовые статусы доступны без цвета. Нет HTML-вставки из diagnostics.
+- [x] **Step 5:** Commit `feat: показать очередь и раздельный прогресс в Vue`.
 
 ## Task 3: C3 — Tauri IPC и настоящий desktop файловый сценарий
 

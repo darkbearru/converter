@@ -1,0 +1,402 @@
+{
+  "converting": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "display_name": "Англо-русский словарь",
+    "generation": 2,
+    "run_id": "00000000-0000-4000-8000-000000000002",
+    "sequence": 10,
+    "state": "converting",
+    "download": {
+      "kind": "remote",
+      "files": [
+        {
+          "source_id": "00000000-0000-4000-8000-000000000003",
+          "state": "completed",
+          "received_bytes": 4294967296,
+          "confirmed_bytes": 4294967296,
+          "total_bytes": 4294967296,
+          "bytes_per_second": 2097152.0,
+          "restart_reason": null
+        }
+      ],
+      "received_bytes": 4294967296,
+      "confirmed_bytes": 4294967296,
+      "total_bytes": 4294967296,
+      "percent": 100.0
+    },
+    "conversion": {
+      "status": "running",
+      "current": {
+        "stage": "write_mdx",
+        "completed": 250,
+        "total": 1000,
+        "unit": "entries",
+        "articles": 1000,
+        "resources": 3
+      },
+      "completed_stages": [
+        {
+          "stage": "read",
+          "completed": 1000,
+          "total": 1000,
+          "unit": "entries",
+          "articles": 1000,
+          "resources": 3
+        }
+      ]
+    },
+    "result": null,
+    "export": {
+      "status": "not_started",
+      "saved_files": [],
+      "error": null
+    },
+    "error": null,
+    "input_choices": [],
+    "diagnostic_count": 0,
+    "options": {
+      "encoding": "auto"
+    },
+    "metadata": {
+      "title": "Англо-русский словарь",
+      "description": "",
+      "index_language": "",
+      "contents_language": "",
+      "source_encoding": "utf-8"
+    }
+  },
+  "downloading": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "display_name": "Англо-русский словарь",
+    "generation": 2,
+    "run_id": "00000000-0000-4000-8000-000000000002",
+    "sequence": 10,
+    "state": "downloading",
+    "download": {
+      "kind": "remote",
+      "files": [
+        {
+          "source_id": "00000000-0000-4000-8000-000000000003",
+          "state": "downloading",
+          "received_bytes": 4294967296,
+          "confirmed_bytes": 4294967296,
+          "total_bytes": 8589934592,
+          "bytes_per_second": 2097152.0,
+          "restart_reason": null
+        }
+      ],
+      "received_bytes": 4294967296,
+      "confirmed_bytes": 4294967296,
+      "total_bytes": 8589934592,
+      "percent": 50.0
+    },
+    "conversion": {
+      "status": "not_started",
+      "current": null,
+      "completed_stages": []
+    },
+    "result": null,
+    "export": {
+      "status": "not_started",
+      "saved_files": [],
+      "error": null
+    },
+    "error": null,
+    "input_choices": [],
+    "diagnostic_count": 0,
+    "options": {
+      "encoding": "auto"
+    },
+    "metadata": {
+      "title": "Англо-русский словарь",
+      "description": "",
+      "index_language": "",
+      "contents_language": "",
+      "source_encoding": "utf-8"
+    }
+  },
+  "local": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "display_name": "Англо-русский словарь",
+    "generation": 2,
+    "run_id": "00000000-0000-4000-8000-000000000002",
+    "sequence": 10,
+    "state": "queued",
+    "download": {
+      "kind": "local",
+      "files": [],
+      "received_bytes": 0,
+      "confirmed_bytes": 0,
+      "total_bytes": null,
+      "percent": null
+    },
+    "conversion": {
+      "status": "not_started",
+      "current": null,
+      "completed_stages": []
+    },
+    "result": null,
+    "export": {
+      "status": "not_started",
+      "saved_files": [],
+      "error": null
+    },
+    "error": null,
+    "input_choices": [],
+    "diagnostic_count": 0,
+    "options": {
+      "encoding": "auto"
+    },
+    "metadata": {
+      "title": "Англо-русский словарь",
+      "description": "",
+      "index_language": "",
+      "contents_language": "",
+      "source_encoding": "utf-8"
+    }
+  },
+  "paused": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "display_name": "Англо-русский словарь",
+    "generation": 2,
+    "run_id": "00000000-0000-4000-8000-000000000002",
+    "sequence": 10,
+    "state": "download_paused",
+    "download": {
+      "kind": "remote",
+      "files": [
+        {
+          "source_id": "00000000-0000-4000-8000-000000000003",
+          "state": "paused",
+          "received_bytes": 4294967296,
+          "confirmed_bytes": 4294967296,
+          "total_bytes": 8589934592,
+          "bytes_per_second": null,
+          "restart_reason": "Сервер изменил файл; загрузка начнётся заново"
+        }
+      ],
+      "received_bytes": 4294967296,
+      "confirmed_bytes": 4294967296,
+      "total_bytes": 8589934592,
+      "percent": 50.0
+    },
+    "conversion": {
+      "status": "not_started",
+      "current": null,
+      "completed_stages": []
+    },
+    "result": null,
+    "export": {
+      "status": "not_started",
+      "saved_files": [],
+      "error": null
+    },
+    "error": null,
+    "input_choices": [],
+    "diagnostic_count": 0,
+    "options": {
+      "encoding": "auto"
+    },
+    "metadata": {
+      "title": "Англо-русский словарь",
+      "description": "",
+      "index_language": "",
+      "contents_language": "",
+      "source_encoding": "utf-8"
+    }
+  },
+  "stale": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "display_name": "Англо-русский словарь",
+    "generation": 1,
+    "run_id": "00000000-0000-4000-8000-000000000002",
+    "sequence": 999,
+    "state": "downloading",
+    "download": {
+      "kind": "local",
+      "files": [],
+      "received_bytes": 0,
+      "confirmed_bytes": 0,
+      "total_bytes": null,
+      "percent": null
+    },
+    "conversion": {
+      "status": "not_started",
+      "current": null,
+      "completed_stages": []
+    },
+    "result": null,
+    "export": {
+      "status": "not_started",
+      "saved_files": [],
+      "error": null
+    },
+    "error": null,
+    "input_choices": [],
+    "diagnostic_count": 0,
+    "options": {
+      "encoding": "auto"
+    },
+    "metadata": {
+      "title": "Англо-русский словарь",
+      "description": "",
+      "index_language": "",
+      "contents_language": "",
+      "source_encoding": "utf-8"
+    }
+  },
+  "succeeded": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "display_name": "Англо-русский словарь",
+    "generation": 2,
+    "run_id": "00000000-0000-4000-8000-000000000002",
+    "sequence": 100,
+    "state": "succeeded",
+    "download": {
+      "kind": "remote",
+      "files": [
+        {
+          "source_id": "00000000-0000-4000-8000-000000000003",
+          "state": "completed",
+          "received_bytes": 4294967296,
+          "confirmed_bytes": 4294967296,
+          "total_bytes": 4294967296,
+          "bytes_per_second": 2097152.0,
+          "restart_reason": null
+        }
+      ],
+      "received_bytes": 4294967296,
+      "confirmed_bytes": 4294967296,
+      "total_bytes": 4294967296,
+      "percent": 100.0
+    },
+    "conversion": {
+      "status": "succeeded",
+      "current": {
+        "stage": "write_mdx",
+        "completed": 250,
+        "total": 1000,
+        "unit": "entries",
+        "articles": 1000,
+        "resources": 3
+      },
+      "completed_stages": [
+        {
+          "stage": "read",
+          "completed": 1000,
+          "total": 1000,
+          "unit": "entries",
+          "articles": 1000,
+          "resources": 3
+        }
+      ]
+    },
+    "result": {
+      "id": "00000000-0000-4000-8000-000000000005",
+      "files": [
+        {
+          "name": "dictionary.mdx",
+          "bytes": 1000
+        },
+        {
+          "name": "dictionary.mdd",
+          "bytes": 1000
+        },
+        {
+          "name": "conversion-report.json",
+          "bytes": 1000
+        }
+      ],
+      "summary": {
+        "source_articles": 1000,
+        "output_keys": 1200,
+        "resources": 3,
+        "warnings": 0,
+        "stages": [],
+        "sort_metrics": {
+          "merge_passes": 0,
+          "peak_sort_bytes": 0
+        }
+      },
+      "can_open": true,
+      "can_export": true
+    },
+    "export": {
+      "status": "not_started",
+      "saved_files": [],
+      "error": null
+    },
+    "error": null,
+    "input_choices": [],
+    "diagnostic_count": 0,
+    "options": {
+      "encoding": "auto"
+    },
+    "metadata": {
+      "title": "Англо-русский словарь",
+      "description": "",
+      "index_language": "",
+      "contents_language": "",
+      "source_encoding": "utf-8"
+    }
+  },
+  "unknown": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "display_name": "Англо-русский словарь",
+    "generation": 2,
+    "run_id": "00000000-0000-4000-8000-000000000002",
+    "sequence": 10,
+    "state": "downloading",
+    "download": {
+      "kind": "remote",
+      "files": [
+        {
+          "source_id": "00000000-0000-4000-8000-000000000003",
+          "state": "downloading",
+          "received_bytes": 4294967296,
+          "confirmed_bytes": 4294967296,
+          "total_bytes": 8589934592,
+          "bytes_per_second": 2097152.0,
+          "restart_reason": null
+        },
+        {
+          "source_id": "00000000-0000-4000-8000-000000000004",
+          "state": "downloading",
+          "received_bytes": 4294967296,
+          "confirmed_bytes": 4294967296,
+          "total_bytes": null,
+          "bytes_per_second": 2097152.0,
+          "restart_reason": null
+        }
+      ],
+      "received_bytes": 8589934592,
+      "confirmed_bytes": 8589934592,
+      "total_bytes": null,
+      "percent": null
+    },
+    "conversion": {
+      "status": "not_started",
+      "current": null,
+      "completed_stages": []
+    },
+    "result": null,
+    "export": {
+      "status": "not_started",
+      "saved_files": [],
+      "error": null
+    },
+    "error": null,
+    "input_choices": [],
+    "diagnostic_count": 0,
+    "options": {
+      "encoding": "auto"
+    },
+    "metadata": {
+      "title": "Англо-русский словарь",
+      "description": "",
+      "index_language": "",
+      "contents_language": "",
+      "source_encoding": "utf-8"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #202731;
+  background: #f3f5f8;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --surface: #ffffff;
+  --canvas: #f3f5f8;
+  --text: #202731;
+  --muted: #596575;
+  --border: #d5dbe4;
+  --accent: #175cd3;
+  --accent-hover: #124aa9;
+  --accent-soft: #eaf1fd;
+  --error: #a32c2c;
+  --error-soft: #fff2f1;
+  --success: #22613e;
+  --focus: #175cd3;
+  --control-radius: 6px;
+}
