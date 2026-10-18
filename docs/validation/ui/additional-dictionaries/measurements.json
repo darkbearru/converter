@@ -1,0 +1,308 @@
+[
+  {
+    "name": "offer-small-light",
+    "engine": "chromium",
+    "colorScheme": "light",
+    "viewport": {
+      "width": 540,
+      "height": 400
+    },
+    "errors": [],
+    "documentWidth": 540,
+    "documentHeight": 400,
+    "canvas": "rgb(250, 250, 250)",
+    "text": "rgb(63, 63, 70)",
+    "composer": {
+      "x": 16,
+      "y": 102,
+      "width": 508,
+      "height": 282
+    },
+    "workspace": {
+      "x": 0,
+      "y": 46,
+      "width": 540,
+      "height": 354
+    },
+    "workspacePaddingBottom": "16px",
+    "history": null,
+    "jobPanels": {
+      "x": 16,
+      "y": 46,
+      "width": 508,
+      "height": 56
+    },
+    "stack": {
+      "x": 16,
+      "y": 46,
+      "width": 508,
+      "height": 74
+    },
+    "dialog": {
+      "x": 16,
+      "y": 20,
+      "width": 508,
+      "height": 360
+    },
+    "diagnosticsList": null,
+    "diagnosticsRows": 0,
+    "diagnosticsLink": [],
+    "toolbar": [
+      {
+        "label": "Добавить ссылку",
+        "x": 454,
+        "y": 110,
+        "width": 24,
+        "height": 24,
+        "iconWidth": 24,
+        "iconHeight": 24,
+        "border": "0px",
+        "gap": "12px"
+      },
+      {
+        "label": "Настройки конвертации",
+        "x": 490,
+        "y": 110,
+        "width": 24,
+        "height": 24,
+        "iconWidth": 24,
+        "iconHeight": 24,
+        "border": "0px",
+        "gap": "12px"
+      }
+    ],
+    "historyActions": [],
+    "dialogButtons": [
+      {
+        "label": "",
+        "color": "rgb(113, 113, 122)",
+        "background": "rgba(0, 0, 0, 0)",
+        "dialogBackground": "rgb(255, 255, 255)"
+      },
+      {
+        "label": "Пропустить",
+        "color": "rgb(82, 82, 91)",
+        "background": "rgba(0, 0, 0, 0)",
+        "dialogBackground": "rgb(255, 255, 255)"
+      },
+      {
+        "label": "Конвертировать",
+        "color": "rgb(9, 9, 11)",
+        "background": "rgb(249, 97, 51)",
+        "dialogBackground": "rgb(255, 255, 255)"
+      }
+    ],
+    "progress": [
+      {
+        "label": "UniversalChRu.dsl.dz: Запись MDX",
+        "value": "25",
+        "background": "rgb(161, 161, 170)",
+        "fill": "rgb(249, 97, 51)"
+      }
+    ]
+  },
+  {
+    "name": "offer-dark",
+    "engine": "webkit",
+    "colorScheme": "dark",
+    "viewport": {
+      "width": 740,
+      "height": 500
+    },
+    "errors": [],
+    "documentWidth": 740,
+    "documentHeight": 500,
+    "canvas": "rgb(9, 9, 11)",
+    "text": "rgb(255, 255, 255)",
+    "composer": {
+      "x": 16,
+      "y": 102,
+      "width": 708,
+      "height": 382
+    },
+    "workspace": {
+      "x": 0,
+      "y": 46,
+      "width": 740,
+      "height": 454
+    },
+    "workspacePaddingBottom": "16px",
+    "history": null,
+    "jobPanels": {
+      "x": 16,
+      "y": 46,
+      "width": 708,
+      "height": 56
+    },
+    "stack": {
+      "x": 16,
+      "y": 46,
+      "width": 708,
+      "height": 74
+    },
+    "dialog": {
+      "x": 110,
+      "y": 108,
+      "width": 520,
+      "height": 284
+    },
+    "diagnosticsList": null,
+    "diagnosticsRows": 0,
+    "diagnosticsLink": [],
+    "toolbar": [
+      {
+        "label": "Добавить ссылку",
+        "x": 654,
+        "y": 110,
+        "width": 24,
+        "height": 24,
+        "iconWidth": 24,
+        "iconHeight": 24,
+        "border": "0px",
+        "gap": "12px"
+      },
+      {
+        "label": "Настройки конвертации",
+        "x": 690,
+        "y": 110,
+        "width": 24,
+        "height": 24,
+        "iconWidth": 24,
+        "iconHeight": 24,
+        "border": "0px",
+        "gap": "12px"
+      }
+    ],
+    "historyActions": [],
+    "dialogButtons": [
+      {
+        "label": "",
+        "color": "rgb(161, 161, 170)",
+        "background": "rgba(0, 0, 0, 0)",
+        "dialogBackground": "rgb(24, 24, 27)"
+      },
+      {
+        "label": "Пропустить",
+        "color": "rgb(161, 161, 170)",
+        "background": "rgba(0, 0, 0, 0)",
+        "dialogBackground": "rgb(24, 24, 27)"
+      },
+      {
+        "label": "Конвертировать",
+        "color": "rgb(9, 9, 11)",
+        "background": "rgb(249, 97, 51)",
+        "dialogBackground": "rgb(24, 24, 27)"
+      }
+    ],
+    "progress": [
+      {
+        "label": "UniversalChRu.dsl.dz: Запись MDX",
+        "value": "25",
+        "background": "rgb(161, 161, 170)",
+        "fill": "rgb(249, 97, 51)"
+      }
+    ]
+  },
+  {
+    "name": "error-dark",
+    "engine": "webkit",
+    "colorScheme": "dark",
+    "viewport": {
+      "width": 740,
+      "height": 500
+    },
+    "errors": [],
+    "documentWidth": 740,
+    "documentHeight": 500,
+    "canvas": "rgb(9, 9, 11)",
+    "text": "rgb(255, 255, 255)",
+    "composer": {
+      "x": 16,
+      "y": 131,
+      "width": 708,
+      "height": 353
+    },
+    "workspace": {
+      "x": 0,
+      "y": 46,
+      "width": 740,
+      "height": 454
+    },
+    "workspacePaddingBottom": "16px",
+    "history": null,
+    "jobPanels": {
+      "x": 16,
+      "y": 46,
+      "width": 708,
+      "height": 56
+    },
+    "stack": {
+      "x": 16,
+      "y": 46,
+      "width": 708,
+      "height": 74
+    },
+    "dialog": {
+      "x": 110,
+      "y": 89.5,
+      "width": 520,
+      "height": 321
+    },
+    "diagnosticsList": null,
+    "diagnosticsRows": 0,
+    "diagnosticsLink": [],
+    "toolbar": [
+      {
+        "label": "Добавить ссылку",
+        "x": 654,
+        "y": 139,
+        "width": 24,
+        "height": 24,
+        "iconWidth": 24,
+        "iconHeight": 24,
+        "border": "0px",
+        "gap": "12px"
+      },
+      {
+        "label": "Настройки конвертации",
+        "x": 690,
+        "y": 139,
+        "width": 24,
+        "height": 24,
+        "iconWidth": 24,
+        "iconHeight": 24,
+        "border": "0px",
+        "gap": "12px"
+      }
+    ],
+    "historyActions": [],
+    "dialogButtons": [
+      {
+        "label": "",
+        "color": "rgb(161, 161, 170)",
+        "background": "rgba(0, 0, 0, 0)",
+        "dialogBackground": "rgb(24, 24, 27)"
+      },
+      {
+        "label": "Закрыть",
+        "color": "rgb(161, 161, 170)",
+        "background": "rgba(0, 0, 0, 0)",
+        "dialogBackground": "rgb(24, 24, 27)"
+      },
+      {
+        "label": "Конвертировать",
+        "color": "rgb(9, 9, 11)",
+        "background": "rgb(255, 121, 80)",
+        "dialogBackground": "rgb(24, 24, 27)"
+      }
+    ],
+    "progress": [
+      {
+        "label": "UniversalChRu.dsl.dz: Запись MDX",
+        "value": "25",
+        "background": "rgb(161, 161, 170)",
+        "fill": "rgb(249, 97, 51)"
+      }
+    ]
+  }
+]
