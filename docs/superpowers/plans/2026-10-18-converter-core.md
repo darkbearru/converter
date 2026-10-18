@@ -47,8 +47,8 @@
 
 **Interfaces:** Produces типы выше; `write_mdx<W: Write + Seek>(records: impl Iterator<Item = Result<MdxRecord>>, metadata: &DictionaryMetadata, out: W, ctx: &RunContext) -> Result<WriteSummary>`; `write_mdd<W: Write + Seek>(resources: impl Iterator<Item = Result<ResourceRecord>>, out: W, ctx: &RunContext) -> Result<WriteSummary>`. Входы уже отсортированы; writer проверяет порядок, хранит сводки на диске. Test helpers `read_mdx(&Path) -> Vec<(String, String)>`, `read_mdd(&Path) -> Vec<(String, Vec<u8>)>` используют mdictlib с проверкой checksum, не собственный parser; `context(&Path) -> RunContext` создаёт конечные тестовые лимиты.
 
-- [ ] **Step 1:** Использовать глобальный stable Rust, обновлённый по прямому запросу пользователя; определить точную версию через `rustup run stable rustc --version` и записать её в `rust-toolchain.toml` (проверенная версия — `1.99.1`). Создать минимальный workspace и conformance-тест до writer. Проверить MSRV mdictlib и Tauri, сохранить `Cargo.lock`. Повторное обновление глобального stable не требуется; точная версия в rust-toolchain.toml может вызвать установку одноимённого versioned toolchain, при этом глобальный default остаётся stable.
-- [ ] **Step 2:** В `пишет_совместимые_блоки_и_дубликаты` сформировать отсортированные `MdxRecord` с `a-b`, `ab`, двумя `яблоко` и CJK; принудительно малые блоки. Assert:
+- [x] **Step 1:** Использовать глобальный stable Rust, обновлённый по прямому запросу пользователя; определить точную версию через `rustup run stable rustc --version` и записать её в `rust-toolchain.toml` (проверенная версия — `1.99.1`). Создать минимальный workspace и conformance-тест до writer. Проверить MSRV mdictlib и Tauri, сохранить `Cargo.lock`. Повторное обновление глобального stable не требуется; точная версия в rust-toolchain.toml может вызвать установку одноимённого versioned toolchain, при этом глобальный default остаётся stable.
+- [x] **Step 2:** В `пишет_совместимые_блоки_и_дубликаты` сформировать отсортированные `MdxRecord` с `a-b`, `ab`, двумя `яблоко` и CJK; принудительно малые блоки. Assert:
 
   ```rust
   assert_eq!(read_mdx(&mdx).iter().filter(|(k, _)| k == "яблоко").count(), 2);
@@ -57,9 +57,9 @@
   ```
 
   Дополнительно независимым `MdxFile::lookup` проверить первую/последнюю запись, пунктуацию и границы блоков; `MddFile::lookup_span().copy_to()` сверить хеш ресурса больше блока. Сигнатуры helpers реализовать в test support через независимую библиотеку.
-- [ ] **Step 3:** Run `cargo test -p converter-core --test mdict_conformance`; ожидается FAIL из-за отсутствующего writer/экспортов, затем реализовать только контракты и writer. UTF-16LE XML header, 64-битная v2 геометрия, Adler-32 и zlib; компаратор ровно из спецификации. Сводки ключей/записей spool на диске; ресурс допускает пересечение record blocks. Проверить отсортированность и переполнение размеров.
-- [ ] **Step 4:** Run `cargo test --locked -p converter-core --test mdict_conformance`; ожидается PASS, включая malformed order, NUL key, отмену и `Write + Seek`-приёмник, возвращающий ошибку записи. `cargo fmt --all -- --check` проходит.
-- [ ] **Step 5:** Commit только workspace, model/writer и их тесты: `feat: добавить потоковую запись MDX и MDD`.
+- [x] **Step 3:** Run `cargo test -p converter-core --test mdict_conformance`; ожидается FAIL из-за отсутствующего writer/экспортов, затем реализовать только контракты и writer. UTF-16LE XML header, 64-битная v2 геометрия, Adler-32 и zlib; компаратор ровно из спецификации. Сводки ключей/записей spool на диске; ресурс допускает пересечение record blocks. Проверить отсортированность и переполнение размеров.
+- [x] **Step 4:** Run `cargo test --locked -p converter-core --test mdict_conformance`; ожидается PASS, включая malformed order, NUL key, отмену и `Write + Seek`-приёмник, возвращающий ошибку записи. `cargo fmt --all -- --check` проходит.
+- [x] **Step 5:** Commit только workspace, model/writer и их тесты: `feat: добавить потоковую запись MDX и MDD`.
 
 ## Task 2: A2 — Подготовка локального DSL/DZ/ZIP и переносимых ресурсов
 
@@ -67,7 +67,7 @@
 
 **Interfaces:** Consumes `PreparedFile`, `InputBundle`, `ResourceRecord`, `RunContext`. Produces `prepare_source(main: &PreparedFile, attachments: &[PreparedFile], ctx: &RunContext) -> Result<Vec<InputBundle>>` и `resolve_resource(bundle: &InputBundle, logical_key: &str) -> Result<Option<ResourceRecord>>`. Несколько bundles означают несколько основных словарей; `_abrv.dsl` привязывается, а не становится обычным заданием.
 
-- [ ] **Step 1:** В `архив_сохраняет_логические_имена` создать ZIP с двумя DSL, `_abrv.dsl`, вложенным PNG и ресурсом `AUX.png`. В `не_теряет_коллизии_и_не_выходит_из_архива` добавить `../x`, drive/UNC пути, symlink и неоднозначные NFC/case варианты. Assert:
+- [x] **Step 1:** В `архив_сохраняет_логические_имена` создать ZIP с двумя DSL, `_abrv.dsl`, вложенным PNG и ресурсом `AUX.png`. В `не_теряет_коллизии_и_не_выходит_из_архива` добавить `../x`, drive/UNC пути, symlink и неоднозначные NFC/case варианты. Assert:
 
   ```rust
   assert_eq!(bundles.len(), 2);
@@ -76,10 +76,10 @@
   assert_eq!(ambiguous.unwrap_err().code, "ambiguous_resource");
   ```
 
-- [ ] **Step 2:** Run `cargo test -p converter-core --test source_preparation`; ожидается FAIL на отсутствующем prepare API.
-- [ ] **Step 3:** Реализовать виртуальные логические пути и физические файлы с внутренними ID, явную привязку attachments, лимиты до/во время извлечения и hash-сравнение коллизий. Проверять пути обоих синтаксисов на всех ОС. Для папок сохранять доступ только к разрешённому корню; не следовать наружным ссылкам. Nested/encrypted ZIP возвращает поддерживаемую диагностическую ошибку.
-- [ ] **Step 4:** Run `cargo test --locked -p converter-core --test source_preparation`; PASS также для лимитов, отсутствующего ресурса, единственного case fallback с предупреждением и отмены. Проверить неизменность хешей исходников.
-- [ ] **Step 5:** Commit `feat: подготовить локальные словари и ZIP-ресурсы`.
+- [x] **Step 2:** Run `cargo test -p converter-core --test source_preparation`; ожидается FAIL на отсутствующем prepare API.
+- [x] **Step 3:** Реализовать виртуальные логические пути и физические файлы с внутренними ID, явную привязку attachments, лимиты до/во время извлечения и hash-сравнение коллизий. Проверять пути обоих синтаксисов на всех ОС. Для папок сохранять доступ только к разрешённому корню; не следовать наружным ссылкам. Nested/encrypted ZIP возвращает поддерживаемую диагностическую ошибку.
+- [x] **Step 4:** Run `cargo test --locked -p converter-core --test source_preparation`; PASS также для лимитов, отсутствующего ресурса, единственного case fallback с предупреждением и отмены. Проверить неизменность хешей исходников.
+- [x] **Step 5:** Commit `feat: подготовить локальные словари и ZIP-ресурсы`.
 
 ## Task 3: A3 — Реестр форматов, кодировки и структурный DSL-парсер
 
@@ -89,7 +89,7 @@
 
 `FormatDescriptor { id: String, name: String, extensions: Vec<String>, supports_resources: bool }`; `ProbeResult { confidence: u8 }` в диапазоне 0–100; `ReadSummary { source_articles: u64, warnings: u64 }`. Точные методы реестра: `builtins() -> Self`, `descriptors(&self) -> Vec<FormatDescriptor>`, `detect(&self, prefix: &[u8], name: &str) -> Result<String>`, `get(&self, id: &str) -> Result<&dyn DictionaryReader>`; равная ненулевая уверенность возвращает `ambiguous_format`, нулевая — `unsupported_format`.
 
-- [ ] **Step 1:** В `разбирает_кодировки_и_границы_буфера` прогнать одинаковый словарь в UTF-8/BOM, UTF-16LE/BE/BOM, Windows-1251 и DZ с чтением порциями 1–7 байтов. Проверить CRLF на границе порции, BOM только в начале, комментарии, два заголовка, подстатью и ошибку декодирования:
+- [x] **Step 1:** В `разбирает_кодировки_и_границы_буфера` прогнать одинаковый словарь в UTF-8/BOM, UTF-16LE/BE/BOM, Windows-1251 и DZ с чтением порциями 1–7 байтов. Проверить CRLF на границе порции, BOM только в начале, комментарии, два заголовка, подстатью и ошибку декодирования:
 
   ```rust
   assert_eq!(sink.entries[0].headwords, ["яблоко", "apple"]);
@@ -99,10 +99,10 @@
   ```
 
   В `реестр_не_требует_изменения_pipeline` зарегистрировать тестовый reader с другим ID и проверить его обнаружение без изменений DSL/writer. Дополнительно Windows-1251 со строго ASCII-префиксом больше 64 KiB не должна ошибочно фиксироваться как UTF-8; UTF-16 без BOM запрашивает ручную кодировку.
-- [ ] **Step 2:** Run `cargo test -p converter-core --test dsl_structure --test reader_contract`; ожидается FAIL.
-- [ ] **Step 3:** Реализовать декодер с сохранением неполного символа между порциями, потоковый `MultiGzDecoder` для DZ, лексер со строками и парсер границ статей. Ограничить probe 64 KiB, сохранять корректные номера строк. Для Auto без BOM выполнить отдельную потоковую проверку всего локального/decompressed источника на UTF-8 до выбора Windows-1251; не фиксировать кодировку по одному префиксу и не менять её посреди статьи. UTF-16 без BOM определяется как требующий ручного выбора. `inspect` не удерживает базу в памяти, показывает байтовый прогресс проверки кодировки; read строго проверяет выбранную кодировку. Структурная ошибка не пропускает статью. Рендеринг подключается в A4 через тот же `DslReader`.
-- [ ] **Step 4:** Run команды Step 2 с `--locked`; PASS, включая отмену, `_abrv.dsl`, пустой словарь и неправильный формат без расширения. Список builtins содержит только DSL, test reader остаётся test-only.
-- [ ] **Step 5:** Commit `feat: добавить расширяемый читатель DSL и кодировки`.
+- [x] **Step 2:** Run `cargo test -p converter-core --test dsl_structure --test reader_contract`; ожидается FAIL.
+- [x] **Step 3:** Реализовать декодер с сохранением неполного символа между порциями, потоковый `MultiGzDecoder` для DZ, лексер со строками и парсер границ статей. Ограничить probe 64 KiB, сохранять корректные номера строк. Для Auto без BOM выполнить отдельную потоковую проверку всего локального/decompressed источника на UTF-8 до выбора Windows-1251; не фиксировать кодировку по одному префиксу и не менять её посреди статьи. UTF-16 без BOM определяется как требующий ручного выбора. `inspect` не удерживает базу в памяти, показывает байтовый прогресс проверки кодировки; read строго проверяет выбранную кодировку. Структурная ошибка не пропускает статью. Рендеринг подключается в A4 через тот же `DslReader`.
+- [x] **Step 4:** Run команды Step 2 с `--locked`; PASS, включая отмену, `_abrv.dsl`, пустой словарь и неправильный формат без расширения. Список builtins содержит только DSL, test reader остаётся test-only.
+- [x] **Step 5:** Commit `feat: добавить расширяемый читатель DSL и кодировки`.
 
 ## Task 4: A4 — Форматирование, варианты ключей, ссылки и ресурсы DSL
 
@@ -110,7 +110,7 @@
 
 **Interfaces:** Consumes `DslReader`, `EntrySink`, `resolve_resource`. Produces `expand_headwords(raw: &str, limit: usize) -> Result<Vec<String>>`, `render_article(ast: &ArticleAst, bundle: &InputBundle, options: &ReadOptions) -> Result<RenderedArticle>`, `RenderedArticle { html, resource_keys, diagnostics }`; `ArticleAst` и `HeadwordAst` принадлежат DSL-модулю, не общему writer. `DictionaryEntry` остаётся общей границей.
 
-- [ ] **Step 1:** В `сохраняет_семантику_и_экранирует_текст` проверить все теги из §4.1 спецификации, вложенность, `~`, экранирование, `[ref]`/`<<…>>`, сокращения, PNG/аудио, пропавший ресурс и неизвестный тег. В `разворачивает_варианты_без_потери_дубликатов` проверить несортируемые/необязательные части и ограничение 64 вариантов:
+- [x] **Step 1:** В `сохраняет_семантику_и_экранирует_текст` проверить все теги из §4.1 спецификации, вложенность, `~`, экранирование, `[ref]`/`<<…>>`, сокращения, PNG/аудио, пропавший ресурс и неизвестный тег. В `разворачивает_варианты_без_потери_дубликатов` проверить несортируемые/необязательные части и ограничение 64 вариантов:
 
   ```rust
   assert!(!rendered.html.contains("<script>"));
@@ -120,10 +120,10 @@
   ```
 
   Проверить, что экранированные скобки не превращаются в варианты/теги; русский текст неизвестного тега виден, есть diagnostic.
-- [ ] **Step 2:** Run `cargo test -p converter-core --test dsl_rendering --test dsl_headwords`; ожидается FAIL.
-- [ ] **Step 3:** Реализовать AST-renderer, а не глобальные regex-замены. Внутренние ссылки — `entry://`, звук — `sound://`, изображения/CSS — согласованные MDD keys. Разрешённый URL-тег ограничен HTTP/HTTPS и безопасным текстом, JS/event-атрибуты не генерируются. Подстановку `~` выполнять по каноническому отображаемому заголовку; сохранять parent ID и исходный порядок. Каждый готовый HTML проверять на 8 MiB. Подключить стандартный CSS через MDD.
-- [ ] **Step 4:** Run Step 2 с `--locked`; PASS, включая незакрытый тег, Unicode, вложенные необязательные части и отсутствующее сокращение. Семантические assertions проверяют контент/ссылки, не случайное форматирование HTML.
-- [ ] **Step 5:** Commit `feat: сохранить разметку и ресурсы DSL`.
+- [x] **Step 2:** Run `cargo test -p converter-core --test dsl_rendering --test dsl_headwords`; ожидается FAIL.
+- [x] **Step 3:** Реализовать AST-renderer, а не глобальные regex-замены. Внутренние ссылки — `entry://`, звук — `sound://`, изображения/CSS — согласованные MDD keys. Разрешённый URL-тег ограничен HTTP/HTTPS и безопасным текстом, JS/event-атрибуты не генерируются. Подстановку `~` выполнять по каноническому отображаемому заголовку; сохранять parent ID и исходный порядок. Каждый готовый HTML проверять на 8 MiB. Подключить стандартный CSS через MDD.
+- [x] **Step 4:** Run Step 2 с `--locked`; PASS, включая незакрытый тег, Unicode, вложенные необязательные части и отсутствующее сокращение. Семантические assertions проверяют контент/ссылки, не случайное форматирование HTML.
+- [x] **Step 5:** Commit `feat: сохранить разметку и ресурсы DSL`.
 
 ## Task 5: A5 — Дисковый pipeline, сортировка и измеримый прогресс этапов
 

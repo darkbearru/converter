@@ -29,8 +29,19 @@ pub(super) fn argument<'a>(raw: &'a str, key: &str) -> Option<&'a str> {
         }
         let value = raw[position + pattern.len()..].trim_start();
         if let Some(quote) = value.chars().next().filter(|ch| matches!(ch, '\'' | '"')) {
-            let end = value[1..].find(quote)? + 1;
-            return Some(&value[1..end]);
+            let mut escaped = false;
+            for (end, ch) in value.char_indices().skip(1) {
+                if escaped {
+                    escaped = false;
+                    continue;
+                }
+                if ch == '\\' {
+                    escaped = true;
+                } else if ch == quote {
+                    return Some(&value[1..end]);
+                }
+            }
+            return None;
         }
         return Some(value.split_whitespace().next().unwrap_or_default());
     }
@@ -72,4 +83,27 @@ pub(super) fn inline_text(raw: &str, display: &str) -> String {
         }
     }
     result
+}
+
+pub(super) fn subentry_reference(raw: &str, limit: usize) -> crate::model::Result<String> {
+    fn escape(value: &str) -> String {
+        let mut result = String::new();
+        for ch in value.chars() {
+            if matches!(ch, '\\' | '[' | ']' | '<' | '>' | '~' | '"') {
+                result.push('\\');
+            }
+            result.push(ch);
+        }
+        result
+    }
+    let keys = super::headwords::expand_headwords(raw, limit)?;
+    let key = keys.first().ok_or_else(|| {
+        crate::model::ConverterError::new("invalid_headword", "Подстатья не содержит ключа")
+    })?;
+    let display = super::headwords::display_headword(raw)?;
+    Ok(format!(
+        "[ref target=\"{}\"]{}[/ref]\n",
+        escape(key),
+        escape(&display)
+    ))
 }

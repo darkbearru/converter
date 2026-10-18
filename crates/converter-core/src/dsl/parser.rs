@@ -188,7 +188,13 @@ impl Parser<'_> {
                 if let Some(child) = group.child.take() {
                     group.children.push(child);
                 }
-                group.root.body.push_str(&format!("<<{name}>>\n"));
+                group.root.body.push_str(
+                    &super::references::subentry_reference(
+                        name,
+                        self.ctx.limits.max_headword_variants,
+                    )
+                    .map_err(|error| error.at(self.source, line.number))?,
+                );
                 group.child = Some(ArticleAst {
                     id: self.next_id,
                     source_line: line.number,
@@ -259,7 +265,14 @@ impl Parser<'_> {
 
     fn emit(&mut self, ast: ArticleAst) -> Result<()> {
         self.ctx.control.check()?;
-        self.sink.push(ast)?;
+        let line = ast.source_line;
+        self.sink.push(ast).map_err(|error| {
+            if error.source_location.is_none() {
+                error.at(self.source, line)
+            } else {
+                error
+            }
+        })?;
         self.summary.source_articles += 1;
         Ok(())
     }

@@ -13,9 +13,12 @@ zip.workspace = true
 unicode-normalization.workspace = true
 sha2.workspace = true
 encoding_rs.workspace = true
+serde_json.workspace = true
+rusqlite.workspace = true
 
 [dev-dependencies]
 mdictlib = "=0.2.8"
+sysinfo = { version = "0.39.6", default-features = false, features = ["system"] }
 
 [lints]
 workspace = true

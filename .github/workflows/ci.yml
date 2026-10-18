@@ -4,6 +4,11 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+    inputs:
+      large_dictionary:
+        description: Проверить миллион статей и измерить RSS
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -30,3 +35,6 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo test --locked --workspace --all-targets
       - run: cargo clippy --locked --workspace --all-targets -- -D warnings
+      - name: Large dictionary and RSS
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.large_dictionary }}
+        run: cargo test --locked --release -p converter-core --test large_dictionary -- --ignored --nocapture

@@ -26,7 +26,7 @@ pub(super) fn resource_key(path: &str) -> String {
     format!("\\{}", path.replace('/', "\\"))
 }
 
-pub(super) fn unique_resources(
+pub(crate) fn unique_resources(
     resources: Vec<ResourceRecord>,
     ctx: &RunContext,
 ) -> Result<Vec<ResourceRecord>> {
