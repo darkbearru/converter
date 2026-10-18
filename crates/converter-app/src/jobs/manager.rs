@@ -801,14 +801,13 @@ impl JobManager {
         let result = job
             .published
             .ok_or_else(|| AppError::new("result_not_found", "Готовый результат ещё не создан"))?;
-        let context = RunContext::new(
-            self.inner
-                .store
-                .root
-                .join("scratch")
-                .join(id)
-                .join("export"),
-        );
+        // Экспорт не делит рабочую папку с завершающимся worker конвертации.
+        let exports = self.inner.store.root.join("exports");
+        fs::create_dir_all(&exports)?;
+        let scratch = tempfile::Builder::new()
+            .prefix("export-")
+            .tempdir_in(exports)?;
+        let context = RunContext::new(scratch.path().to_owned());
         let exported = match self.inner.storage.export(&result, choice, &context).await {
             Ok(exported) => exported,
             Err(error) => ExportSnapshot {
@@ -841,20 +840,32 @@ impl JobManager {
     ) -> AppResult<()> {
         let job = self.job(id)?;
         if let Some(artifacts) = job.ready.clone() {
-            let _permit = self
-                .inner
-                .conversion
-                .acquire()
-                .await
-                .map_err(|_| lock_error())?;
-            let (context, failure) = self.run_context(id, generation, run, &controls)?;
-            let result = self
-                .publish_result(id, generation, run, artifacts, &job.draft.output, &context)
-                .await;
-            if let Some(error) = failure.lock().map_err(|_| lock_error())?.take() {
-                return Err(error);
+            if [&artifacts.mdx, &artifacts.mdd, &artifacts.report]
+                .iter()
+                .any(|path| File::open(path).is_err())
+            {
+                // Ранее выбранный том отключён: исходники сохраняются отдельно,
+                // поэтому повтор строит ready заново уже рядом с новым назначением.
+                self.mutate(id, Some((generation, run)), true, |job| {
+                    job.ready = None;
+                    job.staging_path = None;
+                })?;
+            } else {
+                let _permit = self
+                    .inner
+                    .conversion
+                    .acquire()
+                    .await
+                    .map_err(|_| lock_error())?;
+                let (context, failure) = self.run_context(id, generation, run, &controls)?;
+                let result = self
+                    .publish_result(id, generation, run, artifacts, &job.draft.output, &context)
+                    .await;
+                if let Some(error) = failure.lock().map_err(|_| lock_error())?.take() {
+                    return Err(error);
+                }
+                return result;
             }
-            return result;
         }
         let mut files = Vec::new();
         let mut audits = Vec::new();
@@ -1113,6 +1124,7 @@ impl JobManager {
         output: &OutputChoice,
         context: &RunContext,
     ) -> AppResult<()> {
+        let original_staging = artifacts.directory.clone();
         let published = self
             .inner
             .storage
@@ -1146,6 +1158,10 @@ impl JobManager {
             job.ready = None;
             job.staging_path = None;
         })?;
+        // При переносе на другой том PlatformStorage сохраняет старый ready до commit.
+        if original_staging.exists() {
+            let _ = fs::remove_dir_all(original_staging);
+        }
         Ok(())
     }
     fn stopped_download(

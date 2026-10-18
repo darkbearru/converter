@@ -2,8 +2,12 @@ use super::{
     archive::{extract, is_zip},
     resource_paths::{logical_path, resource_key, unique_resources},
 };
-use crate::model::*;
-use std::path::{Path, PathBuf};
+use crate::{formats::FormatRegistry, model::*};
+use std::{
+    fs::File,
+    io::Read,
+    path::{Path, PathBuf},
+};
 
 pub(super) struct LogicalFile {
     pub name: String,
@@ -12,24 +16,19 @@ pub(super) struct LogicalFile {
     pub primary: bool,
 }
 
-fn is_dsl(name: &str) -> bool {
-    let name = name.to_lowercase();
-    name.ends_with(".dsl") || name.ends_with(".dsl.dz")
-}
-fn stem(name: &str) -> &str {
-    name.strip_suffix(".dz")
-        .unwrap_or(name)
-        .strip_suffix(".dsl")
-        .unwrap_or(name)
-}
-fn is_abbreviation(name: &str) -> bool {
-    stem(&name.to_lowercase()).ends_with("_abrv")
-}
-
 pub fn prepare_source(
     main: &PreparedFile,
     attachments: &[PreparedFile],
     ctx: &RunContext,
+) -> Result<Vec<InputBundle>> {
+    prepare_source_with_registry(main, attachments, ctx, &FormatRegistry::builtins())
+}
+
+pub fn prepare_source_with_registry(
+    main: &PreparedFile,
+    attachments: &[PreparedFile],
+    ctx: &RunContext,
+    registry: &FormatRegistry,
 ) -> Result<Vec<InputBundle>> {
     ctx.control.check()?;
     if ctx.limits.resource_buffer_bytes == 0 {
@@ -94,22 +93,50 @@ pub fn prepare_source(
             ));
         }
     }
-    let mains: Vec<_> = files
-        .iter()
-        .filter(|file| {
-            file.primary
-                && !is_abbreviation(&file.name)
-                && (is_dsl(&file.name) || file.id == main.id)
-        })
-        .collect();
+    let descriptors = registry.descriptors();
+    let mut formats = Vec::with_capacity(files.len());
+    for file in &files {
+        ctx.control.check()?;
+        let lower = file.name.to_lowercase();
+        let candidate = file.id == main.id
+            || descriptors.iter().any(|format| {
+                format
+                    .extensions
+                    .iter()
+                    .any(|ext| lower.ends_with(&format!(".{}", ext.to_lowercase())))
+            });
+        formats.push(if candidate {
+            let mut prefix = Vec::new();
+            File::open(&file.path)?
+                .take(64 * 1024)
+                .read_to_end(&mut prefix)?;
+            Some(registry.detect(&prefix, &file.name)?)
+        } else {
+            None
+        });
+    }
+    let mut mains = Vec::new();
+    for (index, file) in files.iter().enumerate() {
+        if file.primary
+            && let Some(format) = &formats[index]
+            && !registry.get(format)?.is_auxiliary(&file.name)
+        {
+            mains.push(index);
+        }
+    }
     if mains.is_empty() {
         return Err(ConverterError::new(
             "dictionary_not_found",
-            "В источнике не найден основной DSL-словарь",
+            "В источнике не найден поддерживаемый словарь",
         ));
     }
     let mut bundles = Vec::new();
-    for source in &mains {
+    for index in &mains {
+        let source = &files[*index];
+        let reader =
+            registry.get(formats[*index].as_deref().ok_or_else(|| {
+                ConverterError::new("unsupported_format", "Не определён формат")
+            })?)?;
         let directory = source
             .name
             .rsplit_once('/')
@@ -119,10 +146,14 @@ pub fn prepare_source(
         } else {
             format!("{directory}/")
         };
-        let abbreviation_name = format!("{}_abrv", stem(&source.name.to_lowercase()));
-        let mut abbreviations = files.iter().filter(|file| {
-            is_dsl(&file.name) && stem(&file.name.to_lowercase()) == abbreviation_name
-        });
+        let mut abbreviations = files
+            .iter()
+            .enumerate()
+            .filter(|(candidate, file)| {
+                formats[*candidate] == formats[*index]
+                    && reader.is_companion(&source.name, &file.name)
+            })
+            .map(|(_, file)| file);
         let abbreviation = abbreviations.next();
         if abbreviations.next().is_some() {
             return Err(ConverterError::new(
@@ -132,10 +163,9 @@ pub fn prepare_source(
         }
         let resources = files
             .iter()
-            .filter(|file| {
-                !is_dsl(&file.name) && !mains.iter().any(|main| std::ptr::eq(*main, *file))
-            })
-            .filter_map(|file| {
+            .enumerate()
+            .filter(|(index, _)| formats[*index].is_none())
+            .filter_map(|(_, file)| {
                 let name = if file.primary {
                     file.name.strip_prefix(&prefix)?
                 } else {

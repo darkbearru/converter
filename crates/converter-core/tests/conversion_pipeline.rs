@@ -11,6 +11,46 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+#[test]
+fn ручной_utf16_без_bom_проходит_полную_конвертацию()
+-> std::result::Result<(), Box<dyn std::error::Error>> {
+    for (label, big_endian) in [("utf-16le", false), ("utf-16be", true)] {
+        let temp = tempfile::tempdir()?;
+        let mut request = fixture(temp.path(), 1)?;
+        let text = "#NAME \"Проверка\"\nalpha\n\tСтатья\n";
+        let bytes: Vec<u8> = text
+            .encode_utf16()
+            .flat_map(|c| {
+                if big_endian {
+                    c.to_be_bytes()
+                } else {
+                    c.to_le_bytes()
+                }
+            })
+            .collect();
+        std::fs::write(&request.bundle.main.path, bytes)?;
+        let ctx = RunContext::new(temp.path().join("scratch"));
+        assert_eq!(
+            convert_to_staging(&request, &ctx)
+                .expect_err("Нужен ручной выбор")
+                .code,
+            "encoding_required"
+        );
+        request.options.encoding = EncodingChoice::Manual(label.into());
+        let result = convert_to_staging(&request, &ctx)?;
+        assert_eq!(result.summary.source_articles, 1);
+        let reader = MdxFile::open(&result.mdx)?;
+        assert!(
+            reader
+                .lookup("alpha")?
+                .ok_or("Статья")?
+                .text()
+                .contains("Статья")
+        );
+    }
+    Ok(())
+}
+
 fn fixture(
     root: &std::path::Path,
     articles: u64,

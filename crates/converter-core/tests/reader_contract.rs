@@ -2,7 +2,12 @@ use converter_core::{
     formats::{
         DictionaryReader, EntrySink, FormatDescriptor, FormatRegistry, ProbeResult, ReadSummary,
     },
-    model::{DictionaryMetadata, InputBundle, ReadOptions, Result, RunContext},
+    model::{
+        ConversionRequest, DictionaryEntry, DictionaryMetadata, InputBundle, PreparedFile,
+        ReadOptions, Result, RunContext,
+    },
+    pipeline::convert_to_staging_with_registry,
+    prepare::prepare_source_with_registry,
 };
 
 struct OtherReader;
@@ -32,14 +37,65 @@ impl DictionaryReader for OtherReader {
         &self,
         _: &InputBundle,
         _: &ReadOptions,
-        _: &mut dyn EntrySink,
+        sink: &mut dyn EntrySink,
         _: &RunContext,
     ) -> Result<ReadSummary> {
+        sink.push(DictionaryEntry {
+            id: 1,
+            source_line: 2,
+            parent_id: None,
+            headwords: vec!["other".into()],
+            display_headword: "other".into(),
+            html: "<p>Другой формат</p>".into(),
+            resource_keys: vec![],
+        })?;
         Ok(ReadSummary {
-            source_articles: 0,
+            source_articles: 1,
             warnings: 0,
         })
     }
+}
+
+#[test]
+fn новый_reader_проходит_из_zip_до_читаемого_mdx()
+-> std::result::Result<(), Box<dyn std::error::Error>> {
+    use std::{fs::File, io::Write};
+    let temp = tempfile::tempdir()?;
+    let source = temp.path().join("source.zip");
+    let mut zip = zip::ZipWriter::new(File::create(&source)?);
+    zip.start_file("source.other", zip::write::SimpleFileOptions::default())?;
+    zip.write_all(b"OTHER\nentry\n")?;
+    zip.start_file("image.png", zip::write::SimpleFileOptions::default())?;
+    zip.write_all(b"resource")?;
+    zip.finish()?;
+    let file = PreparedFile {
+        id: "archive".into(),
+        display_name: "source.zip".into(),
+        path: source,
+    };
+    let ctx = RunContext::new(temp.path().join("scratch"));
+    let mut registry = FormatRegistry::builtins();
+    registry.register(OtherReader)?;
+    let bundles = prepare_source_with_registry(&file, &[], &ctx, &registry)?;
+    assert_eq!(bundles.len(), 1);
+    assert_eq!(bundles[0].main.display_name, "source.other");
+    let result = convert_to_staging_with_registry(
+        &ConversionRequest {
+            bundle: bundles.into_iter().next().ok_or("Словарь")?,
+            options: ReadOptions::default(),
+            metadata_override: None,
+            staging_dir: temp.path().join("ready"),
+        },
+        &ctx,
+        &registry,
+    )?;
+    assert_eq!(result.summary.source_articles, 1);
+    let reader = mdictlib::MdxFile::open(&result.mdx)?;
+    assert_eq!(
+        reader.lookup("other")?.ok_or("Статья")?.text(),
+        "<p>Другой формат</p>"
+    );
+    Ok(())
 }
 
 #[test]

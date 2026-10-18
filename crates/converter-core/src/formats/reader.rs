@@ -27,6 +27,12 @@ pub trait EntrySink {
 
 pub trait DictionaryReader: Send + Sync {
     fn descriptor(&self) -> FormatDescriptor;
+    fn is_auxiliary(&self, _name: &str) -> bool {
+        false
+    }
+    fn is_companion(&self, _main: &str, _candidate: &str) -> bool {
+        false
+    }
     fn probe(&self, prefix: &[u8], name: &str) -> ProbeResult;
     fn inspect(
         &self,

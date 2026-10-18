@@ -4,6 +4,85 @@ use converter_app::{
 };
 use converter_core::{model::*, pipeline::convert_to_staging};
 use std::{path::Path, sync::Arc};
+mod support;
+
+#[tokio::test]
+async fn экспортирует_готовое_задание_после_очистки_и_перезапуска()
+-> std::result::Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let root = temp.path().join("app");
+    let storage = Arc::new(DesktopStorage::open(root.clone())?);
+    let manager = JobManager::open(root.clone(), storage.clone())?;
+    let job = manager
+        .create(support::local(&manager, temp.path(), "ready.dsl").await)
+        .await?;
+    manager.start(&job.id).await?;
+    support::wait(&manager, &job.id, &[JobState::Succeeded]).await;
+    manager.shutdown().await?;
+    drop(manager);
+    assert!(!root.join("scratch").join(&job.id).exists());
+    let destination = temp.path().join("Копии");
+    std::fs::create_dir(&destination)?;
+    let destination = destination.canonicalize()?;
+    storage.grant_output(&destination)?;
+    let manager = JobManager::open(root.clone(), storage)?;
+    let result_before = manager.result_directory(&job.id)?;
+    let exported = manager
+        .export(&job.id, ExportChoice::Folder(destination))
+        .await?;
+    assert_eq!(
+        exported.status,
+        ExportStatus::Succeeded,
+        "{:?}",
+        exported.error
+    );
+    assert_eq!(exported.saved_files.len(), 3);
+    for file in &exported.saved_files {
+        let path = Path::new(file);
+        assert_eq!(
+            std::fs::read(path)?,
+            std::fs::read(result_before.join(path.file_name().ok_or("Имя")?))?
+        );
+    }
+    assert_eq!(manager.result_directory(&job.id)?, result_before);
+    assert_eq!(std::fs::read_dir(root.join("exports"))?.count(), 0);
+    manager.shutdown().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn новое_назначение_получает_копию_до_удаления_исходного_staging()
+-> std::result::Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let storage = DesktopStorage::open(temp.path().join("app"))?;
+    let old = temp.path().join("старое");
+    let new = temp.path().join("новое");
+    std::fs::create_dir(&old)?;
+    std::fs::create_dir(&new)?;
+    let old_output = storage.grant_output(&old)?;
+    let new_output = storage.grant_output(&new)?;
+    let ready = artifacts(&storage, temp.path(), &old_output)?;
+    let original = ready.directory.clone();
+    let bytes = std::fs::read(&ready.mdx)?;
+    let result = storage
+        .publish(
+            ready,
+            &new_output,
+            &RunContext::new(temp.path().join("scratch")),
+        )
+        .await?;
+    assert!(
+        original.exists(),
+        "Старый ready нужен до долговременного сохранения задания"
+    );
+    assert!(result.directory.starts_with(new.canonicalize()?));
+    assert_eq!(
+        std::fs::read(result.directory.join("dictionary.mdx"))?,
+        bytes
+    );
+    assert_eq!(std::fs::read_dir(&new)?.count(), 1);
+    Ok(())
+}
 
 fn artifacts(
     storage: &DesktopStorage,

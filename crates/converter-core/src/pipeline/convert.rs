@@ -37,6 +37,14 @@ pub fn convert_to_staging(
     request: &ConversionRequest,
     ctx: &RunContext,
 ) -> Result<ConvertedArtifacts> {
+    convert_to_staging_with_registry(request, ctx, &FormatRegistry::builtins())
+}
+
+pub fn convert_to_staging_with_registry(
+    request: &ConversionRequest,
+    ctx: &RunContext,
+    registry: &FormatRegistry,
+) -> Result<ConvertedArtifacts> {
     ctx.control.check()?;
     std::fs::create_dir_all(&ctx.scratch_dir)?;
     let mut directory = ReadyDirectory::create(&request.staging_dir)?;
@@ -46,7 +54,6 @@ pub fn convert_to_staging(
     let report = ReportLog::create(&working.path().join("diagnostics.jsonl"))?;
     let mut ctx = ReportLog::context(&report, ctx);
     ctx.scratch_dir = working.path().to_owned();
-    let registry = FormatRegistry::builtins();
     let mut prefix = Vec::new();
     File::open(&request.bundle.main.path)?
         .take(64 * 1024)

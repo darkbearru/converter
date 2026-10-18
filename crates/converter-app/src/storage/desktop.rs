@@ -133,6 +133,48 @@ fn invalid_result() -> AppError {
 fn join_error(_: tokio::task::JoinError) -> AppError {
     AppError::new("storage_error", "Операция с файлами прервана")
 }
+fn copy_and_publish(
+    files: &[PathBuf; 3],
+    summary: converter_core::model::ConversionSummary,
+    destination: &Path,
+    name: &str,
+    ctx: &RunContext,
+) -> AppResult<PathBuf> {
+    let staging = tempfile::Builder::new()
+        .prefix(".converter-export-")
+        .tempdir_in(destination)?;
+    for source in files {
+        ctx.control.check()?;
+        let metadata = std::fs::symlink_metadata(source)?;
+        if !metadata.file_type().is_file() {
+            return Err(invalid_result());
+        }
+        let mut input = File::open(source)?;
+        let mut output = File::create_new(
+            staging
+                .path()
+                .join(source.file_name().ok_or_else(invalid_result)?),
+        )?;
+        let mut buffer = vec![0; 64 * 1024];
+        loop {
+            ctx.control.check()?;
+            let count = input.read(&mut buffer)?;
+            if count == 0 {
+                break;
+            }
+            output.write_all(&buffer[..count])?;
+        }
+        output.sync_all()?;
+    }
+    let artifacts = ConvertedArtifacts {
+        directory: staging.path().into(),
+        mdx: staging.path().join("dictionary.mdx"),
+        mdd: staging.path().join("dictionary.mdd"),
+        report: staging.path().join("conversion-report.json"),
+        summary,
+    };
+    Ok(publish_local(artifacts, destination, name, ctx)?)
+}
 fn report_name(path: &Path, ctx: &RunContext) -> AppResult<String> {
     #[derive(serde::Deserialize)]
     struct Report {
@@ -231,7 +273,28 @@ impl PlatformStorage for DesktopStorage {
         tokio::task::spawn_blocking(move || {
             let summary = artifacts.summary.clone();
             let name = report_name(&artifacts.report, &ctx)?;
-            let directory = publish_local(artifacts, &destination, &name, &ctx)?;
+            let directory =
+                if artifacts.directory.canonicalize()?.parent() == Some(destination.as_path()) {
+                    publish_local(artifacts, &destination, &name, &ctx)?
+                } else {
+                    // Новое назначение может находиться на другом томе. Старый ready живёт
+                    // до сохранения PublishedResult диспетчером; частичная копия невидима.
+                    if std::fs::symlink_metadata(&artifacts.directory)?
+                        .file_type()
+                        .is_symlink()
+                        || std::fs::read_dir(&artifacts.directory)?.count() != 3
+                    {
+                        return Err(invalid_result());
+                    }
+                    let root = artifacts.directory.canonicalize()?;
+                    let files = [artifacts.mdx, artifacts.mdd, artifacts.report];
+                    for path in &files {
+                        if path.canonicalize()?.parent() != Some(root.as_path()) {
+                            return Err(invalid_result());
+                        }
+                    }
+                    copy_and_publish(&files, summary.clone(), &destination, &name, &ctx)?
+                };
             Ok(PublishedResult {
                 id: uuid::Uuid::new_v4().to_string(),
                 directory,
@@ -260,33 +323,7 @@ impl PlatformStorage for DesktopStorage {
         tokio::task::spawn_blocking(move || {
             ctx.control.check()?;
             let name = report_name(&files[2], &ctx)?;
-            let staging = tempfile::Builder::new()
-                .prefix(".converter-export-")
-                .tempdir_in(&destination)?;
-            for source in &files {
-                ctx.control.check()?;
-                let name = source.file_name().ok_or_else(invalid_result)?;
-                let mut input = File::open(source)?;
-                let mut output = File::create_new(staging.path().join(name))?;
-                let mut buffer = vec![0; 64 * 1024];
-                loop {
-                    ctx.control.check()?;
-                    let count = input.read(&mut buffer)?;
-                    if count == 0 {
-                        break;
-                    }
-                    output.write_all(&buffer[..count])?;
-                }
-                output.sync_all()?;
-            }
-            let artifacts = ConvertedArtifacts {
-                directory: staging.path().into(),
-                mdx: staging.path().join("dictionary.mdx"),
-                mdd: staging.path().join("dictionary.mdd"),
-                report: staging.path().join("conversion-report.json"),
-                summary,
-            };
-            let directory = publish_local(artifacts, &destination, &name, &ctx)?;
+            let directory = copy_and_publish(&files, summary, &destination, &name, &ctx)?;
             Ok(ExportSnapshot {
                 status: ExportStatus::Succeeded,
                 saved_files: files

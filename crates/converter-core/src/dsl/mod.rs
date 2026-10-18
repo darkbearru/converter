@@ -12,7 +12,42 @@ use crate::{formats::*, model::*};
 
 pub struct DslReader;
 
+fn dsl_stem(name: &str) -> &str {
+    name.strip_suffix(".dz")
+        .unwrap_or(name)
+        .strip_suffix(".dsl")
+        .unwrap_or(name)
+}
+
+fn probe_text(text: &str, name: &str) -> u8 {
+    let trimmed = text.trim_start();
+    if trimmed.starts_with('<') || trimmed.contains('\0') {
+        0
+    } else if trimmed.starts_with("#NAME ") || trimmed.starts_with("#INDEX_LANGUAGE ") {
+        100
+    } else if trimmed
+        .lines()
+        .any(|line| line.starts_with([' ', '\t']) && !line.trim().is_empty())
+    {
+        40
+    } else if name.to_ascii_lowercase().ends_with(".dsl")
+        || name.to_ascii_lowercase().ends_with(".dsl.dz")
+    {
+        20
+    } else {
+        0
+    }
+}
+
 impl DictionaryReader for DslReader {
+    fn is_auxiliary(&self, name: &str) -> bool {
+        dsl_stem(&name.to_lowercase()).ends_with("_abrv")
+    }
+    fn is_companion(&self, main: &str, candidate: &str) -> bool {
+        let candidate = candidate.to_lowercase();
+        (candidate.ends_with(".dsl") || candidate.ends_with(".dsl.dz"))
+            && dsl_stem(&candidate) == format!("{}_abrv", dsl_stem(&main.to_lowercase()))
+    }
     fn descriptor(&self) -> FormatDescriptor {
         FormatDescriptor {
             id: "dsl".into(),
@@ -36,24 +71,17 @@ impl DictionaryReader for DslReader {
             )
         };
         let text = encoding.decode_without_bom_handling(&prefix[skip..]).0;
-        let trimmed = text.trim_start();
-        let confidence = if trimmed.starts_with('<') || trimmed.contains('\0') {
-            0
-        } else if trimmed.starts_with("#NAME ") || trimmed.starts_with("#INDEX_LANGUAGE ") {
-            100
-        } else if trimmed
-            .lines()
-            .any(|line| line.starts_with([' ', '\t']) && !line.trim().is_empty())
-        {
-            40
-        } else if name.to_ascii_lowercase().ends_with(".dsl")
-            || name.to_ascii_lowercase().ends_with(".dsl.dz")
-        {
-            // Длинный начальный комментарий может занять весь ограниченный probe.
-            20
-        } else {
-            0
-        };
+        let mut confidence = probe_text(&text, name);
+        if confidence == 0 && skip == 0 && prefix.contains(&0) {
+            // Это лишь допуск к выбору кодировки: Auto всё ещё требует её подтверждения.
+            for candidate in [encoding_rs::UTF_16LE, encoding_rs::UTF_16BE] {
+                let (decoded, malformed) = candidate.decode_without_bom_handling(prefix);
+                let score = probe_text(&decoded, name);
+                if !malformed && score >= 40 {
+                    confidence = confidence.max(score);
+                }
+            }
+        }
         ProbeResult { confidence }
     }
     fn inspect(

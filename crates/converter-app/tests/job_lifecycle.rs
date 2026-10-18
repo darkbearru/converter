@@ -1,4 +1,99 @@
 mod support;
+use converter_core::model::{EncodingChoice, ReadOptions};
+#[tokio::test]
+async fn недоступный_ready_пересоздается_из_сохраненного_источника()
+-> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let storage = support::TestStorage::new(temp.path());
+    storage.fail_publish.store(true, Ordering::SeqCst);
+    let root = temp.path().join("data");
+    let manager = JobManager::open(root.clone(), storage.clone())?;
+    let job = manager
+        .create(support::local(&manager, temp.path(), "ready.dsl").await)
+        .await?;
+    manager.start(&job.id).await?;
+    support::wait(&manager, &job.id, &[JobState::AwaitingInput]).await;
+    manager.shutdown().await?;
+    let saved: serde_json::Value = serde_json::from_slice(&std::fs::read(
+        root.join("jobs").join(format!("{}.json", job.id)),
+    )?)?;
+    std::fs::rename(
+        saved["ready"]["directory"].as_str().ok_or("Ready")?,
+        temp.path().join("отключенный_том"),
+    )?;
+    drop(manager);
+    let manager = JobManager::open(root, storage.clone())?;
+    let new_output = temp.path().join("новая_папка");
+    std::fs::create_dir(&new_output)?;
+    manager
+        .update(
+            &job.id,
+            JobOptionsUpdate {
+                output: Some(OutputChoice::DesktopFolder(new_output.clone())),
+                ..Default::default()
+            },
+        )
+        .await?;
+    manager.start(&job.id).await?;
+    tokio::time::timeout(Duration::from_secs(10), async {
+        loop {
+            if manager.list().expect("Jobs")[0].state == JobState::Succeeded {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await?;
+    assert_eq!(storage.invocations.load(Ordering::SeqCst), 2);
+    assert!(
+        manager
+            .result_directory(&job.id)?
+            .starts_with(new_output.canonicalize()?)
+    );
+    manager.shutdown().await?;
+    Ok(())
+}
+#[tokio::test]
+async fn utf16_без_bom_ожидает_выбора_и_конвертируется() -> Result<(), Box<dyn std::error::Error>> {
+    for (label, big_endian) in [("utf-16le", false), ("utf-16be", true)] {
+        let temp = tempfile::tempdir()?;
+        let manager = JobManager::open(
+            temp.path().join("data"),
+            support::TestStorage::new(temp.path()),
+        )?;
+        let draft = support::local(&manager, temp.path(), "unicode.dsl").await;
+        let bytes: Vec<u8> = "#NAME \"Проверка\"\nalpha\n\tСтатья\n"
+            .encode_utf16()
+            .flat_map(|c| {
+                if big_endian {
+                    c.to_be_bytes()
+                } else {
+                    c.to_le_bytes()
+                }
+            })
+            .collect();
+        std::fs::write(temp.path().join("unicode.dsl"), bytes)?;
+        let job = manager.create(draft).await?;
+        manager.start(&job.id).await?;
+        let awaiting = support::wait(&manager, &job.id, &[JobState::AwaitingInput]).await;
+        assert_eq!(awaiting.error.ok_or("Ошибка")?.code, "encoding_required");
+        manager
+            .update(
+                &job.id,
+                JobOptionsUpdate {
+                    options: Some(ReadOptions {
+                        encoding: EncodingChoice::Manual(label.into()),
+                    }),
+                    ..Default::default()
+                },
+            )
+            .await?;
+        manager.start(&job.id).await?;
+        support::wait(&manager, &job.id, &[JobState::Succeeded]).await;
+        manager.shutdown().await?;
+    }
+    Ok(())
+}
 #[tokio::test]
 async fn отмена_согласует_статусы_скачивания_и_сохраняет_checkpoint()
 -> Result<(), Box<dyn std::error::Error>> {
