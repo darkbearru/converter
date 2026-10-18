@@ -270,9 +270,25 @@ h3 {
   background: transparent;
 }
 .composer-tools {
+  --tool-size: 24px;
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 12px;
+}
+.composer-tools .icon-button.p-button {
+  width: var(--tool-size);
+  height: var(--tool-size);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.composer-tools .app-icon {
+  width: var(--tool-size);
+  height: var(--tool-size);
+}
+.composer-tools .icon-button.p-button:hover:not(:disabled) {
+  color: var(--text);
 }
 .source-composer .p-fileupload-content {
   position: relative;

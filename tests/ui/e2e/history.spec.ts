@@ -32,6 +32,26 @@ test('предупреждение видно сразу, четыре дейс�
   page,
 }) => {
   await page.goto(screenUrl('warning'));
+  const tools = await page.locator('.composer-tools').evaluate((el) => {
+    const buttons = [...el.querySelectorAll('button')];
+    return {
+      gap: parseFloat(getComputedStyle(el).gap),
+      items: buttons.map((button) => {
+        const icon = button.querySelector('.app-icon')!;
+        const r = icon.getBoundingClientRect();
+        return {
+          width: r.width,
+          height: r.height,
+          border: getComputedStyle(button).borderTopWidth,
+        };
+      }),
+    };
+  });
+  expect(tools.gap).toBe(12);
+  expect(tools.items).toEqual([
+    { width: 24, height: 24, border: '0px' },
+    { width: 24, height: 24, border: '0px' },
+  ]);
   await page.locator('.p-accordionheader').click();
   await expect(page.getByText('Не найдена статья для ссылки: 儿', { exact: true })).toBeVisible();
   for (const width of [740, 540]) {

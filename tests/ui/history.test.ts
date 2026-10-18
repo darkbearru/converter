@@ -25,6 +25,8 @@ it('сразу показывает текст предупреждения в �
   render(CompletedHistory, { props: { jobs: [job], bridge: native, pending: {} } });
   await fireEvent.click(screen.getByRole('button', { name: new RegExp(job.display_name) }));
   expect(await screen.findByText('Не найдена статья для ссылки: 儿')).toBeVisible();
+  expect(screen.getByText(/ещё 28\s172 предупреждения/)).toBeVisible();
+  expect(screen.queryByRole('button', { name: /Показать все/ })).not.toBeInTheDocument();
 });
 
 it('запоздалая ошибка прежнего пути не отменяет новый запрос', async () => {

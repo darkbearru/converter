@@ -66,12 +66,11 @@ test('длинное имя, журнал и системная тема раб�
     .not.toBe(before);
   await page.setViewportSize({ width: 540, height: 400 });
   await page.locator('.p-accordionheader').click();
-  await page.getByRole('button', { name: /Предупреждения · 70/ }).click();
   const log = page.locator('.diagnostic-list');
-  await expect(log.locator('li')).toHaveCount(50);
+  await expect(log.locator('li')).toHaveCount(1);
   await expect(log.locator('img')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Далее', exact: true }).click();
-  await expect(log.locator('li')).toHaveCount(20);
+  await expect(log).toContainText('(ещё 69 предупреждений)');
+  await expect(page.getByRole('button', { name: /Показать все/ })).toHaveCount(0);
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
     .toBe(true);

@@ -4,58 +4,78 @@ import { createServer } from 'vite';
 
 const layout = process.argv.includes('--layout');
 const history = process.argv.includes('--history');
-const group = history ? 'history-actions' : layout ? 'composer-layout' : 'composer';
+const compact = process.argv.includes('--compact');
+const group = compact
+  ? 'compact-warning'
+  : history
+    ? 'history-actions'
+    : layout
+      ? 'composer-layout'
+      : 'composer';
 const review = `.impeccable/review/${group}`;
 const archive = `docs/validation/ui/${group}`;
 const only = process.argv.find((arg) => arg.startsWith('--only='))?.slice(7);
-const cases = history
+const cases = compact
   ? [
+      ['empty-dark', 'webkit', 'dark', ''],
       ['warning-dark', 'webkit', 'dark', 'warning', 'history'],
       [
-        'actions-small-light',
-        'webkit',
+        'warning-small-light',
+        'chromium',
         'light',
-        'succeeded',
+        'warning',
         'history',
         { width: 540, height: 400 },
       ],
-      ['delete-light', 'chromium', 'light', 'succeeded', 'delete'],
-      ['delete-small-dark', 'webkit', 'dark', 'long', 'delete', { width: 540, height: 400 }],
-      ['deleted-light', 'chromium', 'light', 'succeeded', 'deleted'],
     ]
-  : layout
+  : history
     ? [
-        ['empty-dark', 'chromium', 'dark', ''],
-        ['one-dark', 'chromium', 'dark', 'history-one'],
-        ['many-dark', 'chromium', 'dark', 'history-many'],
-        ['active-light', 'chromium', 'light', 'history-active'],
-        ['small-light', 'webkit', 'light', 'history-many', null, { width: 540, height: 400 }],
+        ['warning-dark', 'webkit', 'dark', 'warning', 'history'],
         [
-          'download-small',
+          'actions-small-light',
           'webkit',
           'light',
-          'history-many',
-          'download',
+          'succeeded',
+          'history',
           { width: 540, height: 400 },
         ],
+        ['delete-light', 'chromium', 'light', 'succeeded', 'delete'],
+        ['delete-small-dark', 'webkit', 'dark', 'long', 'delete', { width: 540, height: 400 }],
+        ['deleted-light', 'chromium', 'light', 'succeeded', 'deleted'],
       ]
-    : [
-        ['empty-dark', 'chromium', 'dark', ''],
-        ['download-dark', 'chromium', 'dark', 'downloading'],
-        ['ready-dark', 'chromium', 'dark', 'ready'],
-        ['active-dark', 'chromium', 'dark', 'converting'],
-        ['stack-dark', 'chromium', 'dark', 'stack'],
-        ['settings-dark', 'chromium', 'dark', '', 'settings'],
-        ['settings-resources', 'chromium', 'dark', 'ready-resources', 'settings'],
-        ['link-dark', 'chromium', 'dark', '', 'link'],
-        ['history-dark', 'chromium', 'dark', 'succeeded', 'history'],
-        ['empty-light', 'chromium', 'light', ''],
-        ['stack-light', 'chromium', 'light', 'stack'],
-        ['history-light', 'chromium', 'light', 'long', 'history'],
-        ['stack-webkit-light', 'webkit', 'light', 'stack'],
-        ['download-webkit-dark', 'webkit', 'dark', 'downloading'],
-        ['settings-small', 'webkit', 'light', '', 'settings', { width: 540, height: 400 }],
-      ];
+    : layout
+      ? [
+          ['empty-dark', 'chromium', 'dark', ''],
+          ['one-dark', 'chromium', 'dark', 'history-one'],
+          ['many-dark', 'chromium', 'dark', 'history-many'],
+          ['active-light', 'chromium', 'light', 'history-active'],
+          ['small-light', 'webkit', 'light', 'history-many', null, { width: 540, height: 400 }],
+          [
+            'download-small',
+            'webkit',
+            'light',
+            'history-many',
+            'download',
+            { width: 540, height: 400 },
+          ],
+        ]
+      : [
+          ['empty-dark', 'chromium', 'dark', ''],
+          ['download-dark', 'chromium', 'dark', 'downloading'],
+          ['ready-dark', 'chromium', 'dark', 'ready'],
+          ['active-dark', 'chromium', 'dark', 'converting'],
+          ['stack-dark', 'chromium', 'dark', 'stack'],
+          ['settings-dark', 'chromium', 'dark', '', 'settings'],
+          ['settings-resources', 'chromium', 'dark', 'ready-resources', 'settings'],
+          ['link-dark', 'chromium', 'dark', '', 'link'],
+          ['history-dark', 'chromium', 'dark', 'succeeded', 'history'],
+          ['empty-light', 'chromium', 'light', ''],
+          ['stack-light', 'chromium', 'light', 'stack'],
+          ['history-light', 'chromium', 'light', 'long', 'history'],
+          ['stack-webkit-light', 'webkit', 'light', 'stack'],
+          ['download-webkit-dark', 'webkit', 'dark', 'downloading'],
+          ['settings-small', 'webkit', 'light', '', 'settings', { width: 540, height: 400 }],
+        ];
 const server = await createServer({ server: { host: '127.0.0.1', port: 1422, strictPort: true } });
 await server.listen();
 await Promise.all([mkdir(review, { recursive: true }), mkdir(archive, { recursive: true })]);
@@ -68,7 +88,7 @@ try {
         if (caseEngine !== engine) continue;
         if (only && name !== only) continue;
         const viewport = size ?? { width: 740, height: 500 };
-        const page = await browser.newPage({ viewport, colorScheme });
+        const page = await browser.newPage({ viewport, colorScheme, reducedMotion: 'reduce' });
         const errors = [];
         page.on('pageerror', (error) => errors.push(error.message));
         await page.goto(
@@ -145,6 +165,22 @@ try {
             jobPanels: rect('.job-panels'),
             stack: rect('.task-stack'),
             dialog: rect('.p-dialog'),
+            toolbar: [...document.querySelectorAll('.composer-tools .p-button')].map((el) => {
+              const icon = el.querySelector('.app-icon');
+              const r = icon.getBoundingClientRect();
+              const b = el.getBoundingClientRect();
+              return {
+                label: el.getAttribute('aria-label'),
+                x: b.x,
+                y: b.y,
+                width: b.width,
+                height: b.height,
+                iconWidth: r.width,
+                iconHeight: r.height,
+                border: getComputedStyle(el).borderTopWidth,
+                gap: getComputedStyle(el.parentElement).gap,
+              };
+            }),
             historyActions: [...document.querySelectorAll('.history-actions .p-button')].map(
               (el) => {
                 const { x, y, width, height } = el.getBoundingClientRect();

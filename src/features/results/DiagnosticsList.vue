@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, ref, watch } from 'vue';
 import type { DiagnosticPage, NativeBridge } from '../../shared/contracts';
-import { errorMessage, formatCount } from '../../shared/format';
+import { errorMessage, formatCount, formatQuantity } from '../../shared/format';
 const props = defineProps<{ id: string; count: number; bridge: NativeBridge; preview?: boolean }>();
 const open = ref(false);
 const offset = ref(0);
@@ -58,9 +58,15 @@ function back() {
 </script>
 <template>
   <section class="diagnostics">
-    <button type="button" class="disclosure" :aria-expanded="open" @click="open = !open">
-      {{ preview ? 'Предупреждения' : 'Журнал' }} · {{ formatCount(count) }}
-      <span>{{ open ? 'Скрыть' : preview ? 'Показать все' : 'Показать' }}</span>
+    <button
+      v-if="!preview"
+      type="button"
+      class="disclosure"
+      :aria-expanded="open"
+      @click="open = !open"
+    >
+      Журнал · {{ formatCount(count) }}
+      <span>{{ open ? 'Скрыть' : 'Показать' }}</span>
     </button>
     <div v-if="open || preview" :aria-busy="busy">
       <p v-if="error" role="alert" class="error-message">{{ error }}</p>
@@ -69,15 +75,26 @@ function back() {
         {{ count ? 'Не удалось найти записи журнала.' : 'Предупреждений нет.' }}
       </p>
       <ol v-else class="diagnostic-list" :start="offset + 1">
-        <li v-for="(item, index) in page.items" :key="`${offset}-${index}`">
-          <p>{{ item.message }}</p>
+        <li
+          v-for="(item, index) in preview ? page.items.slice(0, 1) : page.items"
+          :key="`${offset}-${index}`"
+        >
+          <p>
+            <span>{{ item.message }}</span
+            ><span v-if="preview && count > 1" class="muted">
+              (ещё
+              {{
+                formatQuantity(count - 1, ['предупреждение', 'предупреждения', 'предупреждений'])
+              }})</span
+            >
+          </p>
           <span v-if="item.source_location" class="hint"
             >{{ item.source_location.source }}, строка {{ item.source_location.line }}</span
           >
         </li>
       </ol>
       <nav
-        v-if="open && (previous.length || page.next_offset !== null)"
+        v-if="!preview && open && (previous.length || page.next_offset !== null)"
         aria-label="Страницы журнала"
         class="pagination"
       >
