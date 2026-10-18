@@ -30,6 +30,8 @@
     "active": true,
     "targets": ["app", "dmg"],
     "shortDescription": "Локальный конвертер словарей DSL в MDX и MDD",
+    "copyright": "© Alexey Abramenko",
+    "resources": { "Credits.rtf": "Credits.rtf" },
     "category": "Utility",
     "icon": [
       "icons/32x32.png",
