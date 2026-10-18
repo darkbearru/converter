@@ -114,6 +114,27 @@ fn экранированные_теги_и_комментарии_не_созд
 }
 
 #[test]
+fn сокращенные_ссылки_не_разбираются_как_межсловарные_теги()
+-> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    for body in [
+        r#"<<[ref dict="Main"]word[/ref]>>"#,
+        r#"<<escaped \>> [ref dict="Main"]word[/ref]>>"#,
+    ] {
+        let input = bundles(temp.path(), &[("Index", body), ("Main", "Body")]);
+        assert!(
+            select_primary_dictionary(
+                &input,
+                &ReadOptions::default(),
+                &RunContext::new(temp.path().join("scratch"))
+            )?
+            .is_none()
+        );
+    }
+    Ok(())
+}
+
+#[test]
 fn отмена_анализа_не_превращается_в_ручной_выбор() -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let input = bundles(

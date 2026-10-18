@@ -5,6 +5,84 @@ use std::{io::Write, path::Path, sync::atomic::Ordering, time::Duration};
 
 type TestResult = Result<(), Box<dyn std::error::Error>>;
 
+fn reorder_archive(path: &Path) -> TestResult {
+    let mut archive = zip::ZipWriter::new(std::fs::File::create(path)?);
+    for (name, contents) in [
+        (
+            "phrasebook.dsl",
+            "#NAME \"PhraseBook\"\nphrase\n\tСамостоятельная статья\n",
+        ),
+        (
+            "index.dsl",
+            "#NAME \"Index\"\nindex\n\t[ref dict=\"Universal\"]alpha[/ref]\n",
+        ),
+        (
+            "universal.dsl",
+            "#NAME \"Universal\"\nalpha\n\tОсновная статья\n",
+        ),
+    ] {
+        archive.start_file(name, zip::write::SimpleFileOptions::default())?;
+        archive.write_all(contents.as_bytes())?;
+    }
+    archive.finish()?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn замена_архива_не_подменяет_предложенный_словарь_и_основной_при_повторе() -> TestResult {
+    for accept_before_change in [false, true] {
+        let temp = tempfile::tempdir()?;
+        let storage = support::TestStorage::new(temp.path());
+        storage.block_publish.store(true, Ordering::SeqCst);
+        let manager = JobManager::open(temp.path().join("data"), storage.clone())?;
+        let parent = manager.create(package(&manager, temp.path()).await).await?;
+        manager.start(&parent.id).await?;
+        tokio::time::timeout(Duration::from_secs(10), storage.publish_started.notified()).await?;
+        let offer = manager
+            .list()?
+            .remove(0)
+            .additional_dictionaries
+            .ok_or("Предложение")?;
+        let queued = if accept_before_change {
+            Some(
+                manager
+                    .resolve_additional(&parent.id, &offer.id, true)
+                    .await?
+                    .remove(0),
+            )
+        } else {
+            None
+        };
+        reorder_archive(&temp.path().join("chinese.zip"))?;
+        storage.block_publish.store(false, Ordering::SeqCst);
+        storage.publish_release.notify_one();
+        settled(&manager, &parent.id).await;
+        let child = match queued {
+            Some(child) => child,
+            None => manager
+                .resolve_additional(&parent.id, &offer.id, true)
+                .await?
+                .remove(0),
+        };
+        let child = settled(&manager, &child.id).await;
+        assert_eq!(child.state, JobState::Failed);
+        assert_eq!(
+            child.error.as_ref().ok_or("Ошибка подмены")?.code,
+            "source_changed"
+        );
+        assert!(child.result.is_none());
+        manager.start(&parent.id).await?;
+        let retry = settled(&manager, &parent.id).await;
+        assert_eq!(retry.state, JobState::Failed);
+        assert_eq!(
+            retry.error.as_ref().ok_or("Ошибка повтора")?.code,
+            "source_changed"
+        );
+        manager.shutdown().await?;
+    }
+    Ok(())
+}
+
 async fn package(manager: &JobManager, root: &Path) -> JobDraft {
     package_with_extra(manager, root, false).await
 }

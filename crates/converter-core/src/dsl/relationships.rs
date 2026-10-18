@@ -1,6 +1,6 @@
 use super::{
     decoder,
-    markup::token_end,
+    markup::{reference_end, token_end},
     metadata, parser,
     references::{argument, inline_text},
 };
@@ -23,6 +23,11 @@ impl parser::AstSink for References<'_> {
                 if let Some(ch) = article.body[position..].chars().next() {
                     position += ch.len_utf8();
                 }
+            } else if let Some(target) = rest.strip_prefix("<<") {
+                let end = reference_end(target).ok_or_else(|| {
+                    ConverterError::new("invalid_markup", "Не закрыта ссылка <<…>>")
+                })?;
+                position += end + 4;
             } else if rest.starts_with('[') {
                 if let Some(end) = token_end(rest) {
                     let token = rest[1..end].trim();
@@ -46,7 +51,7 @@ impl parser::AstSink for References<'_> {
                     position += 1;
                 }
             } else {
-                position += rest.find(['[', '\\']).unwrap_or(rest.len());
+                position += rest.find(['[', '\\', '<']).unwrap_or(rest.len()).max(1);
             }
         }
         Ok(())

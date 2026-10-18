@@ -25,6 +25,8 @@ pub enum AdditionalDictionariesState {
 pub struct AdditionalDictionaryChild {
     pub job_id: String,
     pub dictionary: InputChoice,
+    #[serde(default)]
+    pub fingerprint: Option<String>,
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct StoredAdditionalDictionaries {
@@ -40,6 +42,8 @@ pub struct StoredJob {
     pub snapshot: JobSnapshot,
     pub published: Option<PublishedResult>,
     pub selected_main: Option<String>,
+    #[serde(default)]
+    pub selected_main_fingerprint: Option<String>,
     pub ready: Option<ConvertedArtifacts>,
     #[serde(default)]
     pub staging_path: Option<PathBuf>,

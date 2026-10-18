@@ -418,6 +418,7 @@ impl JobManager {
             snapshot: snapshot.clone(),
             published: None,
             selected_main: None,
+            selected_main_fingerprint: None,
             ready: None,
             staging_path: None,
             additional_dictionaries: None,
@@ -816,6 +817,7 @@ impl JobManager {
                 child.additional_dictionaries = None;
                 child.snapshot.error = None;
                 child.selected_main = Some(choice.id.clone());
+                child.selected_main_fingerprint = None;
                 child.ready = None;
                 child.staging_path = None;
                 if let Some(options) = &update.options {
@@ -871,6 +873,9 @@ impl JobManager {
                     job.draft.output = output;
                 }
                 if let Some(id) = update.dictionary_id {
+                    if job.selected_main.as_ref() != Some(&id) {
+                        job.selected_main_fingerprint = None;
+                    }
                     job.selected_main = Some(id);
                 }
                 if let Some(resources) = resources {
@@ -1260,6 +1265,7 @@ impl JobManager {
         .await
         .map_err(|_| AppError::new("worker_failed", "Не удалось подготовить источник"))??;
         let mut selected = job.selected_main.clone();
+        let mut expected_fingerprint = job.selected_main_fingerprint.clone();
         self.mutate(id, Some((generation, run)), true, |job| {
             job.snapshot.state = JobState::Inspecting;
         })?;
@@ -1267,8 +1273,22 @@ impl JobManager {
             let inspected = bundles.clone();
             let options = job.draft.options.clone();
             let analysis_context = context.clone();
-            let selection = tokio::task::spawn_blocking(move || {
-                select_primary_dictionary(&inspected, &options, &analysis_context)
+            let (selection, fingerprints) = tokio::task::spawn_blocking(move || -> AppResult<_> {
+                let selection = select_primary_dictionary(&inspected, &options, &analysis_context)?;
+                let mut fingerprints = BTreeMap::new();
+                if let Some(selection) = &selection {
+                    for bundle in &inspected {
+                        if bundle.main.id == selection.main_id
+                            || selection.independent_ids.contains(&bundle.main.id)
+                        {
+                            fingerprints.insert(
+                                bundle.main.id.clone(),
+                                package::fingerprint(&bundle.main.path, &analysis_context)?,
+                            );
+                        }
+                    }
+                }
+                Ok((selection, fingerprints))
             })
             .await
             .map_err(|_| {
@@ -1276,8 +1296,10 @@ impl JobManager {
             })??;
             if let Some(selection) = selection {
                 selected = Some(selection.main_id.clone());
+                expected_fingerprint = fingerprints.get(&selection.main_id).cloned();
                 self.mutate(id, Some((generation, run)), true, |job| {
                     job.selected_main = Some(selection.main_id);
+                    job.selected_main_fingerprint = expected_fingerprint.clone();
                     if job.additional_dictionaries.is_none()
                         && !selection.independent_ids.is_empty()
                     {
@@ -1295,7 +1317,8 @@ impl JobManager {
                                 })
                                 .collect(),
                         };
-                        job.additional_dictionaries = Some(package::pending_offer(offer.clone()));
+                        job.additional_dictionaries =
+                            Some(package::pending_offer(offer.clone(), &fingerprints));
                         job.snapshot.additional_dictionaries = Some(offer);
                     }
                 })?;
@@ -1335,6 +1358,17 @@ impl JobManager {
         let inspected_context = context.clone();
         let metadata = tokio::task::spawn_blocking(
             move || -> converter_core::model::Result<DictionaryMetadata> {
+                if let Some(expected) = expected_fingerprint {
+                    let actual =
+                        package::fingerprint(&inspected_bundle.main.path, &inspected_context)
+                            .map_err(|error| ConverterError::new(&error.code, error.message))?;
+                    if actual != expected {
+                        return Err(ConverterError::new(
+                            "source_changed",
+                            "Словарь в архиве изменился после анализа. Выберите архив заново",
+                        ));
+                    }
+                }
                 let registry = converter_core::formats::FormatRegistry::builtins();
                 let mut prefix = Vec::new();
                 File::open(&inspected_bundle.main.path)?

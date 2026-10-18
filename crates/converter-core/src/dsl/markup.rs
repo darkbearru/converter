@@ -33,7 +33,7 @@ pub(super) fn token_end(text: &str) -> Option<usize> {
     None
 }
 
-fn reference_end(text: &str) -> Option<usize> {
+pub(super) fn reference_end(text: &str) -> Option<usize> {
     let mut escaped = false;
     for (position, ch) in text.char_indices() {
         if escaped {

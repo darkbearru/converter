@@ -2,14 +2,34 @@ use super::*;
 use crate::jobs::store::{
     AdditionalDictionariesState, AdditionalDictionaryChild, StoredAdditionalDictionaries,
 };
+use sha2::{Digest, Sha256};
 
-pub(super) fn pending_offer(offer: AdditionalDictionariesOffer) -> StoredAdditionalDictionaries {
+pub(super) fn fingerprint(path: &std::path::Path, ctx: &RunContext) -> AppResult<String> {
+    let mut file = File::open(path)?;
+    let mut hash = Sha256::new();
+    let mut buffer = vec![0; 64 * 1024];
+    loop {
+        ctx.control.check()?;
+        let count = file.read(&mut buffer)?;
+        if count == 0 {
+            break;
+        }
+        hash.update(&buffer[..count]);
+    }
+    Ok(format!("{:x}", hash.finalize()))
+}
+
+pub(super) fn pending_offer(
+    offer: AdditionalDictionariesOffer,
+    fingerprints: &BTreeMap<String, String>,
+) -> StoredAdditionalDictionaries {
     let children = offer
         .dictionaries
         .iter()
         .map(|dictionary| AdditionalDictionaryChild {
             job_id: uuid::Uuid::new_v4().to_string(),
             dictionary: dictionary.clone(),
+            fingerprint: fingerprints.get(&dictionary.id).cloned(),
         })
         .collect();
     StoredAdditionalDictionaries {
@@ -41,6 +61,7 @@ fn additional_child(parent: &StoredJob, plan: &AdditionalDictionaryChild) -> Sto
     child.draft.auto_start = false;
     child.draft.metadata_override = None;
     child.selected_main = Some(plan.dictionary.id.clone());
+    child.selected_main_fingerprint = plan.fingerprint.clone();
     child.published = None;
     child.ready = None;
     child.staging_path = None;
