@@ -495,6 +495,10 @@ impl JobManager {
         Ok(())
     }
     pub async fn cancel(&self, id: &str) -> AppResult<JobSnapshot> {
+        let current = self.job(id)?.snapshot;
+        if state::success(current.state) {
+            return Ok(current);
+        }
         if let Some(controls) = self
             .inner
             .runtime
@@ -508,8 +512,18 @@ impl JobManager {
         }
         Ok(self
             .mutate(id, None, true, |job| {
+                if state::success(job.snapshot.state) {
+                    return;
+                }
                 job.snapshot.state = JobState::Cancelled;
                 job.snapshot.conversion.status = ConversionStatus::Cancelled;
+                for file in &mut job.snapshot.download.files {
+                    if file.state != TransferState::Completed {
+                        file.state = TransferState::Cancelled;
+                        file.bytes_per_second = None;
+                    }
+                }
+                job.snapshot.download = aggregate_downloads(job.snapshot.download.files.clone());
             })?
             .expect("current job"))
     }
@@ -857,7 +871,8 @@ impl JobManager {
                                     Some((generation, &run_id)),
                                     false,
                                     |job| {
-                                        if matches!(job.snapshot.state, JobState::Cancelled)
+                                        if (job.snapshot.state == JobState::Cancelled
+                                            && progress.state != TransferState::Cancelled)
                                             || (job.snapshot.state == JobState::DownloadPaused
                                                 && !matches!(
                                                     progress.state,

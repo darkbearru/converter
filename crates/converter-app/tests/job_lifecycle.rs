@@ -1,5 +1,62 @@
 mod support;
 #[tokio::test]
+async fn отмена_согласует_статусы_скачивания_и_сохраняет_checkpoint()
+-> Result<(), Box<dyn std::error::Error>> {
+    use converter_download::TransferState;
+    let temp = tempfile::tempdir()?;
+    let manager = JobManager::open(
+        temp.path().join("data"),
+        support::TestStorage::new(temp.path()),
+    )?;
+    let server = FixtureServer::spawn(Scenario::HoldAt(1_048_576), vec![5; 2_097_152]).await;
+    let job = manager
+        .create(support::draft(support::remote(server.url())))
+        .await?;
+    manager.start(&job.id).await?;
+    tokio::time::timeout(std::time::Duration::from_secs(10), async {
+        loop {
+            if manager.list().expect("jobs")[0].download.confirmed_bytes >= 1_048_576 {
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        }
+    })
+    .await?;
+    let cancelled = manager.cancel(&job.id).await?;
+    assert_eq!(cancelled.download.files[0].state, TransferState::Cancelled);
+    assert!(cancelled.download.files[0].bytes_per_second.is_none());
+    assert_eq!(cancelled.download.confirmed_bytes, 1_048_576);
+    manager.shutdown().await?;
+    let cancelled = manager.list()?.remove(0);
+    assert_eq!(cancelled.state, JobState::Cancelled);
+    assert_eq!(cancelled.download.files[0].state, TransferState::Cancelled);
+    assert_eq!(cancelled.download.confirmed_bytes, 1_048_576);
+    assert!(cancelled.result.is_none());
+    Ok(())
+}
+#[tokio::test]
+async fn поздняя_отмена_не_отменяет_уже_готовый_результат() -> Result<(), Box<dyn std::error::Error>>
+{
+    let temp = tempfile::tempdir()?;
+    let manager = JobManager::open(
+        temp.path().join("data"),
+        support::TestStorage::new(temp.path()),
+    )?;
+    let job = manager
+        .create(support::local(&manager, temp.path(), "ready.dsl").await)
+        .await?;
+    manager.start(&job.id).await?;
+    let ready = support::wait(&manager, &job.id, &[JobState::Succeeded]).await;
+    let after = manager.cancel(&job.id).await?;
+    assert_eq!(after.state, JobState::Succeeded);
+    assert_eq!(
+        after.result.expect("result").id,
+        ready.result.expect("ready").id
+    );
+    manager.shutdown().await?;
+    Ok(())
+}
+#[tokio::test]
 async fn неоднозначные_ресурсы_ожидают_назначения() -> Result<(), Box<dyn std::error::Error>> {
     use converter_app::storage::PlatformSelection;
     let temp = tempfile::tempdir()?;

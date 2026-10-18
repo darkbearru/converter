@@ -213,6 +213,13 @@ try {
   await wait(() => hasText('1 МиБ'), 'cancel checkpoint');
   await clickText('Отменить задание');
   await wait(() => hasText('Запустить заново'), 'cancelled');
+  await wait(
+    () =>
+      execute(
+        'return document.querySelector(".transfer-list")?.innerText.includes("Отменено") && !document.querySelector(".transfer-list")?.innerText.includes("Скачивается")',
+      ),
+    'cancelled download status',
+  );
   await writeFile(
     join(output, 'result.json'),
     JSON.stringify(
