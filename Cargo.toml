@@ -1,0 +1,21 @@
+[workspace]
+members = ["crates/converter-core"]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.99"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+tempfile = "3"
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+adler2 = "2"
+sha2 = "0.10"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+unwrap_used = "warn"

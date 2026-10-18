@@ -1,0 +1,11 @@
+/target/
+/node_modules/
+/dist/
+/.superpowers/sdd/
+/.work/
+/.downloads/
+/.corpus/
+.DS_Store
+*.mdx
+*.mdd
+*.part
