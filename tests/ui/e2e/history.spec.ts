@@ -60,6 +60,18 @@ test('предупреждение видно сразу, четыре дейс�
       .getByRole('group', { name: 'Действия с конвертацией' })
       .getByRole('button');
     await expect(buttons).toHaveCount(4);
+    await expect(buttons).toHaveText(['Открыть папку', 'Сохранить копию', 'Повторить', 'Удалить']);
+    const colors = await buttons.evaluateAll((els) =>
+      els.map((el) =>
+        getComputedStyle(el)
+          .color.match(/[\d.]+/g)!
+          .slice(0, 3)
+          .map(Number),
+      ),
+    );
+    for (const channels of colors.slice(0, 3))
+      expect(Math.max(...channels) - Math.min(...channels)).toBeLessThanOrEqual(16);
+    expect(colors[3]![0]! - colors[3]![1]!).toBeGreaterThan(40);
     const rects = await buttons.evaluateAll((els) =>
       els.map((el) => {
         const r = el.getBoundingClientRect();

@@ -79,7 +79,11 @@ const ConverterPreset = definePreset(Aura, {
               focusRing: { color: '{red.600}' },
             },
           },
-          outlined: { primary: { color: '{primary.700}' }, danger: { color: '{red.700}' } },
+          outlined: {
+            primary: { color: '{primary.700}' },
+            secondary: { color: '{surface.600}' },
+            danger: { color: '{red.700}' },
+          },
           text: { primary: { color: '{primary.700}' } },
         },
       },

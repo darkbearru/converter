@@ -97,13 +97,16 @@ function warning(job: JobSnapshot) {
           <div class="history-actions" role="group" aria-label="Действия с конвертацией">
             <Button
               v-if="job.result?.can_open"
-              label="Открыть папку результата"
+              label="Открыть папку"
+              severity="secondary"
+              outlined
               :disabled="pending[job.id]"
               @click="$emit('open', job.id)"
             />
             <Button
               v-if="job.result?.can_export"
               :label="job.export.status === 'running' ? 'Сохранение…' : 'Сохранить копию'"
+              severity="secondary"
               outlined
               :disabled="pending[job.id] || job.export.status === 'running'"
               @click="$emit('export', job.id)"
@@ -111,6 +114,7 @@ function warning(job: JobSnapshot) {
             <Button
               v-if="job.state === 'awaiting_input'"
               label="Уточнить параметры"
+              severity="secondary"
               outlined
               :disabled="pending[job.id]"
               @click="$emit('repair', job.id)"
@@ -118,6 +122,7 @@ function warning(job: JobSnapshot) {
             <Button
               v-else
               label="Повторить"
+              severity="secondary"
               outlined
               :disabled="pending[job.id] || job.export.status === 'running'"
               @click="$emit('retry', job.id)"

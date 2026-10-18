@@ -1,115 +1,5 @@
 [
   {
-    "name": "warning-small-light",
-    "engine": "chromium",
-    "colorScheme": "light",
-    "viewport": {
-      "width": 540,
-      "height": 400
-    },
-    "errors": [],
-    "documentWidth": 540,
-    "documentHeight": 400,
-    "canvas": "rgb(250, 250, 250)",
-    "text": "rgb(63, 63, 70)",
-    "composer": {
-      "x": 16,
-      "y": 282.59375,
-      "width": 508,
-      "height": 101.40625
-    },
-    "workspace": {
-      "x": 0,
-      "y": 46,
-      "width": 540,
-      "height": 354
-    },
-    "workspacePaddingBottom": "16px",
-    "history": {
-      "x": 16,
-      "y": 46,
-      "width": 508,
-      "height": 236.59375
-    },
-    "jobPanels": {
-      "x": 16,
-      "y": 46,
-      "width": 508,
-      "height": 236.59375
-    },
-    "stack": {
-      "x": 0,
-      "y": 0,
-      "width": 0,
-      "height": 0
-    },
-    "dialog": null,
-    "toolbar": [
-      {
-        "label": "Добавить ссылку",
-        "x": 454,
-        "y": 290.59375,
-        "width": 24,
-        "height": 24,
-        "iconWidth": 24,
-        "iconHeight": 24,
-        "border": "0px",
-        "gap": "12px"
-      },
-      {
-        "label": "Настройки конвертации",
-        "x": 490,
-        "y": 290.59375,
-        "width": 24,
-        "height": 24,
-        "iconWidth": 24,
-        "iconHeight": 24,
-        "border": "0px",
-        "gap": "12px"
-      }
-    ],
-    "historyActions": [
-      {
-        "label": "Открыть папку результата",
-        "x": 26,
-        "y": 302,
-        "width": 177.609375,
-        "height": 34,
-        "color": "rgb(9, 9, 11)",
-        "background": "rgb(249, 97, 51)"
-      },
-      {
-        "label": "Сохранить копию",
-        "x": 209.609375,
-        "y": 302,
-        "width": 124.03125,
-        "height": 34,
-        "color": "rgb(183, 51, 24)",
-        "background": "rgba(0, 0, 0, 0)"
-      },
-      {
-        "label": "Повторить",
-        "x": 339.640625,
-        "y": 302,
-        "width": 81.703125,
-        "height": 34,
-        "color": "rgb(183, 51, 24)",
-        "background": "rgba(0, 0, 0, 0)"
-      },
-      {
-        "label": "Удалить",
-        "x": 427.34375,
-        "y": 302,
-        "width": 66.84375,
-        "height": 34,
-        "color": "rgb(185, 28, 28)",
-        "background": "rgba(0, 0, 0, 0)"
-      }
-    ],
-    "dialogButtons": [],
-    "progress": []
-  },
-  {
     "name": "empty-dark",
     "engine": "webkit",
     "colorScheme": "dark",
@@ -238,39 +128,149 @@
     ],
     "historyActions": [
       {
-        "label": "Открыть папку результата",
+        "label": "Открыть папку",
         "x": 26,
         "y": 280,
-        "width": 177.609375,
+        "width": 107.859375,
         "height": 34,
-        "color": "rgb(9, 9, 11)",
-        "background": "rgb(249, 97, 51)"
+        "color": "rgb(161, 161, 170)",
+        "background": "rgba(0, 0, 0, 0)"
       },
       {
         "label": "Сохранить копию",
-        "x": 209.609375,
+        "x": 139.859375,
         "y": 280,
         "width": 124.03125,
         "height": 34,
-        "color": "rgb(249, 97, 51)",
+        "color": "rgb(161, 161, 170)",
         "background": "rgba(0, 0, 0, 0)"
       },
       {
         "label": "Повторить",
-        "x": 339.640625,
+        "x": 269.890625,
         "y": 280,
         "width": 81.703125,
         "height": 34,
-        "color": "rgb(249, 97, 51)",
+        "color": "rgb(161, 161, 170)",
         "background": "rgba(0, 0, 0, 0)"
       },
       {
         "label": "Удалить",
-        "x": 427.34375,
+        "x": 357.59375,
         "y": 280,
         "width": 66.84375,
         "height": 34,
         "color": "rgb(248, 113, 113)",
+        "background": "rgba(0, 0, 0, 0)"
+      }
+    ],
+    "dialogButtons": [],
+    "progress": []
+  },
+  {
+    "name": "warning-small-light",
+    "engine": "chromium",
+    "colorScheme": "light",
+    "viewport": {
+      "width": 540,
+      "height": 400
+    },
+    "errors": [],
+    "documentWidth": 540,
+    "documentHeight": 400,
+    "canvas": "rgb(250, 250, 250)",
+    "text": "rgb(63, 63, 70)",
+    "composer": {
+      "x": 16,
+      "y": 282.59375,
+      "width": 508,
+      "height": 101.40625
+    },
+    "workspace": {
+      "x": 0,
+      "y": 46,
+      "width": 540,
+      "height": 354
+    },
+    "workspacePaddingBottom": "16px",
+    "history": {
+      "x": 16,
+      "y": 46,
+      "width": 508,
+      "height": 236.59375
+    },
+    "jobPanels": {
+      "x": 16,
+      "y": 46,
+      "width": 508,
+      "height": 236.59375
+    },
+    "stack": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    },
+    "dialog": null,
+    "toolbar": [
+      {
+        "label": "Добавить ссылку",
+        "x": 454,
+        "y": 290.59375,
+        "width": 24,
+        "height": 24,
+        "iconWidth": 24,
+        "iconHeight": 24,
+        "border": "0px",
+        "gap": "12px"
+      },
+      {
+        "label": "Настройки конвертации",
+        "x": 490,
+        "y": 290.59375,
+        "width": 24,
+        "height": 24,
+        "iconWidth": 24,
+        "iconHeight": 24,
+        "border": "0px",
+        "gap": "12px"
+      }
+    ],
+    "historyActions": [
+      {
+        "label": "Открыть папку",
+        "x": 26,
+        "y": 241,
+        "width": 107.859375,
+        "height": 34,
+        "color": "rgb(82, 82, 91)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "label": "Сохранить копию",
+        "x": 139.859375,
+        "y": 241,
+        "width": 124.03125,
+        "height": 34,
+        "color": "rgb(82, 82, 91)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "label": "Повторить",
+        "x": 269.890625,
+        "y": 241,
+        "width": 81.703125,
+        "height": 34,
+        "color": "rgb(82, 82, 91)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "label": "Удалить",
+        "x": 357.59375,
+        "y": 241,
+        "width": 66.84375,
+        "height": 34,
+        "color": "rgb(185, 28, 28)",
         "background": "rgba(0, 0, 0, 0)"
       }
     ],

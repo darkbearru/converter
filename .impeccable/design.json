@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-18T11:59:04.370431Z",
+  "generatedAt": "2026-10-18T12:09:11.726249Z",
   "title": "Design System: Converter",
   "extensions": {
     "colorMeta": {
@@ -474,6 +474,14 @@
       "css": ".ds-outlined{font:500 14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:.5rem .75rem;border-radius:var(--control-radius,6px);cursor:pointer;transition:background .2s,color .2s,border-color .2s,box-shadow .2s,outline-color .2s;font-size:12px;background:transparent;color:var(--p-button-outlined-primary-color,#b73318);border:1px solid var(--p-button-outlined-primary-border-color,#ffc1a8)}.ds-outlined:hover{background:var(--p-button-outlined-primary-hover-background,#fff3ed)}.ds-outlined:active{background:var(--p-button-outlined-primary-active-background,#ffe2d4)}.ds-outlined:focus-visible{outline:2px solid var(--focus,#F96133);outline-offset:3px;}.ds-outlined:disabled{opacity:.6;cursor:default}"
     },
     {
+      "name": "Нейтральная контурная кнопка",
+      "kind": "button",
+      "refersTo": "button-secondary-outlined-light",
+      "description": "Действия истории: открыть папку, сохранить копию, повторить или уточнить параметры. Светлый текст surface600, тёмный — штатный Aura surface400; в истории padding (7px 8px).",
+      "html": "<button class=\"ds-secondary-outlined\">Открыть папку</button>",
+      "css": ".ds-secondary-outlined{font:500 12px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:inline-flex;align-items:center;justify-content:center;padding:7px 8px;border-radius:var(--control-radius,6px);background:transparent;color:var(--p-button-outlined-secondary-color,#52525b);border:1px solid var(--p-button-outlined-secondary-border-color,#e4e4e7);white-space:nowrap;cursor:pointer;transition:background .2s,color .2s,border-color .2s,outline-color .2s}.ds-secondary-outlined:hover{background:var(--p-button-outlined-secondary-hover-background,#fafafa)}.ds-secondary-outlined:active{background:var(--p-button-outlined-secondary-active-background,#f4f4f5)}.ds-secondary-outlined:focus-visible{outline:2px solid var(--focus,#F96133);outline-offset:3px}.ds-secondary-outlined:disabled{opacity:.6;cursor:default}"
+    },
+    {
       "name": "Опасная кнопка — светлая тема",
       "kind": "button",
       "refersTo": "button-danger-light",
@@ -549,7 +557,7 @@
       "name": "История Accordion",
       "kind": "custom",
       "refersTo": "history-header",
-      "description": "Раскрываемая история; нативный details в snippet передаёт визуальный рисунок без Vue runtime. Предпросмотр показывает одно предупреждение и число остальных; раскрытия полного списка нет.",
+      "description": "Раскрываемая история; нативный details в snippet передаёт визуальный рисунок без Vue runtime. Предпросмотр показывает одно предупреждение и число остальных; раскрытия полного списка нет. Действия открытия/копии/повтора/уточнения — нейтральные secondary outlined, «Удалить» — прежний danger outlined.",
       "html": "<details class=\"ds-history\"><summary class=\"ds-history-header\"><span>Большой русско-английский словарь.dsl</span><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"30\" height=\"30\" viewBox=\"0 0 40 40\" aria-hidden=\"true\"><g transform=\"translate(20 20) scale(2) translate(-20 -20)\"><path d=\"M20,23.7c-0.7,0-1.3-0.3-1.8-0.7l-4.6-4.6c-0.2-0.2-0.2-0.5,0-0.7s0.5-0.2,0.7,0l4.6,4.6\n\t\t\t\tc0.6,0.6,1.5,0.6,2.1,0l4.6-4.6c0.2-0.2,0.5-0.2,0.7,0s0.2,0.5,0,0.7l-4.6,4.6C21.3,23.4,20.7,23.7,20,23.7z\" fill=\"currentColor\"/></g></svg></summary><div class=\"ds-history-content\"><p>Готово с предупреждениями</p><div class=\"ds-history-warning\"><p>Не найдена статья для ссылки: 儿 <span>(ещё 28 172 предупреждения)</span></p><span>Словарь.dsl, строка 10</span></div><strong>Результат</strong><p>dictionary.mdx · dictionary.mdd</p></div></details>",
       "css": ".ds-history{font:400 14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--text,#3f3f46);border-bottom:1px solid var(--border,#e4e4e7)}.ds-history-header{display:flex;align-items:center;gap:10px;padding:12px 10px;font-weight:550;cursor:pointer;list-style:none;background:var(--p-accordion-header-background,#ffffff)}.ds-history-header::-webkit-details-marker{display:none}.ds-history-header span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ds-history-header svg{flex-shrink:0;transition:transform 160ms cubic-bezier(.23,1,.32,1)}.ds-history[open] .ds-history-header svg{transform:rotate(180deg)}.ds-history-header:hover{background:var(--p-accordion-header-hover-background,#f4f4f5)}.ds-history-header:focus-visible{outline:2px solid var(--focus,#F96133);outline-offset:3px;}.ds-history-content{padding:2px 10px 16px}.ds-history-content p{font-size:12px;color:var(--muted,#71717a);margin:0 0 10px}@media(prefers-reduced-motion:reduce){.ds-history-header svg{transition:none}}.ds-history-warning{margin-bottom:12px}.ds-history-warning p{color:var(--text,#3f3f46);margin-bottom:0}.ds-history-warning span{font-size:12px;color:var(--muted,#71717a)}"
     }

@@ -142,6 +142,19 @@ try {
         await page.evaluate(async () => {
           await document.fonts.ready;
         });
+        if (compact && viewport.width === 540) {
+          await page.locator('.completed-history').evaluate(async (history) => {
+            await Promise.allSettled(
+              history.getAnimations({ subtree: true }).map((animation) => animation.finished),
+            );
+            const actions = history.querySelector('.history-actions');
+            if (actions)
+              history.scrollTop += Math.max(
+                0,
+                actions.getBoundingClientRect().bottom - history.getBoundingClientRect().bottom + 8,
+              );
+          });
+        }
         await page.screenshot({ path: `${review}/${name}.png`, animations: 'disabled' });
         await copyFile(`${review}/${name}.png`, `${archive}/${name}.png`);
         const bounds = await page.evaluate(() => {
