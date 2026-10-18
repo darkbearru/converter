@@ -1,7 +1,7 @@
 // Нативный WebView2 процесс из установленного NSIS, без подмены NativeBridge.
 import { createServer } from 'node:http';
 import { createHash } from 'node:crypto';
-import { mkdir, writeFile, readFile, readdir } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, readdir, appendFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -78,14 +78,40 @@ async function readJobs() {
 }
 let session;
 async function request(path, body, method = 'POST') {
-  const response = await fetch(`http://127.0.0.1:4444${path}`, {
-    method,
-    ...(body === undefined
-      ? {}
-      : { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }),
-    signal: AbortSignal.timeout(45000),
-  });
+  const started = Date.now();
+  await appendFile(
+    join(output, 'webdriver.jsonl'),
+    JSON.stringify({ method, path, phase: 'start' }) + '\n',
+  );
+  let response;
+  try {
+    response = await fetch(`http://127.0.0.1:4444${path}`, {
+      method,
+      ...(body === undefined
+        ? {}
+        : { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }),
+      signal: AbortSignal.timeout(path === '/session' ? 120000 : 45000),
+    });
+  } catch (error) {
+    await appendFile(
+      join(output, 'webdriver.jsonl'),
+      JSON.stringify({ method, path, error: error.message, elapsed_ms: Date.now() - started }) +
+        '\n',
+    );
+    throw error;
+  }
   const json = await response.json();
+  await appendFile(
+    join(output, 'webdriver.jsonl'),
+    JSON.stringify({
+      method,
+      path,
+      status: response.status,
+      error: json.value?.error,
+      message: json.value?.message,
+      elapsed_ms: Date.now() - started,
+    }) + '\n',
+  );
   if (!response.ok || json.value?.error)
     throw new Error(
       `WebDriver ${json.value?.error ?? response.status}: ${json.value?.message ?? ''}`,
@@ -154,7 +180,7 @@ async function open() {
 try {
   await wait(async () => {
     if (driverFailure) throw driverFailure;
-    return (await fetch('http://127.0.0.1:4444/status')).ok;
+    return (await fetch('http://127.0.0.1:4444/status', { signal: AbortSignal.timeout(5000) })).ok;
   }, 'tauri-driver');
   await open();
   await newSource(sourceUrl);
