@@ -41,7 +41,7 @@
 
 `PlatformStorage` — `#[async_trait]`, `Send + Sync`: `async import(selection: PlatformSelection, ctx: &RunContext) -> AppResult<Vec<PreparedFile>>`, `create_staging(job_id: &str, output: &OutputChoice) -> AppResult<PathBuf>`, `async publish(artifacts: ConvertedArtifacts, output: &OutputChoice, ctx: &RunContext) -> AppResult<PublishedResult>`, `async export(result: &PublishedResult, choice: ExportChoice, ctx: &RunContext) -> AppResult<ExportSnapshot>`. `PlatformSelection = LocalPaths(Vec<PathBuf>) | NativeHandles(Vec<String>)`; `ExportChoice = Folder(PathBuf) | DocumentHandle(String) | ZipDocumentHandle(String)`. `PublishedResult` содержит принадлежащую приложению/назначению директорию и список файлов; `ResultInfo` раскрывает UI только ID, имена, размеры и разрешённые действия. Реальные пути и handles не выводятся как технические поля продуктового интерфейса.
 
-## Task C1: Долговременная очередь, связывание A/B и snapshot-прогресс
+## Task 1: C1 — Долговременная очередь, связывание A/B и snapshot-прогресс
 
 **Files:** Create `crates/converter-app/{Cargo.toml,src/lib.rs}`, `src/contracts.rs`, `src/jobs/{mod,manager,state,store,scheduler,progress}.rs`, `src/storage/mod.rs`, `examples/export_contract_fixtures.rs`; Test `tests/{job_lifecycle,progress_contract,persistence}.rs`; root workspace member. HTTP tests используют dev-only `converter-test-support` из B2, без копирования сервера.
 
@@ -63,7 +63,7 @@
 - [ ] **Step 4:** Run Step 2 с `--locked`; PASS. Проверить Ctrl-C/shutdown cancellation, restart generation, отсутствие URL tokens в DTO и отказ удалить in-use cache. В fake storage проверить same-filesystem staging на desktop; `publish` повторно использует A6.
 - [ ] **Step 5:** Commit `feat: добавить очередь и независимые снимки прогресса`.
 
-## Task C2: Vue UI, формы источников и два прогресса
+## Task 2: C2 — Vue UI, формы источников и два прогресса
 
 **Files:** Create `package.json`, `package-lock.json`, `index.html`, `vite.config.ts`, `vitest.config.ts`, `tsconfig*.json`, `src/{main.ts,App.vue}`, `src/shared/{contracts,native,format}.ts`, `src/features/sources/SourceForm.vue`, `src/features/jobs/{store.ts,JobQueue.vue,JobSettings.vue}`, `src/features/progress/{DownloadProgress.vue,ConversionProgress.vue}`, `src/features/results/{ResultPanel.vue,DiagnosticsList.vue}`, `src/styles/{tokens,app}.css`, `tests/ui/{progress,job_store,source_form}.test.ts`, `tests/ui/setup.ts`, `tests/ui/fixtures/`.
 
@@ -84,7 +84,7 @@
 - [ ] **Step 4:** Run Step 2, затем `npm run typecheck`; PASS. Формы явно показывают ошибки URL/кодировки/assignment без показа runtime identifiers; keyboard/focus и текстовые статусы доступны без цвета. Нет HTML-вставки из diagnostics.
 - [ ] **Step 5:** Commit `feat: показать очередь и раздельный прогресс в Vue`.
 
-## Task C3: Tauri IPC и настоящий desktop файловый сценарий
+## Task 3: C3 — Tauri IPC и настоящий desktop файловый сценарий
 
 **Files:** Create `src-tauri/{Cargo.toml,build.rs,tauri.conf.json}`, `src-tauri/capabilities/main.json`, `src-tauri/src/{main,lib,commands,events}.rs`, `src-tauri/src/storage/{mod,picker}.rs`, `crates/converter-app/src/storage/desktop.rs`, `crates/converter-app/tests/desktop_storage.rs`; Modify native bridge, npm scripts/workspace. Установить официальные dialog/opener плагины; не включать произвольный shell/fs доступ для frontend.
 
@@ -105,7 +105,7 @@
 - [ ] **Step 4:** В настоящем Tauri приложении запустить URL controlled-server fixture: обрыв → pause → закрытие → запуск → resume → conversion. Зафиксировать два progress blocks, byte counters после reopen, отсутствие нового GET при повторной конвертации. Это нативный smoke, browser mock его не заменяет.
 - [ ] **Step 5:** Commit `feat: связать Tauri с локальным и URL-конвейером`.
 
-## Task C4: Frontend сценарии, адаптивность и контракт прогресса
+## Task 4: C4 — Frontend сценарии, адаптивность и контракт прогресса
 
 **Files:** Create `playwright.config.ts`, `tests/ui/harness/{main.ts,bridge.ts,index.html}`, `tests/ui/e2e/{conversion,download_progress,responsive}.spec.ts`, `docs/validation/desktop-ui.md`; Modify package scripts.
 
@@ -124,7 +124,7 @@
 - [ ] **Step 4:** В `docs/validation/desktop-ui.md` сохранить результаты, скриншоты двух прогрессов и ограничения покрытия. Verify production dist не содержит harness/fixture/URL tokens.
 - [ ] **Step 5:** Commit `test: проверить прогресс и сценарии интерфейса`.
 
-## Task C5: Сборки macOS/Windows и воспроизводимая проверка
+## Task 5: C5 — Сборки macOS/Windows и воспроизводимая проверка
 
 **Files:** Create `.github/workflows/{ci,desktop}.yml`, `src-tauri/tauri.windows.conf.json`, `docs/build/{macos,windows}.md`, `docs/validation/desktop-native.md`; Modify tauri config/icons/.gitignore. Workflows только собирают/тестируют и сохраняют артефакты; не публикуют релиз и не требуют создания удалённого репозитория в рамках реализации.
 

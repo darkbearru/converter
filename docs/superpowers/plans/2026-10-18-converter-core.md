@@ -41,7 +41,7 @@
 
 Начальные защитные значения `Limits`: 64/16 MiB sort buffer по профилю, 8 MiB тело и HTML, 64 варианта заголовка, 100_000 элементов ZIP, 32 GiB распакованных данных, 1_000:1 коэффициент распаковки, 32 входных run-файла на проход объединения, 1 MiB буфер копирования ресурса. Это конечные конфигурируемые лимиты; превышение — диагностическая ошибка, без потери части базы. Суммарный RSS измеряется отдельно.
 
-## Task A1: Совместимая блочная запись MDX/MDD и контракты ядра
+## Task 1: A1 — Совместимая блочная запись MDX/MDD и контракты ядра
 
 **Files:** Create `Cargo.toml`, `rust-toolchain.toml`, `.gitignore`, `crates/converter-core/{Cargo.toml,src/lib.rs}`, `src/model/{mod,error,entry,limits,progress,request}.rs`, `src/mdict/{mod,header,collation,key_blocks,record_blocks,writer}.rs`; Test `tests/mdict_conformance.rs`, `tests/support/{mod,mdict_reader,context}.rs` внутри core crate.
 
@@ -61,7 +61,7 @@
 - [ ] **Step 4:** Run `cargo test --locked -p converter-core --test mdict_conformance`; ожидается PASS, включая malformed order, NUL key, отмену и `Write + Seek`-приёмник, возвращающий ошибку записи. `cargo fmt --all -- --check` проходит.
 - [ ] **Step 5:** Commit только workspace, model/writer и их тесты: `feat: добавить потоковую запись MDX и MDD`.
 
-## Task A2: Подготовка локального DSL/DZ/ZIP и переносимых ресурсов
+## Task 2: A2 — Подготовка локального DSL/DZ/ZIP и переносимых ресурсов
 
 **Files:** Create core `src/prepare/{mod,bundle,archive,resource_paths}.rs`, `tests/source_preparation.rs`, `tests/fixtures/README.md`; Test fixtures генерируются тестом в `tempfile`, небольшие исходные DSL разрешены в Git.
 
@@ -81,7 +81,7 @@
 - [ ] **Step 4:** Run `cargo test --locked -p converter-core --test source_preparation`; PASS также для лимитов, отсутствующего ресурса, единственного case fallback с предупреждением и отмены. Проверить неизменность хешей исходников.
 - [ ] **Step 5:** Commit `feat: подготовить локальные словари и ZIP-ресурсы`.
 
-## Task A3: Реестр форматов, кодировки и структурный DSL-парсер
+## Task 3: A3 — Реестр форматов, кодировки и структурный DSL-парсер
 
 **Files:** Create core `src/formats/{mod,reader,registry}.rs`, `src/dsl/{mod,decoder,lexer,parser,metadata}.rs`, `tests/{reader_contract,dsl_structure}.rs`, `tests/support/collect_sink.rs`.
 
@@ -104,7 +104,7 @@
 - [ ] **Step 4:** Run команды Step 2 с `--locked`; PASS, включая отмену, `_abrv.dsl`, пустой словарь и неправильный формат без расширения. Список builtins содержит только DSL, test reader остаётся test-only.
 - [ ] **Step 5:** Commit `feat: добавить расширяемый читатель DSL и кодировки`.
 
-## Task A4: Форматирование, варианты ключей, ссылки и ресурсы DSL
+## Task 4: A4 — Форматирование, варианты ключей, ссылки и ресурсы DSL
 
 **Files:** Create core `src/dsl/{headwords,renderer,references,abbreviations}.rs`, `assets/converter.css`, `tests/{dsl_rendering,dsl_headwords}.rs`; Modify `src/dsl/parser.rs`, `src/dsl/mod.rs`.
 
@@ -125,7 +125,7 @@
 - [ ] **Step 4:** Run Step 2 с `--locked`; PASS, включая незакрытый тег, Unicode, вложенные необязательные части и отсутствующее сокращение. Семантические assertions проверяют контент/ссылки, не случайное форматирование HTML.
 - [ ] **Step 5:** Commit `feat: сохранить разметку и ресурсы DSL`.
 
-## Task A5: Дисковый pipeline, сортировка и измеримый прогресс этапов
+## Task 5: A5 — Дисковый pipeline, сортировка и измеримый прогресс этапов
 
 **Files:** Create core `src/pipeline/{mod,spool,sort,link_index,convert,validate,report}.rs`, `tests/{conversion_pipeline,large_dictionary}.rs`, `examples/generate_large_fixture.rs`; Modify writer progress hooks.
 
@@ -147,7 +147,7 @@
 - [ ] **Step 4:** Run тест Step 2 и `cargo test --locked -p converter-core --test large_dictionary -- --ignored --nocapture`; первый PASS, второй генерирует вход больше 64 MiB budget вне Git, фиксирует размер, число статей, время и peak RSS. Большой тест пометить ignored, обычный маленький multi-pass остаётся в CI. Измерение RSS не заменять внутренним sort budget.
 - [ ] **Step 5:** Commit `feat: конвертировать большие базы с дисковой сортировкой`.
 
-## Task A6: CLI, публикация результата и независимое открытие
+## Task 6: A6 — CLI, публикация результата и независимое открытие
 
 **Files:** Create `crates/converter-cli/{Cargo.toml,src/main.rs,src/convert.rs,tests/local_convert.rs}`, core `src/pipeline/publication.rs`, `docs/build/core.md`, `docs/validation/core.md`; Modify root workspace.
 

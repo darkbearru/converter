@@ -42,7 +42,7 @@
 
 Экспортная реализация использует системный документный диалог подходящей платформы: iOS экспортирует уже готовые локальные URL через document picker, Android пишет в URI, предоставленный SAF. Внутренняя разница не просачивается в JobManager; `PlatformStorage::export` преобразует результат в общий ExportSnapshot. Если ZIP нужен, его сначала потоково готовит Rust-адаптер в своём каталоге и потом передаёт bridge.
 
-## Task D1: Нативный потоковый импорт/экспорт документов
+## Task 1: D1 — Нативный потоковый импорт/экспорт документов
 
 **Files:** Create plugin выше, `plugins/document-bridge/{Cargo.toml,build.rs,permissions/default.toml}`, `ios/Tests/{DocumentAccessTests,StreamCopyTests}.swift`, Android `src/test/.../{DocumentAccessTest,StreamCopyTest}.kt`; Create `src-tauri/src/storage/mobile.rs`; Modify src-tauri dependency/capabilities.
 
@@ -63,7 +63,7 @@
 - [ ] **Step 4:** Запустить native tests и `cargo test --locked -p converter-app`; ожидается PASS. В симуляторе/эмуляторе вручную выбрать DSL/ZIP из Documents/provider и экспортировать небольшой fixture; сравнить хеши исходных и полученных документов. Проверить, что память не растёт на размер одиночного ресурса.
 - [ ] **Step 5:** Commit `feat: добавить мобильный доступ к документам`.
 
-## Task D2: Мобильная очередь, lifecycle и интерфейс результата
+## Task 2: D2 — Мобильная очередь, lifecycle и интерфейс результата
 
 **Files:** Modify `crates/converter-app/src/jobs/{manager,state,store}.rs`, `src-tauri/src/{lib,events}.rs`, `src-tauri/src/storage/mobile.rs`, `src/features/{sources,progress,results}/`, `src/styles/app.css`; Create `crates/converter-app/tests/mobile_lifecycle.rs`, `tests/ui/mobile_export.test.ts`, `docs/validation/mobile-scenarios.md`.
 
@@ -85,7 +85,7 @@
 - [ ] **Step 4:** Run Step 2 с `--locked` для Cargo, frontend typecheck и responsive e2e; PASS. В настоящем mobile app проверить импорт и URL-сценарий без доступа к соседним файлам, уход в фон/возврат, остановку процесса/перезапуск, partial export и отдельные прогрессы. Неполная download SHA-проверка после процесса повторяется по локальному файлу, не выставляет Completed заранее.
 - [ ] **Step 5:** Commit `feat: адаптировать очередь и экспорт для мобильных платформ`.
 
-## Task D3: Сборки и итоговая платформенная матрица
+## Task 3: D3 — Сборки и итоговая платформенная матрица
 
 **Files:** Create `src-tauri/tauri.{ios,android}.conf.json`, `src-tauri/gen/apple/PrivacyInfo.xcprivacy`, platform entitlements/configs и Android Manifest; `docs/build/{ios,android}.md`, `docs/validation/release-matrix.md`, `.github/workflows/mobile.yml`; Modify npm scripts/.gitignore. Generated native source/config хранить в Git; build outputs, local.properties, signing profiles/keys — исключить.
 

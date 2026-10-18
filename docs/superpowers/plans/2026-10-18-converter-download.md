@@ -40,7 +40,7 @@
 
 Конкретные стартовые значения policy: max_bytes 32 GiB на файл; checkpoint 1 MiB; connect timeout 15 s, idle timeout 30 s; максимум 10 redirects; три дополнительных повтора с задержками 2/5/15 s для сетевого обрыва, 408/429/5xx. Корректный `Retry-After` учитывается до 5 минут с возможностью паузы; превышение даёт приостановку с объяснением. Тесты используют управляемое время, не реальные минуты ожидания. Для fixture tests HTTP разрешён; HTTPS не отключает проверку сертификатов.
 
-## Task B1: Долговременный кэш и проверяемые контрольные точки
+## Task 1: B1 — Долговременный кэш и проверяемые контрольные точки
 
 **Files:** Create crate manifest/lib/model/checkpoint/cache; `tests/checkpoint_recovery.rs`, `tests/support/cache.rs`; Modify workspace.
 
@@ -61,7 +61,7 @@
 - [ ] **Step 4:** Run Step 2 с `--locked`; PASS для всех crash points, hash mismatch, manifest version mismatch, очистки только собственного source ID и cache reopen. Защитить неполную загрузку от одновременных writers одного source ID.
 - [ ] **Step 5:** Commit `feat: сохранить контрольные точки скачивания`.
 
-## Task B2: HTTP-докачка и смена версии источника
+## Task 2: B2 — HTTP-докачка и смена версии источника
 
 **Files:** Create `src/{http,resume,policy}.rs`, `tests/http_resume.rs`, `crates/converter-test-support/{Cargo.toml,src/lib.rs,src/http.rs,examples/serve_fixture.rs}`; Modify workspace и dev-dependencies загрузчика.
 
@@ -83,7 +83,7 @@ Test-only API: `FixtureServer::spawn(scenario: Scenario, payload: Vec<u8>) -> Fi
 - [ ] **Step 4:** Run Step 2 с `--locked`; PASS, включая HEAD=405, URL без расширения, query token, CORS-неразрешённый сервер, неожиданное HTTP encoding, redirect loop, timeout и ответ короче объявленного Content-Length. Проверить, что cookies/auth не заимствуются из браузера.
 - [ ] **Step 5:** Commit `feat: добавить проверяемую HTTP-докачку`.
 
-## Task B3: Управление передачей, завершение и отдельный прогресс
+## Task 3: B3 — Управление передачей, завершение и отдельный прогресс
 
 **Files:** Create `src/{transfer,progress}.rs`, `tests/{transfer_control,download_progress}.rs`; Modify public `lib.rs`.
 
@@ -105,7 +105,7 @@ Test-only API: `FixtureServer::spawn(scenario: Scenario, payload: Vec<u8>) -> Fi
 - [ ] **Step 4:** Run Step 2 с `--locked`; PASS с Tokio paused time/fake clock, включая 429 Retry-After, 403/истёкшую ссылку, 503 с исчерпанием попыток, cancel и повтор после успешного завершения. Последний случай проверяет локальный хеш и не выполняет новый GET.
 - [ ] **Step 5:** Commit `feat: управлять скачиванием и его прогрессом`.
 
-## Task B4: Рабочий URL → локальный источник → конвертация в CLI
+## Task 4: B4 — Рабочий URL → локальный источник → конвертация в CLI
 
 **Files:** Create CLI `src/fetch.rs`, `tests/remote_convert.rs`, `docs/build/download.md`, `docs/validation/download.md`; Modify CLI manifest/main/convert и dev-dependency на `converter-test-support` из B2.
 
