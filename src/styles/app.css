@@ -95,11 +95,19 @@ h3 {
   font-size: 11px;
 }
 .conversion-workspace {
+  --history-max-share: 70%;
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
   padding: 0 16px 16px;
+}
+.job-panels {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: var(--history-max-share);
 }
 .completed-history {
   flex: 1 1 auto;
@@ -144,14 +152,17 @@ h3 {
   margin-bottom: 10px;
 }
 .composer-workspace {
-  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 calc(100% - var(--history-max-share));
   position: relative;
-  min-height: 188px;
+  min-height: 0;
 }
 .app-error {
   margin: 0 8px 8px;
 }
 .task-stack {
+  flex-shrink: 0;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -229,12 +240,21 @@ h3 {
   vertical-align: middle;
 }
 .source-composer {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  container-type: size;
   position: relative;
   z-index: 2;
   background: var(--composer-surface);
   border-radius: 24px;
 }
 .source-composer .p-fileupload {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   position: relative;
   border: 0;
   background: transparent;
@@ -256,7 +276,8 @@ h3 {
 }
 .source-composer .p-fileupload-content {
   position: relative;
-  height: 188px;
+  flex: 1;
+  min-height: 0;
   padding: 0;
   border: 0;
   background: transparent;
@@ -268,7 +289,9 @@ h3 {
 }
 .source-dropzone {
   width: 100%;
-  height: 188px;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
   border: 0;
   background: transparent;
   border-radius: 24px;
@@ -292,9 +315,11 @@ h3 {
 .source-ready {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: safe center;
   align-items: center;
-  height: 188px;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
   padding: 45px 64px;
   overflow: auto;
   font-size: 15px;
@@ -350,10 +375,13 @@ h3 {
   flex-direction: column;
   align-items: stretch;
   justify-content: center;
-  height: 188px;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
   padding: 46px 84px 36px;
 }
 .source-transfer .p-progressbar {
+  flex-shrink: 0;
   background: var(--p-surface-400);
   border-radius: 8px;
 }
@@ -659,6 +687,29 @@ h3 {
 .task-leave-to {
   transform: translateY(-12px);
   opacity: 0;
+}
+@container (max-height: 180px) {
+  .source-dropzone {
+    gap: 4px;
+    padding-block: 24px 8px;
+    font-size: 13px;
+  }
+  .source-dropzone .app-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .source-ready {
+    padding-block: 36px 24px;
+  }
+  .source-transfer {
+    padding-block: 32px 4px;
+    padding-inline: 64px 116px;
+  }
+}
+@container (max-height: 120px) {
+  .source-composer .source-transfer .p-progressbar {
+    height: 20px;
+  }
 }
 @media (max-width: 480px) {
   .app-header {

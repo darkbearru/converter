@@ -58,6 +58,23 @@ export function createHarness(scenario: string | null) {
       currentId = job.id;
     }
   }
+  if (['history-one', 'history-many', 'history-active'].includes(scenario ?? '')) {
+    const count = scenario === 'history-one' ? 1 : 12;
+    for (let index = 0; index < count; index++) {
+      const job = copy(samples.succeeded);
+      job.id = `history-${index}`;
+      job.display_name = `Словарь ${index + 1}.dsl`;
+      jobs.set(job.id, job);
+    }
+    if (scenario === 'history-active') {
+      for (let index = 0; index < 2; index++) {
+        const job = copy(samples.converting);
+        job.id = `active-${index}`;
+        job.display_name = `В работе ${index + 1}.dsl`;
+        jobs.set(job.id, job);
+      }
+    }
+  }
   if (scenario === 'long') {
     const job = copy(samples.succeeded);
     job.display_name = `Большой русско-английский словарь ${'очень_длинное_название_'.repeat(16)}.dsl`;

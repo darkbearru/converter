@@ -63,17 +63,17 @@ async function save(update: JobOptionsUpdate) {
       <span class="app-caption">DSL → MDX + MDD</span>
     </header>
     <main class="conversion-workspace" id="main-content">
-      <CompletedHistory
-        :jobs="history"
-        :bridge="bridge"
-        :pending="store.pending"
-        @open="store.openResult"
-        @export="store.exportResult"
-        @retry="store.startJob"
-        @repair="selected = $event"
-      />
-      <div class="composer-workspace">
-        <p v-if="error" role="alert" class="app-error error-message">{{ error }}</p>
+      <div v-if="history.length || active.length" class="job-panels">
+        <CompletedHistory
+          v-if="history.length"
+          :jobs="history"
+          :bridge="bridge"
+          :pending="store.pending"
+          @open="store.openResult"
+          @export="store.exportResult"
+          @retry="store.startJob"
+          @repair="selected = $event"
+        />
         <ActiveTasks
           :jobs="active"
           :pending="store.pending"
@@ -82,6 +82,9 @@ async function save(update: JobOptionsUpdate) {
           @resume="store.resumeDownload"
           @details="selected = $event"
         />
+      </div>
+      <div class="composer-workspace">
+        <p v-if="error" role="alert" class="app-error error-message">{{ error }}</p>
         <SourceComposer :bridge="bridge" :jobs="jobs" @snapshot="store.mergeSnapshot" />
       </div>
     </main>

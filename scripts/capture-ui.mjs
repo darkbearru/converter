@@ -2,26 +2,43 @@ import { mkdir, copyFile, readFile, writeFile } from 'node:fs/promises';
 import { chromium, webkit } from '@playwright/test';
 import { createServer } from 'vite';
 
-const review = '.impeccable/review/composer';
-const archive = 'docs/validation/ui/composer';
+const layout = process.argv.includes('--layout');
+const review = `.impeccable/review/${layout ? 'composer-layout' : 'composer'}`;
+const archive = `docs/validation/ui/${layout ? 'composer-layout' : 'composer'}`;
 const only = process.argv.find((arg) => arg.startsWith('--only='))?.slice(7);
-const cases = [
-  ['empty-dark', 'chromium', 'dark', ''],
-  ['download-dark', 'chromium', 'dark', 'downloading'],
-  ['ready-dark', 'chromium', 'dark', 'ready'],
-  ['active-dark', 'chromium', 'dark', 'converting'],
-  ['stack-dark', 'chromium', 'dark', 'stack'],
-  ['settings-dark', 'chromium', 'dark', '', 'settings'],
-  ['settings-resources', 'chromium', 'dark', 'ready-resources', 'settings'],
-  ['link-dark', 'chromium', 'dark', '', 'link'],
-  ['history-dark', 'chromium', 'dark', 'succeeded', 'history'],
-  ['empty-light', 'chromium', 'light', ''],
-  ['stack-light', 'chromium', 'light', 'stack'],
-  ['history-light', 'chromium', 'light', 'long', 'history'],
-  ['stack-webkit-light', 'webkit', 'light', 'stack'],
-  ['download-webkit-dark', 'webkit', 'dark', 'downloading'],
-  ['settings-small', 'webkit', 'light', '', 'settings', { width: 540, height: 400 }],
-];
+const cases = layout
+  ? [
+      ['empty-dark', 'chromium', 'dark', ''],
+      ['one-dark', 'chromium', 'dark', 'history-one'],
+      ['many-dark', 'chromium', 'dark', 'history-many'],
+      ['active-light', 'chromium', 'light', 'history-active'],
+      ['small-light', 'webkit', 'light', 'history-many', null, { width: 540, height: 400 }],
+      [
+        'download-small',
+        'webkit',
+        'light',
+        'history-many',
+        'download',
+        { width: 540, height: 400 },
+      ],
+    ]
+  : [
+      ['empty-dark', 'chromium', 'dark', ''],
+      ['download-dark', 'chromium', 'dark', 'downloading'],
+      ['ready-dark', 'chromium', 'dark', 'ready'],
+      ['active-dark', 'chromium', 'dark', 'converting'],
+      ['stack-dark', 'chromium', 'dark', 'stack'],
+      ['settings-dark', 'chromium', 'dark', '', 'settings'],
+      ['settings-resources', 'chromium', 'dark', 'ready-resources', 'settings'],
+      ['link-dark', 'chromium', 'dark', '', 'link'],
+      ['history-dark', 'chromium', 'dark', 'succeeded', 'history'],
+      ['empty-light', 'chromium', 'light', ''],
+      ['stack-light', 'chromium', 'light', 'stack'],
+      ['history-light', 'chromium', 'light', 'long', 'history'],
+      ['stack-webkit-light', 'webkit', 'light', 'stack'],
+      ['download-webkit-dark', 'webkit', 'dark', 'downloading'],
+      ['settings-small', 'webkit', 'light', '', 'settings', { width: 540, height: 400 }],
+    ];
 const server = await createServer({ server: { host: '127.0.0.1', port: 1422, strictPort: true } });
 await server.listen();
 await Promise.all([mkdir(review, { recursive: true }), mkdir(archive, { recursive: true })]);
@@ -41,6 +58,13 @@ try {
           `http://127.0.0.1:1422/tests/ui/harness/index.html?scenario=${scenario}&capture=1`,
         );
         await page.locator('.source-composer').waitFor();
+        if (scenario.startsWith('history-'))
+          await page.waitForFunction(
+            (count) => document.querySelectorAll('.p-accordionheader').length === count,
+            scenario === 'history-one' ? 1 : 12,
+          );
+        if (scenario === 'history-active')
+          await page.waitForFunction(() => document.querySelectorAll('.active-task').length === 2);
         if (scenario === 'stack')
           await page.waitForFunction(() => document.querySelectorAll('.active-task').length === 2);
         if (scenario === 'converting') await page.locator('.active-task').waitFor();
@@ -55,6 +79,15 @@ try {
         if (action === 'history') {
           await page.locator('.p-accordionheader').click();
           await page.locator('.result-path').waitFor();
+        }
+        if (action === 'download') {
+          await page.getByRole('button', { name: 'Добавить ссылку', exact: true }).click();
+          await page
+            .getByLabel('Ссылка на словарь', { exact: true })
+            .fill('https://example.org/main.dsl');
+          await page.getByRole('button', { name: 'Скачать', exact: true }).click();
+          await page.getByRole('progressbar', { name: 'Скачивание', exact: true }).waitFor();
+          await page.getByRole('dialog').waitFor({ state: 'hidden' });
         }
         await page.evaluate(async () => {
           await document.fonts.ready;
@@ -74,6 +107,12 @@ try {
             canvas: getComputedStyle(document.body).backgroundColor,
             text: getComputedStyle(document.body).color,
             composer: rect('.source-composer'),
+            workspace: rect('.conversion-workspace'),
+            workspacePaddingBottom: getComputedStyle(
+              document.querySelector('.conversion-workspace'),
+            ).paddingBottom,
+            history: rect('.completed-history'),
+            jobPanels: rect('.job-panels'),
             stack: rect('.task-stack'),
             dialog: rect('.p-dialog'),
             dialogButtons: [...document.querySelectorAll('.p-dialog .p-button')].map((el) => ({

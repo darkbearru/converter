@@ -1,0 +1,295 @@
+[
+  {
+    "name": "empty-dark",
+    "engine": "chromium",
+    "colorScheme": "dark",
+    "viewport": {
+      "width": 740,
+      "height": 500
+    },
+    "errors": [],
+    "documentWidth": 740,
+    "documentHeight": 500,
+    "canvas": "rgb(9, 9, 11)",
+    "text": "rgb(255, 255, 255)",
+    "composer": {
+      "x": 16,
+      "y": 46,
+      "width": 708,
+      "height": 438
+    },
+    "workspace": {
+      "x": 0,
+      "y": 46,
+      "width": 740,
+      "height": 454
+    },
+    "workspacePaddingBottom": "16px",
+    "history": null,
+    "jobPanels": null,
+    "stack": null,
+    "dialog": null,
+    "dialogButtons": [],
+    "progress": []
+  },
+  {
+    "name": "one-dark",
+    "engine": "chromium",
+    "colorScheme": "dark",
+    "viewport": {
+      "width": 740,
+      "height": 500
+    },
+    "errors": [],
+    "documentWidth": 740,
+    "documentHeight": 500,
+    "canvas": "rgb(9, 9, 11)",
+    "text": "rgb(255, 255, 255)",
+    "composer": {
+      "x": 16,
+      "y": 119,
+      "width": 708,
+      "height": 365
+    },
+    "workspace": {
+      "x": 0,
+      "y": 46,
+      "width": 740,
+      "height": 454
+    },
+    "workspacePaddingBottom": "16px",
+    "history": {
+      "x": 16,
+      "y": 46,
+      "width": 708,
+      "height": 73
+    },
+    "jobPanels": {
+      "x": 16,
+      "y": 46,
+      "width": 708,
+      "height": 73
+    },
+    "stack": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    },
+    "dialog": null,
+    "dialogButtons": [],
+    "progress": []
+  },
+  {
+    "name": "many-dark",
+    "engine": "chromium",
+    "colorScheme": "dark",
+    "viewport": {
+      "width": 740,
+      "height": 500
+    },
+    "errors": [],
+    "documentWidth": 740,
+    "documentHeight": 500,
+    "canvas": "rgb(9, 9, 11)",
+    "text": "rgb(255, 255, 255)",
+    "composer": {
+      "x": 16,
+      "y": 352.59375,
+      "width": 708,
+      "height": 131.40625
+    },
+    "workspace": {
+      "x": 0,
+      "y": 46,
+      "width": 740,
+      "height": 454
+    },
+    "workspacePaddingBottom": "16px",
+    "history": {
+      "x": 16,
+      "y": 46,
+      "width": 708,
+      "height": 306.59375
+    },
+    "jobPanels": {
+      "x": 16,
+      "y": 46,
+      "width": 708,
+      "height": 306.59375
+    },
+    "stack": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    },
+    "dialog": null,
+    "dialogButtons": [],
+    "progress": []
+  },
+  {
+    "name": "active-light",
+    "engine": "chromium",
+    "colorScheme": "light",
+    "viewport": {
+      "width": 740,
+      "height": 500
+    },
+    "errors": [],
+    "documentWidth": 740,
+    "documentHeight": 500,
+    "canvas": "rgb(250, 250, 250)",
+    "text": "rgb(63, 63, 70)",
+    "composer": {
+      "x": 16,
+      "y": 352.59375,
+      "width": 708,
+      "height": 131.40625
+    },
+    "workspace": {
+      "x": 0,
+      "y": 46,
+      "width": 740,
+      "height": 454
+    },
+    "workspacePaddingBottom": "16px",
+    "history": {
+      "x": 16,
+      "y": 46,
+      "width": 708,
+      "height": 198.59375
+    },
+    "jobPanels": {
+      "x": 16,
+      "y": 46,
+      "width": 708,
+      "height": 306.59375
+    },
+    "stack": {
+      "x": 16,
+      "y": 244.59375,
+      "width": 708,
+      "height": 126
+    },
+    "dialog": null,
+    "dialogButtons": [],
+    "progress": [
+      {
+        "label": "В работе 1.dsl: Запись MDX",
+        "value": "25",
+        "background": "rgb(161, 161, 170)",
+        "fill": "rgb(249, 97, 51)"
+      },
+      {
+        "label": "В работе 2.dsl: Запись MDX",
+        "value": "25",
+        "background": "rgb(161, 161, 170)",
+        "fill": "rgb(249, 97, 51)"
+      }
+    ]
+  },
+  {
+    "name": "small-light",
+    "engine": "webkit",
+    "colorScheme": "light",
+    "viewport": {
+      "width": 540,
+      "height": 400
+    },
+    "errors": [],
+    "documentWidth": 540,
+    "documentHeight": 400,
+    "canvas": "rgb(250, 250, 250)",
+    "text": "rgb(63, 63, 70)",
+    "composer": {
+      "x": 16,
+      "y": 282.59375,
+      "width": 508,
+      "height": 101.40625
+    },
+    "workspace": {
+      "x": 0,
+      "y": 46,
+      "width": 540,
+      "height": 354
+    },
+    "workspacePaddingBottom": "16px",
+    "history": {
+      "x": 16,
+      "y": 46,
+      "width": 508,
+      "height": 236.59375
+    },
+    "jobPanels": {
+      "x": 16,
+      "y": 46,
+      "width": 508,
+      "height": 236.59375
+    },
+    "stack": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    },
+    "dialog": null,
+    "dialogButtons": [],
+    "progress": []
+  },
+  {
+    "name": "download-small",
+    "engine": "webkit",
+    "colorScheme": "light",
+    "viewport": {
+      "width": 540,
+      "height": 400
+    },
+    "errors": [],
+    "documentWidth": 540,
+    "documentHeight": 400,
+    "canvas": "rgb(250, 250, 250)",
+    "text": "rgb(63, 63, 70)",
+    "composer": {
+      "x": 16,
+      "y": 282.59375,
+      "width": 508,
+      "height": 101.40625
+    },
+    "workspace": {
+      "x": 0,
+      "y": 46,
+      "width": 540,
+      "height": 354
+    },
+    "workspacePaddingBottom": "16px",
+    "history": {
+      "x": 16,
+      "y": 46,
+      "width": 508,
+      "height": 236.59375
+    },
+    "jobPanels": {
+      "x": 16,
+      "y": 46,
+      "width": 508,
+      "height": 236.59375
+    },
+    "stack": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    },
+    "dialog": null,
+    "dialogButtons": [],
+    "progress": [
+      {
+        "label": "Скачивание",
+        "value": "50",
+        "background": "rgb(161, 161, 170)",
+        "fill": "rgb(101, 200, 238)"
+      }
+    ]
+  }
+]
