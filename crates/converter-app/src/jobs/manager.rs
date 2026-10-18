@@ -49,6 +49,15 @@ pub struct JobManager {
 fn lock_error() -> AppError {
     AppError::new("state_lock", "Не удалось получить состояние очереди")
 }
+fn cancel_download_progress(snapshot: &mut JobSnapshot) {
+    for file in &mut snapshot.download.files {
+        if file.state != TransferState::Completed {
+            file.state = TransferState::Cancelled;
+        }
+        file.bytes_per_second = None;
+    }
+    snapshot.download = aggregate_downloads(snapshot.download.files.clone());
+}
 impl JobManager {
     pub fn open(data_dir: PathBuf, storage: Arc<dyn PlatformStorage>) -> AppResult<Self> {
         let store = Store::open(data_dir)?;
@@ -74,6 +83,15 @@ impl JobManager {
                     }
                 }
                 snapshot.download = aggregate_downloads(snapshot.download.files.clone());
+                snapshot.sequence += 1;
+            } else if snapshot.state == JobState::Cancelled
+                && snapshot.download.files.iter().any(|file| {
+                    (file.state != TransferState::Completed
+                        && file.state != TransferState::Cancelled)
+                        || file.bytes_per_second.is_some()
+                })
+            {
+                cancel_download_progress(snapshot);
                 snapshot.sequence += 1;
             } else if state::active(snapshot.state) {
                 snapshot.state = JobState::Interrupted;
@@ -517,13 +535,7 @@ impl JobManager {
                 }
                 job.snapshot.state = JobState::Cancelled;
                 job.snapshot.conversion.status = ConversionStatus::Cancelled;
-                for file in &mut job.snapshot.download.files {
-                    if file.state != TransferState::Completed {
-                        file.state = TransferState::Cancelled;
-                        file.bytes_per_second = None;
-                    }
-                }
-                job.snapshot.download = aggregate_downloads(job.snapshot.download.files.clone());
+                cancel_download_progress(&mut job.snapshot);
             })?
             .expect("current job"))
     }

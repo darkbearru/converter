@@ -1,5 +1,35 @@
 mod support;
 #[tokio::test]
+async fn старое_отмененное_задание_не_показывает_активное_скачивание()
+-> Result<(), Box<dyn std::error::Error>> {
+    use converter_app::*;
+    use converter_download::TransferState;
+    let temp = tempfile::tempdir()?;
+    let data = temp.path().join("data");
+    let storage = support::TestStorage::new(temp.path());
+    let manager = JobManager::open(data.clone(), storage.clone())?;
+    let job = manager
+        .create(support::draft(support::remote(
+            "http://127.0.0.1:9/unused".into(),
+        )))
+        .await?;
+    manager.cancel(&job.id).await?;
+    manager.shutdown().await?;
+    drop(manager);
+    let path = data.join("jobs").join(format!("{}.json", job.id));
+    let mut legacy: serde_json::Value = serde_json::from_slice(&std::fs::read(&path)?)?;
+    legacy["snapshot"]["download"]["files"][0]["state"] = "downloading".into();
+    legacy["snapshot"]["download"]["files"][0]["bytes_per_second"] = 100.into();
+    std::fs::write(&path, serde_json::to_vec(&legacy)?)?;
+    let manager = JobManager::open(data, storage)?;
+    let restored = manager.list()?.remove(0);
+    assert_eq!(restored.state, JobState::Cancelled);
+    assert_eq!(restored.download.files[0].state, TransferState::Cancelled);
+    assert!(restored.download.files[0].bytes_per_second.is_none());
+    manager.shutdown().await?;
+    Ok(())
+}
+#[tokio::test]
 async fn счетчики_скачивания_восстанавливаются_из_checkpoint()
 -> Result<(), Box<dyn std::error::Error>> {
     use converter_test_support::http::{FixtureServer, Scenario};

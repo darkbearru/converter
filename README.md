@@ -1,0 +1,61 @@
+# Converter
+
+Локальный конвертер Lingvo DSL в бинарные словари MDict v2: **MDX + MDD** с изображениями, озвучкой и оформлением. Tauri 2, Vue 3/TypeScript, Rust. Для работы собранного приложения PHP, Python и Node.js не требуются.
+
+Источники: `.dsl`, `.dsl.dz`, ZIP, локальные ресурсы и прямые HTTP(S)-ссылки. Скачивание поддерживает контрольные точки, паузу, ограниченные повторы и продолжение через Range/If-Range. Все источники задания должны скачаться и пройти проверку до конвертации. Завершённые файлы повторно используются из кэша.
+
+Интерфейс показывает очередь, независимые блоки скачивания/конвертации, этапы, счётчики и постраничный журнал. При неизвестном размере процент отсутствует. Результат публикуется целой папкой с MDX, MDD и `conversion-report.json`; существующие файлы сохраняются, совпадения получают суффикс.
+
+Основные платформы — **macOS и Windows x64**. iOS/Android вынесены в следующий этап: мобильные SDK и сборки пока не устанавливаются и не проверяются.
+
+## Запуск разработки
+
+Node.js 24.18.0, npm 12.2.0, Rust 1.99.1 из `rust-toolchain.toml`, системные desktop инструменты сборки.
+
+```sh
+npm ci
+npm run tauri -- dev
+```
+
+## Сборка и проверки
+
+```sh
+npm test -- --run
+npm run typecheck
+npm run check:contracts
+npm run test:e2e
+cargo test --locked --workspace --all-targets
+cargo clippy --locked --workspace --all-targets -- -D warnings
+```
+
+Для Playwright предварительно выполнить `npx playwright install chromium webkit`. Linux CI проверяет библиотеки с `--exclude converter-desktop`; Linux-приложение в выпуск не входит.
+
+```sh
+npm run build:macos
+npm run build:macos:intel
+npm run build:windows
+```
+
+Каждая команда запускается на соответствующей ОС; для Intel на ARM Mac нужен дополнительный desktop Rust target. Пакеты и `build-info.json`/`SHA256SUMS` находятся в `.work/packages/<target>/`. CI [Desktop packages](https://github.com/darkbearru/converter/actions/workflows/desktop.yml) сохраняет артефакты, не публикуя release. Это тестовые пакеты; подпись и notarization оформляются отдельно.
+
+- [macOS: инструменты, пути и сборка](docs/build/macos.md)
+- [Windows: NSIS, offline WebView2 и протокол VM](docs/build/windows.md)
+- [Нативные проверки и ограничения](docs/validation/desktop-native.md)
+- [Vue: Chromium/WebKit, клавиатура и адаптивность](docs/validation/desktop-ui.md)
+- [Миллион статей и измерения RSS](docs/validation/pipeline-2026-10-18.md)
+- [Зависимости и область advisory glib](docs/validation/dependencies.md)
+
+## Структура
+
+| Модуль | Ответственность |
+|---|---|
+| `converter-core` | Подготовка источников, реестр читателей, DSL, внешняя сортировка, MDX/MDD, валидация |
+| `converter-download` | HTTP, приватный кэш, контрольные точки, SHA-256, повторы и продолжение |
+| `converter-app` | Очередь, состояния, события, журнал и платформенное хранилище |
+| `src-tauri` | Нативные диалоги, ограниченный IPC и жизненный цикл окна |
+| `src` | Vue-интерфейс, типы DTO и bridge |
+| `converter-cli` | Инструмент разработки для проверки локального/URL-конвейера |
+
+В первой версии реальный читатель один — DSL. Новые форматы добавляются разработчиком через `DictionaryReader`, регистрацию в `FormatRegistry` и пересборку. Загружаемых исполняемых плагинов нет. Системные диалоги и список форматов используют реестр.
+
+Тесты используют собственные синтетические словари. Для приёмки конкретной пользовательской базы нужны её исходные файлы и ресурсы; результаты и границы текущего покрытия перечислены в протоколах выше.
