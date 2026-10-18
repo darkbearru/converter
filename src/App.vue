@@ -2,7 +2,8 @@
 import { computed, onBeforeUnmount, ref } from 'vue';
 import Dialog from 'primevue/dialog';
 import bookIcon from '../book.svg';
-import type { JobOptionsUpdate, NativeBridge } from './shared/contracts';
+import Button from 'primevue/button';
+import type { JobOptionsUpdate, JobSnapshot, NativeBridge } from './shared/contracts';
 import { nativeBridge } from './shared/native';
 import { isActive } from './shared/format';
 import Icon from './shared/ui/Icon.vue';
@@ -41,6 +42,20 @@ const history = computed(() =>
     .reverse(),
 );
 const selected = ref<string | null>(null);
+const deleting = ref<JobSnapshot | null>(null);
+const deleteError = ref('');
+function requestDelete(id: string) {
+  deleteError.value = '';
+  deleting.value = store.jobs[id] ?? null;
+}
+async function confirmDelete() {
+  if (!deleting.value) return;
+  const id = deleting.value.id;
+  const removed = await store.deleteJob(id);
+  if (deleting.value?.id !== id) return;
+  if (removed) deleting.value = null;
+  else deleteError.value = error.value;
+}
 const detail = computed(() => (selected.value ? store.jobs[selected.value] : undefined));
 onBeforeUnmount(store.dispose);
 async function save(update: JobOptionsUpdate) {
@@ -73,6 +88,7 @@ async function save(update: JobOptionsUpdate) {
           @export="store.exportResult"
           @retry="store.startJob"
           @repair="selected = $event"
+          @remove="requestDelete"
         />
         <ActiveTasks
           :jobs="active"
@@ -88,6 +104,37 @@ async function save(update: JobOptionsUpdate) {
         <SourceComposer :bridge="bridge" :jobs="jobs" @snapshot="store.mergeSnapshot" />
       </div>
     </main>
+    <Dialog
+      :visible="Boolean(deleting)"
+      modal
+      header="Удалить из истории"
+      class="app-dialog delete-dialog"
+      :closable="!deleting || !store.pending[deleting.id]"
+      :close-on-escape="!deleting || !store.pending[deleting.id]"
+      @update:visible="!$event && (deleting = null)"
+    >
+      <template #closeicon><Icon name="close" /></template>
+      <p>Вы действительно хотите удалить</p>
+      <p class="delete-filename">{{ deleting?.display_name }}?</p>
+      <p class="hint">Исходный словарь и готовые файлы останутся на диске.</p>
+      <p v-if="deleteError" class="error-message" role="alert">{{ deleteError }}</p>
+      <template #footer>
+        <Button
+          label="Отмена"
+          outlined
+          autofocus
+          :disabled="Boolean(deleting && store.pending[deleting.id])"
+          @click="deleting = null"
+        />
+        <Button
+          label="Удалить"
+          severity="danger"
+          :loading="Boolean(deleting && store.pending[deleting.id])"
+          :disabled="Boolean(deleting && store.pending[deleting.id])"
+          @click="confirmDelete"
+        />
+      </template>
+    </Dialog>
     <Dialog
       :visible="Boolean(detail)"
       modal

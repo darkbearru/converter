@@ -510,6 +510,27 @@ h3 {
   gap: 8px;
   padding-bottom: 8px;
 }
+.history-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+}
+.history-actions .p-button {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 12px;
+  padding: 7px 8px;
+}
+.delete-filename {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  margin: 6px 0 12px;
+}
+.completed-history .diagnostics {
+  margin: 0 0 12px;
+}
 .result-panel .muted {
   color: var(--muted);
   font-size: 12px;

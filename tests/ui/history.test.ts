@@ -4,6 +4,29 @@ import CompletedHistory from '../../src/features/jobs/CompletedHistory.vue';
 import fixtures from './fixtures/contracts.json';
 import type { JobSnapshot, NativeBridge } from '../../src/shared/contracts';
 
+it('сразу показывает текст предупреждения в раскрытой записи', async () => {
+  const job = structuredClone(fixtures.succeeded) as JobSnapshot;
+  job.state = 'succeeded_with_warnings';
+  job.diagnostic_count = 28173;
+  const native = {
+    getResultPath: async () => '/result',
+    readDiagnostics: async () => ({
+      items: [
+        {
+          code: 'missing_reference',
+          message: 'Не найдена статья для ссылки: 儿',
+          source_location: { source: job.display_name, line: 4 },
+        },
+      ],
+      total: 28173,
+      next_offset: 1,
+    }),
+  } as unknown as NativeBridge;
+  render(CompletedHistory, { props: { jobs: [job], bridge: native, pending: {} } });
+  await fireEvent.click(screen.getByRole('button', { name: new RegExp(job.display_name) }));
+  expect(await screen.findByText('Не найдена статья для ссылки: 儿')).toBeVisible();
+});
+
 it('запоздалая ошибка прежнего пути не отменяет новый запрос', async () => {
   const job = structuredClone(fixtures.succeeded) as JobSnapshot;
   let rejectOld!: (reason: Error) => void;

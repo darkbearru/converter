@@ -66,7 +66,7 @@ test('длинное имя, журнал и системная тема раб�
     .not.toBe(before);
   await page.setViewportSize({ width: 540, height: 400 });
   await page.locator('.p-accordionheader').click();
-  await page.getByRole('button', { name: /Журнал · 70/ }).click();
+  await page.getByRole('button', { name: /Предупреждения · 70/ }).click();
   const log = page.locator('.diagnostic-list');
   await expect(log.locator('li')).toHaveCount(50);
   await expect(log.locator('img')).toHaveCount(0);
@@ -110,5 +110,5 @@ test('новые задачи образуют стопку, отмена и red
     .click();
   await expect(page.locator('.active-task')).toHaveCount(4);
   await page.locator('.p-accordionheader').click();
-  await expect(page.getByRole('button', { name: 'Запустить заново', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Повторить', exact: true })).toBeVisible();
 });

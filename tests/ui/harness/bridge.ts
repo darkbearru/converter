@@ -82,6 +82,14 @@ export function createHarness(scenario: string | null) {
     job.had_errors = true;
     jobs.set(currentId, job);
   }
+  if (scenario === 'warning') {
+    const job = copy(samples.succeeded);
+    job.state = 'succeeded_with_warnings';
+    job.display_name = 'PhoneticListChCh.dsl.dz';
+    job.diagnostic_count = 28173;
+    job.result!.summary.warnings = 28173;
+    jobs.set(currentId, job);
+  }
   if (scenario === 'awaiting') {
     const job = copy(samples.local);
     job.state = 'awaiting_input';
@@ -135,6 +143,9 @@ export function createHarness(scenario: string | null) {
     },
     async getJobs() {
       return [...jobs.values()].map(copy);
+    },
+    async deleteJob(id) {
+      jobs.delete(id);
     },
     async onJobEvent(callback) {
       listeners.add(callback);
@@ -210,7 +221,10 @@ export function createHarness(scenario: string | null) {
       return {
         items: Array.from({ length: Math.max(0, end - offset) }, (_, index) => ({
           code: 'test_warning',
-          message: `Предупреждение ${offset + index + 1}${offset + index === 0 ? ': <img src=x onerror=alert(1)>' : ''}`,
+          message:
+            scenario === 'warning'
+              ? 'Не найдена статья для ссылки: 儿'
+              : `Предупреждение ${offset + index + 1}${offset + index === 0 ? ': <img src=x onerror=alert(1)>' : ''}`,
           source_location: { source: 'Словарь.dsl', line: offset + index + 10 },
         })),
         next_offset: end < total ? end : null,

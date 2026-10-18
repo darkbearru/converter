@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-18T11:26:25.245278Z",
+  "generatedAt": "2026-10-18T11:48:56.287934Z",
   "title": "Design System: Converter",
   "extensions": {
     "colorMeta": {
@@ -311,6 +311,62 @@
           "#dcfce7",
           "#f0fdf4"
         ]
+      },
+      "danger-light": {
+        "role": "tertiary",
+        "displayName": "Опасное действие, светлая заливка",
+        "tonalRamp": [
+          "#450a0a",
+          "#7f1d1d",
+          "#991b1b",
+          "#b91c1c",
+          "#dc2626",
+          "#fca5a5",
+          "#fee2e2",
+          "#fef2f2"
+        ]
+      },
+      "danger-active-light": {
+        "role": "tertiary",
+        "displayName": "Опасное действие, светлый active",
+        "tonalRamp": [
+          "#450a0a",
+          "#7f1d1d",
+          "#991b1b",
+          "#b91c1c",
+          "#dc2626",
+          "#fca5a5",
+          "#fee2e2",
+          "#fef2f2"
+        ]
+      },
+      "danger-outlined-hover-light": {
+        "role": "tertiary",
+        "displayName": "Опасное контурное действие, светлый hover",
+        "tonalRamp": [
+          "#450a0a",
+          "#7f1d1d",
+          "#991b1b",
+          "#b91c1c",
+          "#dc2626",
+          "#fca5a5",
+          "#fee2e2",
+          "#fef2f2"
+        ]
+      },
+      "danger-outlined-active-light": {
+        "role": "tertiary",
+        "displayName": "Опасное контурное действие, светлый active",
+        "tonalRamp": [
+          "#450a0a",
+          "#7f1d1d",
+          "#991b1b",
+          "#b91c1c",
+          "#dc2626",
+          "#fca5a5",
+          "#fee2e2",
+          "#fef2f2"
+        ]
       }
     },
     "typographyMeta": {
@@ -416,6 +472,22 @@
       "description": "Aura outlined; светлая тема использует primary700, тёмная — основной оранжевый.",
       "html": "<button class=\"ds-outlined\">Выбрать папку</button>",
       "css": ".ds-outlined{font:500 14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:.5rem .75rem;border-radius:var(--control-radius,6px);cursor:pointer;transition:background .2s,color .2s,border-color .2s,box-shadow .2s,outline-color .2s;font-size:12px;background:transparent;color:var(--p-button-outlined-primary-color,#b73318);border:1px solid var(--p-button-outlined-primary-border-color,#ffc1a8)}.ds-outlined:hover{background:var(--p-button-outlined-primary-hover-background,#fff3ed)}.ds-outlined:active{background:var(--p-button-outlined-primary-active-background,#ffe2d4)}.ds-outlined:focus-visible{outline:2px solid var(--focus,#F96133);outline-offset:3px;}.ds-outlined:disabled{opacity:.6;cursor:default}"
+    },
+    {
+      "name": "Опасная кнопка — светлая тема",
+      "kind": "button",
+      "refersTo": "button-danger-light",
+      "description": "Подтверждение удаления истории. Aura red600/red700/red800, белая надпись; тёмная тема в приложении наследует Aura.",
+      "html": "<button class=\"ds-danger-light\">Удалить</button>",
+      "css": ".ds-danger-light{font:500 14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:.5rem .75rem;border-radius:var(--control-radius,6px);cursor:pointer;transition:background .2s,color .2s,border-color .2s,box-shadow .2s,outline-color .2s;background:var(--p-red-600,#dc2626);color:var(--p-surface-0,#ffffff);border:1px solid var(--p-red-600,#dc2626)}.ds-danger-light:hover{background:var(--p-red-700,#b91c1c);border-color:var(--p-red-700,#b91c1c)}.ds-danger-light:active{background:var(--p-red-800,#991b1b);border-color:var(--p-red-800,#991b1b)}.ds-danger-light:focus-visible{outline:2px solid var(--p-red-600,#dc2626);outline-offset:3px}.ds-danger-light:disabled{opacity:.6;cursor:default}"
+    },
+    {
+      "name": "Опасная контурная кнопка — светлая тема",
+      "kind": "button",
+      "refersTo": "button-danger-outlined-light",
+      "description": "Удаление из строки действий истории. Текст Aura red700, стандартные светлые hover/active red50/red100.",
+      "html": "<button class=\"ds-danger-outlined-light\">Удалить</button>",
+      "css": ".ds-danger-outlined-light{font:500 12px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:7px 8px;border-radius:var(--control-radius,6px);cursor:pointer;white-space:nowrap;transition:background .2s,color .2s,border-color .2s,box-shadow .2s,outline-color .2s;background:transparent;color:var(--p-red-700,#b91c1c);border:1px solid var(--p-red-200,#fecaca)}.ds-danger-outlined-light:hover{background:var(--p-red-50,#fef2f2)}.ds-danger-outlined-light:active{background:var(--p-red-100,#fee2e2)}.ds-danger-outlined-light:focus-visible{outline:2px solid var(--focus,#F96133);outline-offset:3px}.ds-danger-outlined-light:disabled{opacity:.6;cursor:default}"
     },
     {
       "name": "Текстовая кнопка",

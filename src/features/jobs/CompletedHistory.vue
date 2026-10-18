@@ -20,6 +20,7 @@ defineEmits<{
   export: [id: string];
   retry: [id: string];
   repair: [id: string];
+  remove: [id: string];
 }>();
 const expanded = ref<string[]>([]);
 const paths = reactive<Record<string, string>>({});
@@ -84,14 +85,51 @@ function warning(job: JobSnapshot) {
         <AccordionContent>
           <p class="history-status">{{ stateLabels[job.state] }}</p>
           <p v-if="job.error" class="error-message" role="alert">{{ job.error.message }}</p>
-          <ResultPanel
-            v-if="job.result"
-            :result="job.result"
-            :export-state="job.export"
-            :busy="Boolean(pending[job.id])"
-            @open="$emit('open', job.id)"
-            @export="$emit('export', job.id)"
+          <DiagnosticsList
+            v-if="job.diagnostic_count && expanded.includes(job.id)"
+            :key="`${job.id}:${job.run_id}`"
+            :id="job.id"
+            :count="job.diagnostic_count"
+            :bridge="bridge"
+            preview
           />
+          <ResultPanel v-if="job.result" :result="job.result" :export-state="job.export" />
+          <div class="history-actions" role="group" aria-label="Действия с конвертацией">
+            <Button
+              v-if="job.result?.can_open"
+              label="Открыть папку результата"
+              :disabled="pending[job.id]"
+              @click="$emit('open', job.id)"
+            />
+            <Button
+              v-if="job.result?.can_export"
+              :label="job.export.status === 'running' ? 'Сохранение…' : 'Сохранить копию'"
+              outlined
+              :disabled="pending[job.id] || job.export.status === 'running'"
+              @click="$emit('export', job.id)"
+            />
+            <Button
+              v-if="job.state === 'awaiting_input'"
+              label="Уточнить параметры"
+              outlined
+              :disabled="pending[job.id]"
+              @click="$emit('repair', job.id)"
+            />
+            <Button
+              v-else
+              label="Повторить"
+              outlined
+              :disabled="pending[job.id] || job.export.status === 'running'"
+              @click="$emit('retry', job.id)"
+            />
+            <Button
+              label="Удалить"
+              severity="danger"
+              outlined
+              :disabled="pending[job.id] || job.export.status === 'running'"
+              @click="$emit('remove', job.id)"
+            />
+          </div>
           <Button
             v-if="paths[job.id]"
             class="result-path"
@@ -104,34 +142,6 @@ function warning(job: JobSnapshot) {
           <p v-if="pathErrors[job.id]" class="error-message" role="alert">
             {{ pathErrors[job.id] }}
           </p>
-          <Button
-            v-if="job.state === 'awaiting_input'"
-            label="Уточнить параметры"
-            outlined
-            @click="$emit('repair', job.id)"
-          />
-          <Button
-            v-if="['cancelled', 'failed', 'interrupted'].includes(job.state)"
-            label="Запустить заново"
-            outlined
-            :disabled="pending[job.id]"
-            @click="$emit('retry', job.id)"
-            ><template #icon><Icon name="refresh" /></template
-          ></Button>
-          <Button
-            v-if="['succeeded', 'succeeded_with_warnings'].includes(job.state)"
-            label="Повторить конвертацию"
-            outlined
-            :disabled="pending[job.id]"
-            @click="$emit('retry', job.id)"
-            ><template #icon><Icon name="refresh" /></template
-          ></Button>
-          <DiagnosticsList
-            v-if="job.diagnostic_count"
-            :id="job.id"
-            :count="job.diagnostic_count"
-            :bridge="bridge"
-          />
         </AccordionContent>
       </AccordionPanel>
     </Accordion>

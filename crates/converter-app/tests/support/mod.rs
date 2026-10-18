@@ -15,6 +15,9 @@ pub struct TestStorage {
     active: AtomicUsize,
     pub peak: AtomicUsize,
     pub fail_publish: AtomicBool,
+    pub block_export: AtomicBool,
+    pub export_started: tokio::sync::Notify,
+    pub export_release: tokio::sync::Notify,
 }
 impl TestStorage {
     pub fn new(root: &Path) -> Arc<Self> {
@@ -24,6 +27,9 @@ impl TestStorage {
             active: AtomicUsize::new(0),
             peak: AtomicUsize::new(0),
             fail_publish: AtomicBool::new(false),
+            block_export: AtomicBool::new(false),
+            export_started: tokio::sync::Notify::new(),
+            export_release: tokio::sync::Notify::new(),
         })
     }
 }
@@ -98,6 +104,10 @@ impl PlatformStorage for TestStorage {
         _choice: ExportChoice,
         _ctx: &RunContext,
     ) -> AppResult<ExportSnapshot> {
+        if self.block_export.load(Ordering::SeqCst) {
+            self.export_started.notify_one();
+            self.export_release.notified().await;
+        }
         Err(AppError::new(
             "not_supported",
             "Экспорт проверяется адаптером desktop",

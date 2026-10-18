@@ -6,10 +6,11 @@ export function createJobStore(bridge: NativeBridge) {
   const jobs = reactive<Record<string, JobSnapshot>>({});
   const error = ref('');
   const pending = reactive<Record<string, boolean>>({});
+  const deleted = new Set<string>();
   let disposed = false;
   let unsubscribe: (() => void) | undefined;
   function mergeSnapshot(snapshot: JobSnapshot) {
-    if (disposed) return;
+    if (disposed || deleted.has(snapshot.id)) return;
     const old = jobs[snapshot.id];
     if (
       old &&
@@ -33,14 +34,16 @@ export function createJobStore(bridge: NativeBridge) {
     }
   })();
   async function action(id: string, run: () => Promise<JobSnapshot | void>) {
-    if (pending[id]) return;
+    if (pending[id]) return false;
     pending[id] = true;
     error.value = '';
     try {
       const snapshot = await run();
       if (snapshot) mergeSnapshot(snapshot);
+      return true;
     } catch (e) {
       error.value = errorMessage(e);
+      return false;
     } finally {
       pending[id] = false;
     }
@@ -55,6 +58,12 @@ export function createJobStore(bridge: NativeBridge) {
     pauseDownload: (id: string) => action(id, () => bridge.pauseDownload(id)),
     resumeDownload: (id: string) => action(id, () => bridge.resumeDownload(id)),
     cancelJob: (id: string) => action(id, () => bridge.cancelJob(id)),
+    deleteJob: (id: string) =>
+      action(id, async () => {
+        await bridge.deleteJob(id);
+        deleted.add(id);
+        delete jobs[id];
+      }),
     updateJob: (id: string, update: JobOptionsUpdate) =>
       action(id, () => bridge.updateJob(id, update)),
     exportResult: (id: string) => action(id, () => bridge.exportResult(id)),

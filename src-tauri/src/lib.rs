@@ -53,6 +53,7 @@ pub fn run() {
             commands::pause_download,
             commands::resume_download,
             commands::cancel_job,
+            commands::delete_job,
             commands::update_job,
             commands::read_diagnostics,
             commands::export_result,

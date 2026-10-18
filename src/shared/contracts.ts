@@ -176,6 +176,7 @@ export interface NativeBridge {
   pauseDownload(id: string): Promise<JobSnapshot>;
   resumeDownload(id: string): Promise<JobSnapshot>;
   cancelJob(id: string): Promise<JobSnapshot>;
+  deleteJob(id: string): Promise<void>;
   updateJob(id: string, update: JobOptionsUpdate): Promise<JobSnapshot>;
   getJobs(): Promise<JobSnapshot[]>;
   readDiagnostics(id: string, offset: number, limit: number): Promise<DiagnosticPage>;

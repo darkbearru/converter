@@ -2,8 +2,7 @@
 import { useId } from 'vue';
 import type { ExportSnapshot, ResultInfo } from '../../shared/contracts';
 import { formatBytes, formatQuantity } from '../../shared/format';
-defineProps<{ result: ResultInfo; exportState: ExportSnapshot; busy: boolean }>();
-defineEmits<{ open: []; export: [] }>();
+defineProps<{ result: ResultInfo; exportState: ExportSnapshot }>();
 const titleId = useId();
 </script>
 <template>
@@ -20,24 +19,6 @@ const titleId = useId();
         ><span class="muted">{{ formatBytes(file.bytes) }}</span>
       </li>
     </ul>
-    <div class="button-row">
-      <button
-        v-if="result.can_open"
-        type="button"
-        class="primary"
-        :disabled="busy"
-        @click="$emit('open')"
-      >
-        Открыть папку результата</button
-      ><button
-        v-if="result.can_export"
-        type="button"
-        :disabled="busy || exportState.status === 'running'"
-        @click="$emit('export')"
-      >
-        {{ exportState.status === 'running' ? 'Сохранение…' : 'Сохранить копию' }}
-      </button>
-    </div>
     <p v-if="exportState.error" role="alert" class="error-message">
       {{ exportState.error.message }} Готовый результат сохранён в приложении.
     </p>

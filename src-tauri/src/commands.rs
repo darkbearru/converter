@@ -67,6 +67,10 @@ pub async fn cancel_job(state: State<'_, NativeState>, id: String) -> AppResult<
     state.manager.cancel(&id).await
 }
 #[tauri::command]
+pub async fn delete_job(state: State<'_, NativeState>, id: String) -> AppResult<()> {
+    state.manager.delete(&id).await
+}
+#[tauri::command]
 pub async fn update_job(
     state: State<'_, NativeState>,
     id: String,

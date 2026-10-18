@@ -5,6 +5,36 @@ import fixtures from './fixtures/contracts.json';
 
 const jobs = fixtures as unknown as Record<string, JobSnapshot>;
 describe('Очередь событий Rust', () => {
+  it('запоздалые события не возвращают удалённую запись', async () => {
+    let listener!: (event: JobEvent) => void;
+    const store = createJobStore({
+      onJobEvent: async (callback: typeof listener) => {
+        listener = callback;
+        return () => {};
+      },
+      getJobs: async () => [jobs.succeeded],
+      deleteJob: async () => {},
+    } as unknown as NativeBridge);
+    await store.ready;
+    await store.deleteJob(jobs.succeeded.id);
+    listener({ snapshot: { ...jobs.succeeded, sequence: 99999 } });
+    expect(Object.keys(store.jobs)).toEqual([]);
+    store.dispose();
+  });
+  it('сохраняет запись при ошибке удаления', async () => {
+    const store = createJobStore({
+      onJobEvent: async () => () => {},
+      getJobs: async () => [jobs.succeeded],
+      deleteJob: async () => {
+        throw { message: 'Хранилище недоступно' };
+      },
+    } as unknown as NativeBridge);
+    await store.ready;
+    await store.deleteJob(jobs.succeeded.id);
+    expect(store.jobs[jobs.succeeded.id].result).not.toBeNull();
+    expect(store.error.value).toBe('Хранилище недоступно');
+    store.dispose();
+  });
   it('подписывается до снимка и отбрасывает старые generation и sequence', async () => {
     const order: string[] = [];
     let listener!: (event: JobEvent) => void;

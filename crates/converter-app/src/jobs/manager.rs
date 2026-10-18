@@ -11,7 +11,7 @@ use converter_download::{
     TransferOutcome, TransferState,
 };
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     fs::{self, File},
     io::{BufRead, BufReader, BufWriter, Read, Write},
     path::PathBuf,
@@ -28,6 +28,7 @@ struct Runtime {
     imports: BTreeMap<String, PreparedFile>,
     controls: BTreeMap<String, Controls>,
     gates: BTreeMap<String, ProgressGate>,
+    exports: BTreeSet<String>,
 }
 fn source_id(source: &RegisteredSource) -> &str {
     match source {
@@ -110,6 +111,17 @@ struct Inner {
 pub struct JobManager {
     inner: Arc<Inner>,
 }
+struct ExportGuard {
+    manager: JobManager,
+    id: String,
+}
+impl Drop for ExportGuard {
+    fn drop(&mut self) {
+        if let Ok(mut runtime) = self.manager.inner.runtime.lock() {
+            runtime.exports.remove(&self.id);
+        }
+    }
+}
 fn lock_error() -> AppError {
     AppError::new("state_lock", "Не удалось получить состояние очереди")
 }
@@ -181,6 +193,7 @@ impl JobManager {
                     imports,
                     controls: BTreeMap::new(),
                     gates: BTreeMap::new(),
+                    exports: BTreeSet::new(),
                 }),
                 events,
                 transfer: Semaphore::new(1),
@@ -206,6 +219,50 @@ impl JobManager {
             .values()
             .map(|j| j.snapshot.clone())
             .collect())
+    }
+    pub async fn delete(&self, id: &str) -> AppResult<()> {
+        fn finished(state: JobState) -> bool {
+            matches!(
+                state,
+                JobState::Succeeded
+                    | JobState::SucceededWithWarnings
+                    | JobState::Failed
+                    | JobState::Cancelled
+                    | JobState::Interrupted
+                    | JobState::AwaitingInput
+            )
+        }
+        if !finished(self.job(id)?.snapshot.state) {
+            return Err(AppError::new(
+                "job_not_finished",
+                "Можно удалить только завершённое задание",
+            ));
+        }
+        self.wait_idle(id).await?;
+        let mut runtime = self.inner.runtime.lock().map_err(|_| lock_error())?;
+        let job = runtime
+            .jobs
+            .get(id)
+            .ok_or_else(|| AppError::new("job_not_found", "Задание не найдено"))?;
+        if runtime.controls.contains_key(id)
+            || runtime.exports.contains(id)
+            || !finished(job.snapshot.state)
+            || job.snapshot.export.status == ExportStatus::Running
+        {
+            return Err(AppError::new(
+                "job_busy",
+                "Дождитесь завершения операции с заданием",
+            ));
+        }
+        let mut journals = self.inner.journals.lock().map_err(|_| lock_error())?;
+        // Удаляется только запись истории. Исходники, кэш и готовые файлы остаются на диске.
+        fs::remove_file(self.inner.store.id_path(id, "json")?)?;
+        runtime.jobs.remove(id);
+        runtime.gates.remove(id);
+        journals.remove(id);
+        // Ошибка очистки журнала не должна возвращать уже удалённую запись в интерфейс.
+        let _ = fs::remove_file(self.inner.store.id_path(id, "diagnostics.jsonl")?);
+        Ok(())
     }
     fn job(&self, id: &str) -> AppResult<StoredJob> {
         self.inner
@@ -942,10 +999,26 @@ impl JobManager {
         })
     }
     pub async fn export(&self, id: &str, choice: ExportChoice) -> AppResult<ExportSnapshot> {
-        let job = self.job(id)?;
-        let result = job
-            .published
-            .ok_or_else(|| AppError::new("result_not_found", "Готовый результат ещё не создан"))?;
+        let result = {
+            let mut runtime = self.inner.runtime.lock().map_err(|_| lock_error())?;
+            let result = runtime
+                .jobs
+                .get(id)
+                .ok_or_else(|| AppError::new("job_not_found", "Задание не найдено"))?
+                .published
+                .clone()
+                .ok_or_else(|| {
+                    AppError::new("result_not_found", "Готовый результат ещё не создан")
+                })?;
+            if !runtime.exports.insert(id.to_owned()) {
+                return Err(AppError::new("job_busy", "Копия уже сохраняется"));
+            }
+            result
+        };
+        let _guard = ExportGuard {
+            manager: self.clone(),
+            id: id.to_owned(),
+        };
         // Экспорт не делит рабочую папку с завершающимся worker конвертации.
         let exports = self.inner.store.root.join("exports");
         fs::create_dir_all(&exports)?;

@@ -1,0 +1,428 @@
+[
+  {
+    "name": "delete-light",
+    "engine": "chromium",
+    "colorScheme": "light",
+    "viewport": {
+      "width": 740,
+      "height": 500
+    },
+    "errors": [],
+    "documentWidth": 740,
+    "documentHeight": 500,
+    "canvas": "rgb(250, 250, 250)",
+    "text": "rgb(63, 63, 70)",
+    "composer": {
+      "x": 16,
+      "y": 322,
+      "width": 708,
+      "height": 162
+    },
+    "workspace": {
+      "x": 0,
+      "y": 46,
+      "width": 740,
+      "height": 454
+    },
+    "workspacePaddingBottom": "16px",
+    "history": {
+      "x": 16,
+      "y": 46,
+      "width": 708,
+      "height": 276
+    },
+    "jobPanels": {
+      "x": 16,
+      "y": 46,
+      "width": 708,
+      "height": 276
+    },
+    "stack": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    },
+    "dialog": {
+      "x": 110,
+      "y": 129.5,
+      "width": 520,
+      "height": 241
+    },
+    "historyActions": [
+      {
+        "label": "Открыть папку результата",
+        "x": 26,
+        "y": 215,
+        "width": 177.609375,
+        "height": 34,
+        "color": "rgb(9, 9, 11)",
+        "background": "rgb(249, 97, 51)"
+      },
+      {
+        "label": "Сохранить копию",
+        "x": 209.609375,
+        "y": 215,
+        "width": 124.03125,
+        "height": 34,
+        "color": "rgb(183, 51, 24)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "label": "Повторить",
+        "x": 339.640625,
+        "y": 215,
+        "width": 81.703125,
+        "height": 34,
+        "color": "rgb(183, 51, 24)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "label": "Удалить",
+        "x": 427.34375,
+        "y": 215,
+        "width": 66.84375,
+        "height": 34,
+        "color": "rgb(185, 28, 28)",
+        "background": "rgba(0, 0, 0, 0)"
+      }
+    ],
+    "dialogButtons": [
+      {
+        "label": "",
+        "color": "rgb(113, 113, 122)",
+        "background": "rgba(0, 0, 0, 0)",
+        "dialogBackground": "rgb(255, 255, 255)"
+      },
+      {
+        "label": "Отмена",
+        "color": "rgb(183, 51, 24)",
+        "background": "rgba(0, 0, 0, 0)",
+        "dialogBackground": "rgb(255, 255, 255)"
+      },
+      {
+        "label": "Удалить",
+        "color": "rgb(255, 255, 255)",
+        "background": "rgb(220, 38, 38)",
+        "dialogBackground": "rgb(255, 255, 255)"
+      }
+    ],
+    "progress": []
+  },
+  {
+    "name": "deleted-light",
+    "engine": "chromium",
+    "colorScheme": "light",
+    "viewport": {
+      "width": 740,
+      "height": 500
+    },
+    "errors": [],
+    "documentWidth": 740,
+    "documentHeight": 500,
+    "canvas": "rgb(250, 250, 250)",
+    "text": "rgb(63, 63, 70)",
+    "composer": {
+      "x": 16,
+      "y": 46,
+      "width": 708,
+      "height": 438
+    },
+    "workspace": {
+      "x": 0,
+      "y": 46,
+      "width": 740,
+      "height": 454
+    },
+    "workspacePaddingBottom": "16px",
+    "history": null,
+    "jobPanels": null,
+    "stack": null,
+    "dialog": null,
+    "historyActions": [],
+    "dialogButtons": [],
+    "progress": []
+  },
+  {
+    "name": "warning-dark",
+    "engine": "webkit",
+    "colorScheme": "dark",
+    "viewport": {
+      "width": 740,
+      "height": 500
+    },
+    "errors": [],
+    "documentWidth": 740,
+    "documentHeight": 500,
+    "canvas": "rgb(9, 9, 11)",
+    "text": "rgb(255, 255, 255)",
+    "composer": {
+      "x": 16,
+      "y": 352.59375,
+      "width": 708,
+      "height": 131.40625
+    },
+    "workspace": {
+      "x": 0,
+      "y": 46,
+      "width": 740,
+      "height": 454
+    },
+    "workspacePaddingBottom": "16px",
+    "history": {
+      "x": 16,
+      "y": 46,
+      "width": 708,
+      "height": 306.59375
+    },
+    "jobPanels": {
+      "x": 16,
+      "y": 46,
+      "width": 708,
+      "height": 306.59375
+    },
+    "stack": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    },
+    "dialog": null,
+    "historyActions": [
+      {
+        "label": "Открыть папку результата",
+        "x": 26,
+        "y": 314,
+        "width": 177.609375,
+        "height": 34,
+        "color": "rgb(9, 9, 11)",
+        "background": "rgb(249, 97, 51)"
+      },
+      {
+        "label": "Сохранить копию",
+        "x": 209.609375,
+        "y": 314,
+        "width": 124.03125,
+        "height": 34,
+        "color": "rgb(249, 97, 51)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "label": "Повторить",
+        "x": 339.640625,
+        "y": 314,
+        "width": 81.703125,
+        "height": 34,
+        "color": "rgb(249, 97, 51)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "label": "Удалить",
+        "x": 427.34375,
+        "y": 314,
+        "width": 66.84375,
+        "height": 34,
+        "color": "rgb(248, 113, 113)",
+        "background": "rgba(0, 0, 0, 0)"
+      }
+    ],
+    "dialogButtons": [],
+    "progress": []
+  },
+  {
+    "name": "actions-small-light",
+    "engine": "webkit",
+    "colorScheme": "light",
+    "viewport": {
+      "width": 540,
+      "height": 400
+    },
+    "errors": [],
+    "documentWidth": 540,
+    "documentHeight": 400,
+    "canvas": "rgb(250, 250, 250)",
+    "text": "rgb(63, 63, 70)",
+    "composer": {
+      "x": 16,
+      "y": 282.59375,
+      "width": 508,
+      "height": 101.40625
+    },
+    "workspace": {
+      "x": 0,
+      "y": 46,
+      "width": 540,
+      "height": 354
+    },
+    "workspacePaddingBottom": "16px",
+    "history": {
+      "x": 16,
+      "y": 46,
+      "width": 508,
+      "height": 236.59375
+    },
+    "jobPanels": {
+      "x": 16,
+      "y": 46,
+      "width": 508,
+      "height": 236.59375
+    },
+    "stack": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    },
+    "dialog": null,
+    "historyActions": [
+      {
+        "label": "Открыть папку результата",
+        "x": 26,
+        "y": 237,
+        "width": 177.609375,
+        "height": 34,
+        "color": "rgb(9, 9, 11)",
+        "background": "rgb(249, 97, 51)"
+      },
+      {
+        "label": "Сохранить копию",
+        "x": 209.609375,
+        "y": 237,
+        "width": 124.03125,
+        "height": 34,
+        "color": "rgb(183, 51, 24)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "label": "Повторить",
+        "x": 339.640625,
+        "y": 237,
+        "width": 81.703125,
+        "height": 34,
+        "color": "rgb(183, 51, 24)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "label": "Удалить",
+        "x": 427.34375,
+        "y": 237,
+        "width": 66.84375,
+        "height": 34,
+        "color": "rgb(185, 28, 28)",
+        "background": "rgba(0, 0, 0, 0)"
+      }
+    ],
+    "dialogButtons": [],
+    "progress": []
+  },
+  {
+    "name": "delete-small-dark",
+    "engine": "webkit",
+    "colorScheme": "dark",
+    "viewport": {
+      "width": 540,
+      "height": 400
+    },
+    "errors": [],
+    "documentWidth": 540,
+    "documentHeight": 400,
+    "canvas": "rgb(9, 9, 11)",
+    "text": "rgb(255, 255, 255)",
+    "composer": {
+      "x": 16,
+      "y": 282.59375,
+      "width": 508,
+      "height": 101.40625
+    },
+    "workspace": {
+      "x": 0,
+      "y": 46,
+      "width": 540,
+      "height": 354
+    },
+    "workspacePaddingBottom": "16px",
+    "history": {
+      "x": 16,
+      "y": 46,
+      "width": 508,
+      "height": 236.59375
+    },
+    "jobPanels": {
+      "x": 16,
+      "y": 46,
+      "width": 508,
+      "height": 236.59375
+    },
+    "stack": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    },
+    "dialog": {
+      "x": 16,
+      "y": 20,
+      "width": 508,
+      "height": 360
+    },
+    "historyActions": [
+      {
+        "label": "Открыть папку результата",
+        "x": 26,
+        "y": 336,
+        "width": 177.609375,
+        "height": 34,
+        "color": "rgb(9, 9, 11)",
+        "background": "rgb(249, 97, 51)"
+      },
+      {
+        "label": "Сохранить копию",
+        "x": 209.609375,
+        "y": 336,
+        "width": 124.03125,
+        "height": 34,
+        "color": "rgb(249, 97, 51)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "label": "Повторить",
+        "x": 339.640625,
+        "y": 336,
+        "width": 81.703125,
+        "height": 34,
+        "color": "rgb(249, 97, 51)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "label": "Удалить",
+        "x": 427.34375,
+        "y": 336,
+        "width": 66.84375,
+        "height": 34,
+        "color": "rgb(248, 113, 113)",
+        "background": "color(srgb 0.972549 0.443137 0.443137 / 0.04)"
+      }
+    ],
+    "dialogButtons": [
+      {
+        "label": "",
+        "color": "rgb(161, 161, 170)",
+        "background": "rgba(0, 0, 0, 0)",
+        "dialogBackground": "rgb(24, 24, 27)"
+      },
+      {
+        "label": "Отмена",
+        "color": "rgb(249, 97, 51)",
+        "background": "rgba(0, 0, 0, 0)",
+        "dialogBackground": "rgb(24, 24, 27)"
+      },
+      {
+        "label": "Удалить",
+        "color": "rgb(69, 10, 10)",
+        "background": "rgb(248, 113, 113)",
+        "dialogBackground": "rgb(24, 24, 27)"
+      }
+    ],
+    "progress": []
+  }
+]

@@ -2,7 +2,7 @@
 import { onBeforeUnmount, ref, watch } from 'vue';
 import type { DiagnosticPage, NativeBridge } from '../../shared/contracts';
 import { errorMessage, formatCount } from '../../shared/format';
-const props = defineProps<{ id: string; count: number; bridge: NativeBridge }>();
+const props = defineProps<{ id: string; count: number; bridge: NativeBridge; preview?: boolean }>();
 const open = ref(false);
 const offset = ref(0);
 const previous = ref<number[]>([]);
@@ -15,7 +15,7 @@ async function load() {
   busy.value = true;
   error.value = '';
   try {
-    const result = await props.bridge.readDiagnostics(props.id, offset.value, 50);
+    const result = await props.bridge.readDiagnostics(props.id, offset.value, open.value ? 50 : 1);
     if (run === generation) page.value = result;
   } catch (e) {
     if (run === generation) error.value = errorMessage(e);
@@ -30,12 +30,18 @@ watch(
     page.value = { items: [], next_offset: null, total: 0 };
     offset.value = 0;
     previous.value = [];
-    if (open.value) void load();
+    if (open.value || props.preview) void load();
   },
 );
-watch([open, () => props.count], () => {
-  if (open.value) void load();
-});
+watch(
+  [open, () => props.count],
+  () => {
+    offset.value = 0;
+    previous.value = [];
+    if (open.value || props.preview) void load();
+  },
+  { immediate: true },
+);
 onBeforeUnmount(() => {
   generation++;
 });
@@ -53,12 +59,15 @@ function back() {
 <template>
   <section class="diagnostics">
     <button type="button" class="disclosure" :aria-expanded="open" @click="open = !open">
-      Журнал · {{ formatCount(count) }} <span>{{ open ? 'Скрыть' : 'Показать' }}</span>
+      {{ preview ? 'Предупреждения' : 'Журнал' }} · {{ formatCount(count) }}
+      <span>{{ open ? 'Скрыть' : preview ? 'Показать все' : 'Показать' }}</span>
     </button>
-    <div v-if="open" :aria-busy="busy">
+    <div v-if="open || preview" :aria-busy="busy">
       <p v-if="error" role="alert" class="error-message">{{ error }}</p>
       <p v-if="busy" role="status" class="muted">Чтение журнала…</p>
-      <p v-else-if="!page.items.length" class="muted">Предупреждений нет.</p>
+      <p v-else-if="!error && !page.items.length" class="muted">
+        {{ count ? 'Не удалось найти записи журнала.' : 'Предупреждений нет.' }}
+      </p>
       <ol v-else class="diagnostic-list" :start="offset + 1">
         <li v-for="(item, index) in page.items" :key="`${offset}-${index}`">
           <p>{{ item.message }}</p>
@@ -68,7 +77,7 @@ function back() {
         </li>
       </ol>
       <nav
-        v-if="previous.length || page.next_offset !== null"
+        v-if="open && (previous.length || page.next_offset !== null)"
         aria-label="Страницы журнала"
         class="pagination"
       >

@@ -68,7 +68,18 @@ const ConverterPreset = definePreset(Aura, {
     button: {
       colorScheme: {
         light: {
-          outlined: { primary: { color: '{primary.700}' } },
+          root: {
+            danger: {
+              background: '{red.600}',
+              hoverBackground: '{red.700}',
+              activeBackground: '{red.800}',
+              borderColor: '{red.600}',
+              hoverBorderColor: '{red.700}',
+              activeBorderColor: '{red.800}',
+              focusRing: { color: '{red.600}' },
+            },
+          },
+          outlined: { primary: { color: '{primary.700}' }, danger: { color: '{red.700}' } },
           text: { primary: { color: '{primary.700}' } },
         },
       },

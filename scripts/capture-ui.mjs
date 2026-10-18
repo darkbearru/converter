@@ -3,42 +3,59 @@ import { chromium, webkit } from '@playwright/test';
 import { createServer } from 'vite';
 
 const layout = process.argv.includes('--layout');
-const review = `.impeccable/review/${layout ? 'composer-layout' : 'composer'}`;
-const archive = `docs/validation/ui/${layout ? 'composer-layout' : 'composer'}`;
+const history = process.argv.includes('--history');
+const group = history ? 'history-actions' : layout ? 'composer-layout' : 'composer';
+const review = `.impeccable/review/${group}`;
+const archive = `docs/validation/ui/${group}`;
 const only = process.argv.find((arg) => arg.startsWith('--only='))?.slice(7);
-const cases = layout
+const cases = history
   ? [
-      ['empty-dark', 'chromium', 'dark', ''],
-      ['one-dark', 'chromium', 'dark', 'history-one'],
-      ['many-dark', 'chromium', 'dark', 'history-many'],
-      ['active-light', 'chromium', 'light', 'history-active'],
-      ['small-light', 'webkit', 'light', 'history-many', null, { width: 540, height: 400 }],
+      ['warning-dark', 'webkit', 'dark', 'warning', 'history'],
       [
-        'download-small',
+        'actions-small-light',
         'webkit',
         'light',
-        'history-many',
-        'download',
+        'succeeded',
+        'history',
         { width: 540, height: 400 },
       ],
+      ['delete-light', 'chromium', 'light', 'succeeded', 'delete'],
+      ['delete-small-dark', 'webkit', 'dark', 'long', 'delete', { width: 540, height: 400 }],
+      ['deleted-light', 'chromium', 'light', 'succeeded', 'deleted'],
     ]
-  : [
-      ['empty-dark', 'chromium', 'dark', ''],
-      ['download-dark', 'chromium', 'dark', 'downloading'],
-      ['ready-dark', 'chromium', 'dark', 'ready'],
-      ['active-dark', 'chromium', 'dark', 'converting'],
-      ['stack-dark', 'chromium', 'dark', 'stack'],
-      ['settings-dark', 'chromium', 'dark', '', 'settings'],
-      ['settings-resources', 'chromium', 'dark', 'ready-resources', 'settings'],
-      ['link-dark', 'chromium', 'dark', '', 'link'],
-      ['history-dark', 'chromium', 'dark', 'succeeded', 'history'],
-      ['empty-light', 'chromium', 'light', ''],
-      ['stack-light', 'chromium', 'light', 'stack'],
-      ['history-light', 'chromium', 'light', 'long', 'history'],
-      ['stack-webkit-light', 'webkit', 'light', 'stack'],
-      ['download-webkit-dark', 'webkit', 'dark', 'downloading'],
-      ['settings-small', 'webkit', 'light', '', 'settings', { width: 540, height: 400 }],
-    ];
+  : layout
+    ? [
+        ['empty-dark', 'chromium', 'dark', ''],
+        ['one-dark', 'chromium', 'dark', 'history-one'],
+        ['many-dark', 'chromium', 'dark', 'history-many'],
+        ['active-light', 'chromium', 'light', 'history-active'],
+        ['small-light', 'webkit', 'light', 'history-many', null, { width: 540, height: 400 }],
+        [
+          'download-small',
+          'webkit',
+          'light',
+          'history-many',
+          'download',
+          { width: 540, height: 400 },
+        ],
+      ]
+    : [
+        ['empty-dark', 'chromium', 'dark', ''],
+        ['download-dark', 'chromium', 'dark', 'downloading'],
+        ['ready-dark', 'chromium', 'dark', 'ready'],
+        ['active-dark', 'chromium', 'dark', 'converting'],
+        ['stack-dark', 'chromium', 'dark', 'stack'],
+        ['settings-dark', 'chromium', 'dark', '', 'settings'],
+        ['settings-resources', 'chromium', 'dark', 'ready-resources', 'settings'],
+        ['link-dark', 'chromium', 'dark', '', 'link'],
+        ['history-dark', 'chromium', 'dark', 'succeeded', 'history'],
+        ['empty-light', 'chromium', 'light', ''],
+        ['stack-light', 'chromium', 'light', 'stack'],
+        ['history-light', 'chromium', 'light', 'long', 'history'],
+        ['stack-webkit-light', 'webkit', 'light', 'stack'],
+        ['download-webkit-dark', 'webkit', 'dark', 'downloading'],
+        ['settings-small', 'webkit', 'light', '', 'settings', { width: 540, height: 400 }],
+      ];
 const server = await createServer({ server: { host: '127.0.0.1', port: 1422, strictPort: true } });
 await server.listen();
 await Promise.all([mkdir(review, { recursive: true }), mkdir(archive, { recursive: true })]);
@@ -76,9 +93,22 @@ try {
           await page.getByRole('button', { name: 'Настройки конвертации', exact: true }).click();
         if (action === 'link')
           await page.getByRole('button', { name: 'Добавить ссылку', exact: true }).click();
-        if (action === 'history') {
+        if (['history', 'delete', 'deleted'].includes(action)) {
           await page.locator('.p-accordionheader').click();
           await page.locator('.result-path').waitFor();
+          if (['warning', 'long'].includes(scenario))
+            await page.locator('.diagnostic-list li').first().waitFor();
+        }
+        if (['delete', 'deleted'].includes(action)) {
+          await page.getByRole('button', { name: 'Удалить', exact: true }).click();
+          if (action === 'deleted') {
+            await page
+              .getByRole('dialog')
+              .getByRole('button', { name: 'Удалить', exact: true })
+              .click();
+            await page.getByRole('dialog').waitFor({ state: 'hidden' });
+            await page.locator('.completed-history').waitFor({ state: 'hidden' });
+          }
         }
         if (action === 'download') {
           await page.getByRole('button', { name: 'Добавить ссылку', exact: true }).click();
@@ -115,6 +145,20 @@ try {
             jobPanels: rect('.job-panels'),
             stack: rect('.task-stack'),
             dialog: rect('.p-dialog'),
+            historyActions: [...document.querySelectorAll('.history-actions .p-button')].map(
+              (el) => {
+                const { x, y, width, height } = el.getBoundingClientRect();
+                return {
+                  label: el.textContent,
+                  x,
+                  y,
+                  width,
+                  height,
+                  color: getComputedStyle(el).color,
+                  background: getComputedStyle(el).backgroundColor,
+                };
+              },
+            ),
             dialogButtons: [...document.querySelectorAll('.p-dialog .p-button')].map((el) => ({
               label: el.textContent,
               color: getComputedStyle(el).color,
