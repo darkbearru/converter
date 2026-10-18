@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue';
+import bookIcon from '../book.svg';
 import type { JobOptionsUpdate, JobSnapshot, NativeBridge } from './shared/contracts';
 import { nativeBridge } from './shared/native';
 import { isActive, stateLabels } from './shared/format';
@@ -44,18 +45,7 @@ async function save(update: JobOptionsUpdate) {
   <div class="app-shell">
     <header class="app-header">
       <div class="app-identity">
-        <svg aria-hidden="true" width="28" height="28" viewBox="0 0 28 28" fill="none">
-          <path
-            d="M4 5h8a3 3 0 0 1 3 3v15a4 4 0 0 0-4-3H4V5Z"
-            stroke="currentColor"
-            stroke-width="1.6"
-          />
-          <path
-            d="M15 9h9v14h-5a4 4 0 0 0-4 0M7 9h4M7 12h4M19 13h2M19 16h2"
-            stroke="currentColor"
-            stroke-width="1.6"
-          />
-        </svg>
+        <img class="app-logo" :src="bookIcon" alt="" width="40" height="36" />
         <h1>Converter</h1>
       </div>
       <span class="app-caption">Словари в MDX + MDD</span>

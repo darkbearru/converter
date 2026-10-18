@@ -156,8 +156,10 @@ ul {
   gap: 10px;
   color: var(--text);
 }
-.app-identity svg {
-  color: var(--accent);
+.app-logo {
+  width: 40px;
+  height: 36px;
+  object-fit: contain;
   flex: 0 0 auto;
 }
 .app-caption,
