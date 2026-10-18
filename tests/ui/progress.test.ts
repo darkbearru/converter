@@ -8,9 +8,17 @@ import { formatBytes } from '../../src/shared/format';
 
 const jobs = fixtures as unknown as Record<string, JobSnapshot>;
 describe('Раздельные этапы задания', () => {
+  it('показывает привычные русские обозначения размеров файлов', () => {
+    expect(formatBytes(0)).toBe('0 байт');
+    expect(formatBytes(512)).toBe('512 байт');
+    expect(formatBytes(1024)).toBe('1 Кб');
+    expect(formatBytes(1024 ** 2)).toBe('1 Мб');
+    expect(formatBytes(1024 ** 3)).toBe('1 Гб');
+    expect(formatBytes(1024 ** 4)).toBe('1 Тб');
+  });
   it('не выдаёт последнюю скорость завершённого файла за текущую', () => {
     render(DownloadProgress, { props: { progress: jobs.converting.download } });
-    expect(screen.queryByText('2 МиБ/с')).not.toBeInTheDocument();
+    expect(screen.queryByText('2 Мб/с')).not.toBeInTheDocument();
   });
   it('обозначает завершённую конвертацию значением 100 для доступности', () => {
     render(ConversionProgress, { props: { progress: jobs.succeeded.conversion } });
@@ -50,7 +58,7 @@ describe('Раздельные этапы задания', () => {
       'aria-valuenow',
     );
     expect(screen.getByText('Общий размер неизвестен')).toBeVisible();
-    expect(screen.getByText('8 ГиБ')).toBeVisible();
+    expect(screen.getByText('8 Гб')).toBeVisible();
   });
   it('для локального файла не рисует загрузку с нуля', () => {
     render(DownloadProgress, { props: { progress: jobs.local.download } });
@@ -62,6 +70,6 @@ describe('Раздельные этапы задания', () => {
     render(DownloadProgress, { props: { progress: jobs.paused.download } });
     expect(screen.getByText('Сервер изменил файл; загрузка начнётся заново')).toBeVisible();
     expect(screen.getByText('На паузе')).toBeVisible();
-    expect(formatBytes(5 * 1024 ** 3)).toBe('5 ГиБ');
+    expect(formatBytes(5 * 1024 ** 3)).toBe('5 Гб');
   });
 });

@@ -36,6 +36,6 @@ test('один неизвестный размер убирает общий п�
     page.getByRole('progressbar', { name: 'Скачивание', exact: true }),
   ).not.toHaveAttribute('aria-valuenow');
   await expect(page.getByText('Общий размер неизвестен', { exact: true })).toBeVisible();
-  await expect(page.getByText('8 ГиБ', { exact: true })).toBeVisible();
-  await expect(page.getByText(/4 ГиБ из 8 ГиБ · 50%/)).toBeVisible();
+  await expect(page.getByText('8 Гб', { exact: true })).toBeVisible();
+  await expect(page.getByText(/4 Гб из 8 Гб · 50%/)).toBeVisible();
 });

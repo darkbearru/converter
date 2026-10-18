@@ -184,9 +184,9 @@ try {
   }, 'tauri-driver');
   await open();
   await newSource(sourceUrl);
-  await wait(() => hasText('1 МиБ'), 'checkpoint');
+  await wait(() => hasText('1 Мб'), 'checkpoint');
   await clickText('Приостановить скачивание');
-  await wait(() => hasText('Подтверждено и сохранено: 1 МиБ'), 'paused checkpoint');
+  await wait(() => hasText('Подтверждено и сохранено: 1 Мб'), 'paused checkpoint');
   await screenshot('paused.png');
   await request(`/session/${session}`, undefined, 'DELETE');
   session = undefined;
@@ -198,7 +198,7 @@ try {
     'reopen application',
     45000,
   );
-  await wait(() => hasText('Подтверждено и сохранено: 1 МиБ'), 'restored checkpoint');
+  await wait(() => hasText('Подтверждено и сохранено: 1 Мб'), 'restored checkpoint');
   await clickText('Продолжить скачивание');
   await wait(
     () => requests.some((r) => r.range === `bytes=${checkpoint}-` && r.if_range === '"native-v1"'),
@@ -253,7 +253,7 @@ try {
   assert.equal(report.summary.source_articles, 60001);
   await clickText('Добавить');
   await newSource(sourceUrl.replace('/dictionary', '/cancel'));
-  await wait(() => hasText('1 МиБ'), 'cancel checkpoint');
+  await wait(() => hasText('1 Мб'), 'cancel checkpoint');
   await clickText('Отменить задание');
   await wait(() => hasText('Запустить заново'), 'cancelled');
   await wait(

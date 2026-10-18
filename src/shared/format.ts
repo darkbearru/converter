@@ -12,7 +12,7 @@ export const formatQuantity = (value: number, forms: [string, string, string]) =
   `${formatCount(value)} ${noun(value, forms)}`;
 export function formatBytes(value: number): string {
   if (!Number.isFinite(value) || value < 0) return '—';
-  const units = ['Б', 'КиБ', 'МиБ', 'ГиБ', 'ТиБ'];
+  const units = ['байт', 'Кб', 'Мб', 'Гб', 'Тб'];
   const index =
     value === 0 ? 0 : Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
   return `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: index ? 1 : 0 }).format(value / 1024 ** index)} ${units[index]}`;
