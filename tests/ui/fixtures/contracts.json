@@ -58,6 +58,7 @@
     },
     "error": null,
     "input_choices": [],
+    "additional_dictionaries": null,
     "diagnostic_count": 0,
     "options": {
       "encoding": "auto"
@@ -113,6 +114,7 @@
     },
     "error": null,
     "input_choices": [],
+    "additional_dictionaries": null,
     "diagnostic_count": 0,
     "options": {
       "encoding": "auto"
@@ -158,6 +160,7 @@
     },
     "error": null,
     "input_choices": [],
+    "additional_dictionaries": null,
     "diagnostic_count": 0,
     "options": {
       "encoding": "auto"
@@ -213,6 +216,7 @@
     },
     "error": null,
     "input_choices": [],
+    "additional_dictionaries": null,
     "diagnostic_count": 0,
     "options": {
       "encoding": "auto"
@@ -258,6 +262,7 @@
     },
     "error": null,
     "input_choices": [],
+    "additional_dictionaries": null,
     "diagnostic_count": 0,
     "options": {
       "encoding": "auto"
@@ -358,6 +363,7 @@
     },
     "error": null,
     "input_choices": [],
+    "additional_dictionaries": null,
     "diagnostic_count": 0,
     "options": {
       "encoding": "auto"
@@ -422,6 +428,7 @@
     },
     "error": null,
     "input_choices": [],
+    "additional_dictionaries": null,
     "diagnostic_count": 0,
     "options": {
       "encoding": "auto"

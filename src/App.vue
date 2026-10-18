@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import Dialog from 'primevue/dialog';
 import bookIcon from '../book.svg';
 import Button from 'primevue/button';
-import type { JobOptionsUpdate, JobSnapshot, NativeBridge } from './shared/contracts';
+import type {
+  AdditionalDictionariesOffer,
+  JobOptionsUpdate,
+  JobSnapshot,
+  NativeBridge,
+} from './shared/contracts';
 import { nativeBridge } from './shared/native';
 import { isActive } from './shared/format';
 import Icon from './shared/ui/Icon.vue';
@@ -15,6 +20,7 @@ import JobSettings from './features/jobs/JobSettings.vue';
 import DownloadProgress from './features/progress/DownloadProgress.vue';
 import ConversionProgress from './features/progress/ConversionProgress.vue';
 import DiagnosticsList from './features/results/DiagnosticsList.vue';
+import AdditionalDictionariesDialog from './features/jobs/AdditionalDictionariesDialog.vue';
 const props = defineProps<{ bridge?: NativeBridge }>();
 const bridge = props.bridge ?? nativeBridge;
 const store = createJobStore(bridge);
@@ -44,6 +50,42 @@ const history = computed(() =>
 const selected = ref<string | null>(null);
 const deleting = ref<JobSnapshot | null>(null);
 const deleteError = ref('');
+const additionalError = ref('');
+const additionalJob = computed(() =>
+  jobs.value.find(
+    (job) =>
+      job.additional_dictionaries && !store.resolvedOffers.has(job.additional_dictionaries.id),
+  ),
+);
+const presentedOffer = ref<{ jobId: string; offer: AdditionalDictionariesOffer } | null>(null);
+const additionalOffer = computed(() => presentedOffer.value?.offer);
+watch(
+  [additionalJob, presentedOffer],
+  () => {
+    if (!presentedOffer.value && additionalJob.value?.additional_dictionaries) {
+      presentedOffer.value = {
+        jobId: additionalJob.value.id,
+        offer: additionalJob.value.additional_dictionaries,
+      };
+      additionalError.value = '';
+    }
+  },
+  { immediate: true },
+);
+async function decideAdditional(convert: boolean) {
+  const current = presentedOffer.value;
+  if (!current || store.pending[`offer:${current.offer.id}`]) return;
+  additionalError.value = '';
+  const resolved = await store.resolveAdditional(current.jobId, current.offer.id, convert);
+  if (presentedOffer.value?.offer.id !== current.offer.id) return;
+  if (resolved) presentedOffer.value = null;
+  else additionalError.value = error.value;
+}
+function dismissAdditional() {
+  if (!presentedOffer.value) return;
+  store.resolvedOffers.add(presentedOffer.value.offer.id);
+  presentedOffer.value = null;
+}
 function requestDelete(id: string) {
   deleteError.value = '';
   deleting.value = store.jobs[id] ?? null;
@@ -104,6 +146,13 @@ async function save(update: JobOptionsUpdate) {
         <SourceComposer :bridge="bridge" :jobs="jobs" @snapshot="store.mergeSnapshot" />
       </div>
     </main>
+    <AdditionalDictionariesDialog
+      :offer="additionalOffer"
+      :busy="Boolean(additionalOffer && store.pending[`offer:${additionalOffer.id}`])"
+      :error="additionalError"
+      @decide="decideAdditional"
+      @dismiss="dismissAdditional"
+    />
     <Dialog
       :visible="Boolean(deleting)"
       modal

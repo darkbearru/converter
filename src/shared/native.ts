@@ -23,6 +23,8 @@ export const nativeBridge: NativeBridge = {
   cancelJob: (id) => call('cancel_job', { id }),
   deleteJob: (id) => call('delete_job', { id }),
   updateJob: (id, update) => call('update_job', { id, update }),
+  resolveAdditionalDictionaries: (id, offerId, convert) =>
+    call('resolve_additional_dictionaries', { jobId: id, offerId, convert }),
   getJobs: () => call('get_jobs'),
   readDiagnostics: (id, offset, limit) => call('read_diagnostics', { id, offset, limit }),
   exportResult: (id) => call('export_result', { id }),

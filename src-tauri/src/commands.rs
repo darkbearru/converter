@@ -82,6 +82,18 @@ pub async fn update_job(
     state.manager.update(&id, update).await
 }
 #[tauri::command]
+pub async fn resolve_additional_dictionaries(
+    state: State<'_, NativeState>,
+    job_id: String,
+    offer_id: String,
+    convert: bool,
+) -> AppResult<Vec<JobSnapshot>> {
+    state
+        .manager
+        .resolve_additional(&job_id, &offer_id, convert)
+        .await
+}
+#[tauri::command]
 pub fn read_diagnostics(
     state: State<'_, NativeState>,
     id: String,

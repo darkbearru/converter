@@ -1,6 +1,7 @@
 .dsl-article {
     --dsl-color: #20734b;
     --dsl-muted: #666;
+    --dsl-stress: #a53232;
     line-height: 1.5;
     overflow-wrap: anywhere;
 }
@@ -22,6 +23,8 @@
 .dsl-comment { color: var(--dsl-muted); }
 .dsl-example { font-style: italic; }
 .dsl-transcription { font-family: serif; }
+.dsl-stress { color: var(--dsl-stress); }
+.dsl-optional { color: var(--dsl-muted); }
 .dsl-abbreviation { text-decoration: underline dotted; }
 .dsl-image { display: inline-block; max-width: 100%; height: auto; vertical-align: middle; }
 .dsl-sound { display: inline-block; padding: .15em .4em; }

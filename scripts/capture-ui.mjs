@@ -6,92 +6,108 @@ const layout = process.argv.includes('--layout');
 const history = process.argv.includes('--history');
 const compact = process.argv.includes('--compact');
 const diagnostics = process.argv.includes('--diagnostics');
-const group = diagnostics
-  ? 'diagnostics-dialog'
-  : compact
-    ? 'compact-warning'
-    : history
-      ? 'history-actions'
-      : layout
-        ? 'composer-layout'
-        : 'composer';
+const additional = process.argv.includes('--additional');
+const group = additional
+  ? 'additional-dictionaries'
+  : diagnostics
+    ? 'diagnostics-dialog'
+    : compact
+      ? 'compact-warning'
+      : history
+        ? 'history-actions'
+        : layout
+          ? 'composer-layout'
+          : 'composer';
 const review = `.impeccable/review/${group}`;
 const archive = `docs/validation/ui/${group}`;
 const only = process.argv.find((arg) => arg.startsWith('--only='))?.slice(7);
-const cases = diagnostics
+const cases = additional
   ? [
-      ['link-dark', 'webkit', 'dark', 'warning', 'history'],
-      ['dialog-dark', 'webkit', 'dark', 'warning', 'diagnostics'],
+      ['offer-dark', 'webkit', 'dark', 'additional', 'additional'],
       [
-        'dialog-small-light',
+        'offer-small-light',
         'chromium',
         'light',
-        'warning',
-        'diagnostics',
+        'additional-long',
+        'additional',
         { width: 540, height: 400 },
       ],
+      ['error-dark', 'webkit', 'dark', 'additional-error', 'additional-error'],
     ]
-  : compact
+  : diagnostics
     ? [
-        ['empty-dark', 'webkit', 'dark', ''],
-        ['warning-dark', 'webkit', 'dark', 'warning', 'history'],
+        ['link-dark', 'webkit', 'dark', 'warning', 'history'],
+        ['dialog-dark', 'webkit', 'dark', 'warning', 'diagnostics'],
         [
-          'warning-small-light',
+          'dialog-small-light',
           'chromium',
           'light',
           'warning',
-          'history',
+          'diagnostics',
           { width: 540, height: 400 },
         ],
       ]
-    : history
+    : compact
       ? [
+          ['empty-dark', 'webkit', 'dark', ''],
           ['warning-dark', 'webkit', 'dark', 'warning', 'history'],
           [
-            'actions-small-light',
-            'webkit',
+            'warning-small-light',
+            'chromium',
             'light',
-            'succeeded',
+            'warning',
             'history',
             { width: 540, height: 400 },
           ],
-          ['delete-light', 'chromium', 'light', 'succeeded', 'delete'],
-          ['delete-small-dark', 'webkit', 'dark', 'long', 'delete', { width: 540, height: 400 }],
-          ['deleted-light', 'chromium', 'light', 'succeeded', 'deleted'],
         ]
-      : layout
+      : history
         ? [
-            ['empty-dark', 'chromium', 'dark', ''],
-            ['one-dark', 'chromium', 'dark', 'history-one'],
-            ['many-dark', 'chromium', 'dark', 'history-many'],
-            ['active-light', 'chromium', 'light', 'history-active'],
-            ['small-light', 'webkit', 'light', 'history-many', null, { width: 540, height: 400 }],
+            ['warning-dark', 'webkit', 'dark', 'warning', 'history'],
             [
-              'download-small',
+              'actions-small-light',
               'webkit',
               'light',
-              'history-many',
-              'download',
+              'succeeded',
+              'history',
               { width: 540, height: 400 },
             ],
+            ['delete-light', 'chromium', 'light', 'succeeded', 'delete'],
+            ['delete-small-dark', 'webkit', 'dark', 'long', 'delete', { width: 540, height: 400 }],
+            ['deleted-light', 'chromium', 'light', 'succeeded', 'deleted'],
           ]
-        : [
-            ['empty-dark', 'chromium', 'dark', ''],
-            ['download-dark', 'chromium', 'dark', 'downloading'],
-            ['ready-dark', 'chromium', 'dark', 'ready'],
-            ['active-dark', 'chromium', 'dark', 'converting'],
-            ['stack-dark', 'chromium', 'dark', 'stack'],
-            ['settings-dark', 'chromium', 'dark', '', 'settings'],
-            ['settings-resources', 'chromium', 'dark', 'ready-resources', 'settings'],
-            ['link-dark', 'chromium', 'dark', '', 'link'],
-            ['history-dark', 'chromium', 'dark', 'succeeded', 'history'],
-            ['empty-light', 'chromium', 'light', ''],
-            ['stack-light', 'chromium', 'light', 'stack'],
-            ['history-light', 'chromium', 'light', 'long', 'history'],
-            ['stack-webkit-light', 'webkit', 'light', 'stack'],
-            ['download-webkit-dark', 'webkit', 'dark', 'downloading'],
-            ['settings-small', 'webkit', 'light', '', 'settings', { width: 540, height: 400 }],
-          ];
+        : layout
+          ? [
+              ['empty-dark', 'chromium', 'dark', ''],
+              ['one-dark', 'chromium', 'dark', 'history-one'],
+              ['many-dark', 'chromium', 'dark', 'history-many'],
+              ['active-light', 'chromium', 'light', 'history-active'],
+              ['small-light', 'webkit', 'light', 'history-many', null, { width: 540, height: 400 }],
+              [
+                'download-small',
+                'webkit',
+                'light',
+                'history-many',
+                'download',
+                { width: 540, height: 400 },
+              ],
+            ]
+          : [
+              ['empty-dark', 'chromium', 'dark', ''],
+              ['download-dark', 'chromium', 'dark', 'downloading'],
+              ['ready-dark', 'chromium', 'dark', 'ready'],
+              ['active-dark', 'chromium', 'dark', 'converting'],
+              ['stack-dark', 'chromium', 'dark', 'stack'],
+              ['settings-dark', 'chromium', 'dark', '', 'settings'],
+              ['settings-resources', 'chromium', 'dark', 'ready-resources', 'settings'],
+              ['link-dark', 'chromium', 'dark', '', 'link'],
+              ['history-dark', 'chromium', 'dark', 'succeeded', 'history'],
+              ['empty-light', 'chromium', 'light', ''],
+              ['stack-light', 'chromium', 'light', 'stack'],
+              ['history-light', 'chromium', 'light', 'long', 'history'],
+              ['stack-webkit-light', 'webkit', 'light', 'stack'],
+              ['download-webkit-dark', 'webkit', 'dark', 'downloading'],
+              ['settings-small', 'webkit', 'light', '', 'settings', { width: 540, height: 400 }],
+            ];
 const server = await createServer({ server: { host: '127.0.0.1', port: 1422, strictPort: true } });
 await server.listen();
 await Promise.all([mkdir(review, { recursive: true }), mkdir(archive, { recursive: true })]);
@@ -111,6 +127,14 @@ try {
           `http://127.0.0.1:1422/tests/ui/harness/index.html?scenario=${scenario}&capture=1`,
         );
         await page.locator('.source-composer').waitFor();
+        if (action?.startsWith('additional')) {
+          const dialog = page.getByRole('dialog', { name: 'Другие словари в архиве' });
+          await dialog.waitFor();
+          if (action === 'additional-error') {
+            await dialog.getByRole('button', { name: 'Конвертировать', exact: true }).click();
+            await dialog.getByRole('alert').waitFor();
+          }
+        }
         if (scenario.startsWith('history-'))
           await page.waitForFunction(
             (count) => document.querySelectorAll('.p-accordionheader').length === count,

@@ -55,6 +55,7 @@ pub fn run() {
             commands::cancel_job,
             commands::delete_job,
             commands::update_job,
+            commands::resolve_additional_dictionaries,
             commands::read_diagnostics,
             commands::export_result,
             commands::open_result,

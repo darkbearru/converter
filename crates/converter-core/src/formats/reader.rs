@@ -20,6 +20,12 @@ pub struct ReadSummary {
     pub warnings: u64,
 }
 
+#[derive(Clone, Debug)]
+pub struct SourceRelationships {
+    pub title: String,
+    pub external_dictionaries: Vec<String>,
+}
+
 pub trait EntrySink {
     fn push(&mut self, entry: DictionaryEntry) -> Result<()>;
     fn diagnostic(&mut self, diagnostic: Diagnostic) -> Result<()>;
@@ -40,6 +46,14 @@ pub trait DictionaryReader: Send + Sync {
         options: &ReadOptions,
         ctx: &RunContext,
     ) -> Result<DictionaryMetadata>;
+    fn relationships(
+        &self,
+        _bundle: &InputBundle,
+        _options: &ReadOptions,
+        _ctx: &RunContext,
+    ) -> Result<Option<SourceRelationships>> {
+        Ok(None)
+    }
     fn read(
         &self,
         bundle: &InputBundle,

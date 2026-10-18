@@ -180,6 +180,12 @@ pub struct InputChoice {
     pub display_name: String,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AdditionalDictionariesOffer {
+    pub id: String,
+    pub main_name: String,
+    pub dictionaries: Vec<InputChoice>,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct JobSnapshot {
     #[serde(default)]
     pub resource_attachments: Vec<ResourceAttachment>,
@@ -203,6 +209,8 @@ pub struct JobSnapshot {
     pub export: ExportSnapshot,
     pub error: Option<AppError>,
     pub input_choices: Vec<InputChoice>,
+    #[serde(default)]
+    pub additional_dictionaries: Option<AdditionalDictionariesOffer>,
     pub diagnostic_count: u64,
     pub options: ReadOptions,
     pub metadata: Option<DictionaryMetadata>,

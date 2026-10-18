@@ -1,7 +1,14 @@
 use super::references::inline_text;
 use crate::model::{ConverterError, Diagnostic, Result, RunContext};
 
-fn token_end(text: &str) -> Option<usize> {
+pub(super) fn token_end(text: &str) -> Option<usize> {
+    // Апостроф здесь является именем тега ударения, а не кавычкой аргумента.
+    if text.starts_with("[']") {
+        return Some(2);
+    }
+    if text.starts_with("[/']") {
+        return Some(3);
+    }
     let mut quote = None;
     let mut escaped = false;
     for (position, ch) in text.char_indices().skip(1) {
@@ -83,7 +90,35 @@ fn known(name: &str) -> bool {
             | "ref"
             | "url"
             | "s"
+            | "'"
+            | "*"
     )
+}
+
+fn formatting(name: &str) -> bool {
+    matches!(
+        name,
+        "b" | "i" | "u" | "c" | "trn" | "ex" | "com" | "sup" | "sub" | "t" | "lang" | "'" | "*"
+    )
+}
+
+#[derive(Default)]
+struct Frame {
+    name: String,
+    argument: String,
+    children: Vec<Node>,
+    source_position: usize,
+}
+
+impl Frame {
+    fn reopened(&self) -> Self {
+        Self {
+            name: self.name.clone(),
+            argument: self.argument.clone(),
+            children: Vec::new(),
+            source_position: self.source_position,
+        }
+    }
 }
 
 struct MarkupParser<'a> {
@@ -91,26 +126,60 @@ struct MarkupParser<'a> {
     position: usize,
     display: &'a str,
     diagnostics: Vec<Diagnostic>,
+    minimum_html_bytes: usize,
     ctx: &'a RunContext,
 }
 
 impl MarkupParser<'_> {
-    fn nodes(&mut self, stop: Option<&str>, depth: usize) -> Result<Vec<Node>> {
-        if depth > 128 {
+    fn push(&mut self, frames: &mut [Frame], node: Node) -> Result<()> {
+        // Нижняя оценка размера HTML ограничивает рост дерева при разбиении тегов.
+        self.minimum_html_bytes = self.minimum_html_bytes.saturating_add(match &node {
+            Node::Text(text) => text.len(),
+            Node::Reference(target) => target.len().saturating_add(8),
+            Node::Element { .. } => 8,
+        });
+        if self.minimum_html_bytes > self.ctx.limits.max_html_bytes {
             return Err(ConverterError::new(
-                "invalid_markup",
-                "Слишком глубокая вложенность тегов DSL",
+                "article_too_large",
+                "HTML статьи превышает допустимый размер",
             ));
         }
-        let mut nodes = Vec::new();
+        frames
+            .last_mut()
+            .ok_or_else(|| ConverterError::new("invalid_markup", "Неожиданный конец разметки"))?
+            .children
+            .push(node);
+        Ok(())
+    }
+
+    fn close(&mut self, frames: &mut Vec<Frame>) -> Result<()> {
+        let frame = frames
+            .pop()
+            .ok_or_else(|| ConverterError::new("invalid_markup", "Неожиданный конец разметки"))?;
+        if frame.children.is_empty() && formatting(&frame.name) {
+            return Ok(());
+        }
+        self.push(
+            frames,
+            Node::Element {
+                name: frame.name,
+                argument: frame.argument,
+                children: frame.children,
+            },
+        )
+    }
+
+    fn nodes(&mut self) -> Result<Vec<Node>> {
+        let mut frames = vec![Frame::default()];
         let mut text = String::new();
         let mut iterations = 0usize;
+        let source = self.source;
         while self.position < self.source.len() {
             if iterations.is_multiple_of(1024) {
                 self.ctx.control.check()?;
             }
             iterations += 1;
-            let rest = &self.source[self.position..];
+            let rest = &source[self.position..];
             let ch = rest.chars().next().ok_or_else(|| {
                 ConverterError::new("invalid_markup", "Неожиданный конец разметки")
             })?;
@@ -128,12 +197,12 @@ impl MarkupParser<'_> {
             } else if let Some(target) = rest.strip_prefix("<<") {
                 if let Some(end) = reference_end(target) {
                     if !text.is_empty() {
-                        nodes.push(Node::Text(std::mem::take(&mut text)));
+                        self.push(&mut frames, Node::Text(std::mem::take(&mut text)))?;
                     }
-                    nodes.push(Node::Reference(inline_text(
-                        target[..end].trim(),
-                        self.display,
-                    )));
+                    self.push(
+                        &mut frames,
+                        Node::Reference(inline_text(target[..end].trim(), self.display)),
+                    )?;
                     self.position += end + 4;
                 } else {
                     return Err(ConverterError::new(
@@ -167,38 +236,100 @@ impl MarkupParser<'_> {
                     continue;
                 }
                 if !text.is_empty() {
-                    nodes.push(Node::Text(std::mem::take(&mut text)));
+                    self.push(&mut frames, Node::Text(std::mem::take(&mut text)))?;
                 }
                 if closing {
-                    if stop == Some(normalized(&name).as_str()) {
-                        return Ok(nodes);
+                    let matching = frames
+                        .iter()
+                        .rposition(|frame| normalized(&frame.name) == normalized(&name));
+                    let Some(matching) = matching else {
+                        return Err(ConverterError::new(
+                            "invalid_markup",
+                            format!("Неожиданное закрытие тега: [{raw}]"),
+                        ));
+                    };
+                    let crossed = matching + 1 != frames.len();
+                    // После переноса оформления внутрь [p] порядок кадров может отличаться
+                    // от исходного: предупреждаем только о пересечении исходных тегов.
+                    let source_crossed = frames
+                        .iter()
+                        .any(|frame| frame.source_position > frames[matching].source_position);
+                    if crossed
+                        && ((!formatting(&frames[matching].name) && frames[matching].name != "p")
+                            || frames[matching + 1..]
+                                .iter()
+                                .any(|frame| !formatting(&frame.name)))
+                    {
+                        return Err(ConverterError::new(
+                            "invalid_markup",
+                            format!("Неожиданное закрытие тега: [{raw}]"),
+                        ));
                     }
+                    let reopen: Vec<_> =
+                        frames[matching + 1..].iter().map(Frame::reopened).collect();
+                    while frames.len() > matching {
+                        self.close(&mut frames)?;
+                    }
+                    // Восстанавливаем только оформление: ссылки, ресурсы и блоки не разрываем.
+                    frames.extend(reopen);
+                    if source_crossed {
+                        self.diagnostics.push(Diagnostic {
+                            code: "repaired_markup".into(),
+                            message: format!(
+                                "Восстановлено пересечение тегов оформления перед [{raw}]"
+                            ),
+                            source_location: None,
+                        });
+                    }
+                    continue;
+                }
+                if frames.len() > 128 {
                     return Err(ConverterError::new(
                         "invalid_markup",
-                        format!("Неожиданное закрытие тега: [{raw}]"),
+                        "Слишком глубокая вложенность тегов DSL",
                     ));
                 }
-                let children = self.nodes(Some(&normalized(&name)), depth + 1)?;
-                nodes.push(Node::Element {
+                // Сокращение остаётся одним узлом даже при закрытии внешнего оформления
+                // внутри [p]. Переносим только активные стили, сохраняя порядок исходных тегов.
+                let reopen = if name == "p" {
+                    let start = frames
+                        .iter()
+                        .rposition(|frame| !formatting(&frame.name))
+                        .map_or(0, |position| position + 1);
+                    let reopen = frames[start..]
+                        .iter()
+                        .map(Frame::reopened)
+                        .collect::<Vec<_>>();
+                    while frames.len() > start {
+                        self.close(&mut frames)?;
+                    }
+                    reopen
+                } else {
+                    Vec::new()
+                };
+                frames.push(Frame {
                     name,
                     argument: argument.into(),
-                    children,
+                    children: Vec::new(),
+                    source_position: self.position,
                 });
+                frames.extend(reopen);
             } else {
                 text.push(ch);
                 self.position += ch.len_utf8();
             }
         }
-        if let Some(stop) = stop {
+        if frames.len() > 1 {
+            let stop = normalized(&frames[frames.len() - 1].name);
             return Err(ConverterError::new(
                 "invalid_markup",
                 format!("Не закрыт тег [{stop}]"),
             ));
         }
         if !text.is_empty() {
-            nodes.push(Node::Text(text));
+            self.push(&mut frames, Node::Text(text))?;
         }
-        Ok(nodes)
+        Ok(frames.remove(0).children)
     }
 }
 
@@ -212,9 +343,10 @@ pub(super) fn parse(
         position: 0,
         display,
         diagnostics: Vec::new(),
+        minimum_html_bytes: 0,
         ctx,
     };
-    let nodes = parser.nodes(None, 0)?;
+    let nodes = parser.nodes()?;
     Ok((nodes, parser.diagnostics))
 }
 

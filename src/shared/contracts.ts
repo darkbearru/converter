@@ -119,7 +119,13 @@ export interface ExportSnapshot {
   saved_files: string[];
   error: AppError | null;
 }
+export interface AdditionalDictionariesOffer {
+  id: string;
+  main_name: string;
+  dictionaries: { id: string; display_name: string }[];
+}
 export interface JobSnapshot {
+  additional_dictionaries?: AdditionalDictionariesOffer | null;
   resource_attachments?: ResourceAttachment[];
   id: string;
   display_name: string;
@@ -178,6 +184,11 @@ export interface NativeBridge {
   cancelJob(id: string): Promise<JobSnapshot>;
   deleteJob(id: string): Promise<void>;
   updateJob(id: string, update: JobOptionsUpdate): Promise<JobSnapshot>;
+  resolveAdditionalDictionaries(
+    id: string,
+    offerId: string,
+    convert: boolean,
+  ): Promise<JobSnapshot[]>;
   getJobs(): Promise<JobSnapshot[]>;
   readDiagnostics(id: string, offset: number, limit: number): Promise<DiagnosticPage>;
   exportResult(id: string): Promise<JobSnapshot>;

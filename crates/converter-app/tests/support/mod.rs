@@ -15,6 +15,9 @@ pub struct TestStorage {
     active: AtomicUsize,
     pub peak: AtomicUsize,
     pub fail_publish: AtomicBool,
+    pub block_publish: AtomicBool,
+    pub publish_started: tokio::sync::Notify,
+    pub publish_release: tokio::sync::Notify,
     pub block_export: AtomicBool,
     pub export_started: tokio::sync::Notify,
     pub export_release: tokio::sync::Notify,
@@ -27,6 +30,9 @@ impl TestStorage {
             active: AtomicUsize::new(0),
             peak: AtomicUsize::new(0),
             fail_publish: AtomicBool::new(false),
+            block_publish: AtomicBool::new(false),
+            publish_started: tokio::sync::Notify::new(),
+            publish_release: tokio::sync::Notify::new(),
             block_export: AtomicBool::new(false),
             export_started: tokio::sync::Notify::new(),
             export_release: tokio::sync::Notify::new(),
@@ -79,6 +85,10 @@ impl PlatformStorage for TestStorage {
         output: &OutputChoice,
         ctx: &RunContext,
     ) -> AppResult<PublishedResult> {
+        if self.block_publish.load(Ordering::SeqCst) {
+            self.publish_started.notify_one();
+            self.publish_release.notified().await;
+        }
         if self.fail_publish.swap(false, Ordering::SeqCst) {
             return Err(AppError::new(
                 "output_unavailable",

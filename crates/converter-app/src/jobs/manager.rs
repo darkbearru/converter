@@ -5,7 +5,11 @@ use super::{
     store::{RegisteredSource, Store, StoredJob},
 };
 use crate::{storage::*, *};
-use converter_core::{model::*, pipeline::convert_to_staging, prepare::prepare_source};
+use converter_core::{
+    model::*,
+    pipeline::convert_to_staging,
+    prepare::{prepare_source, select_primary_dictionary},
+};
 use converter_download::{
     DownloadCache, DownloadManager, DownloadPolicy, DownloadProgress, DownloadRequest,
     TransferOutcome, TransferState,
@@ -22,6 +26,8 @@ use std::{
     time::Instant,
 };
 use tokio::sync::{Notify, Semaphore, broadcast};
+
+mod package;
 
 struct Runtime {
     jobs: BTreeMap<String, StoredJob>,
@@ -138,6 +144,7 @@ impl JobManager {
     pub fn open(data_dir: PathBuf, storage: Arc<dyn PlatformStorage>) -> AppResult<Self> {
         let store = Store::open(data_dir)?;
         let mut jobs = store.load()?;
+        package::recover(&store, &mut jobs)?;
         let imports = store.imports()?;
         let cache = DownloadCache::open(store.root.join("downloads"))?;
         for job in jobs.values_mut() {
@@ -246,6 +253,8 @@ impl JobManager {
             .ok_or_else(|| AppError::new("job_not_found", "Задание не найдено"))?;
         if runtime.controls.contains_key(id)
             || runtime.exports.contains(id)
+            || package::has_incomplete_dispatch(job)
+            || package::protected_child(&runtime.jobs, id)
             || !finished(job.snapshot.state)
             || job.snapshot.export.status == ExportStatus::Running
         {
@@ -395,6 +404,7 @@ impl JobManager {
             export: ExportSnapshot::default(),
             error: None,
             input_choices: vec![],
+            additional_dictionaries: None,
             diagnostic_count: 0,
             options: draft.options.clone(),
             metadata: draft.metadata_override.clone(),
@@ -410,6 +420,7 @@ impl JobManager {
             selected_main: None,
             ready: None,
             staging_path: None,
+            additional_dictionaries: None,
         };
         self.inner.store.save(&job)?;
         self.inner
@@ -474,6 +485,9 @@ impl JobManager {
         Ok(Some(snapshot))
     }
     pub async fn start(&self, id: &str) -> AppResult<JobSnapshot> {
+        self.start_job(id, false).await
+    }
+    async fn start_job(&self, id: &str, only_new: bool) -> AppResult<JobSnapshot> {
         if self.inner.stopping.load(Ordering::SeqCst) {
             return Err(AppError::new("app_stopping", "Приложение завершает работу"));
         }
@@ -494,6 +508,13 @@ impl JobManager {
         let snapshot = {
             let mut runtime = self.inner.runtime.lock().map_err(|_| lock_error())?;
             if runtime.controls.contains_key(id) {
+                if only_new {
+                    return runtime
+                        .jobs
+                        .get(id)
+                        .map(|job| job.snapshot.clone())
+                        .ok_or_else(|| AppError::new("job_not_found", "Задание не найдено"));
+                }
                 return Err(AppError::new("job_busy", "Задание уже выполняется"));
             }
             let mut job = runtime
@@ -501,6 +522,10 @@ impl JobManager {
                 .get(id)
                 .cloned()
                 .ok_or_else(|| AppError::new("job_not_found", "Задание не найдено"))?;
+            if only_new && (job.snapshot.generation != 0 || job.snapshot.state != JobState::Queued)
+            {
+                return Ok(job.snapshot);
+            }
             if job.snapshot.state == JobState::AwaitingInput {
                 return Err(AppError::new(
                     "input_required",
@@ -787,6 +812,8 @@ impl JobManager {
                 child.snapshot.sequence = 0;
                 child.snapshot.state = JobState::Queued;
                 child.snapshot.input_choices.clear();
+                child.snapshot.additional_dictionaries = None;
+                child.additional_dictionaries = None;
                 child.snapshot.error = None;
                 child.selected_main = Some(choice.id.clone());
                 child.ready = None;
@@ -1232,7 +1259,48 @@ impl JobManager {
         })
         .await
         .map_err(|_| AppError::new("worker_failed", "Не удалось подготовить источник"))??;
-        let selected = job.selected_main.as_deref();
+        let mut selected = job.selected_main.clone();
+        self.mutate(id, Some((generation, run)), true, |job| {
+            job.snapshot.state = JobState::Inspecting;
+        })?;
+        if bundles.len() > 1 && selected.is_none() {
+            let inspected = bundles.clone();
+            let options = job.draft.options.clone();
+            let analysis_context = context.clone();
+            let selection = tokio::task::spawn_blocking(move || {
+                select_primary_dictionary(&inspected, &options, &analysis_context)
+            })
+            .await
+            .map_err(|_| {
+                AppError::new("worker_failed", "Не удалось определить основной словарь")
+            })??;
+            if let Some(selection) = selection {
+                selected = Some(selection.main_id.clone());
+                self.mutate(id, Some((generation, run)), true, |job| {
+                    job.selected_main = Some(selection.main_id);
+                    if job.additional_dictionaries.is_none()
+                        && !selection.independent_ids.is_empty()
+                    {
+                        let offer = AdditionalDictionariesOffer {
+                            id: uuid::Uuid::new_v4().to_string(),
+                            main_name: selection.main_title,
+                            dictionaries: bundles
+                                .iter()
+                                .filter(|bundle| {
+                                    selection.independent_ids.contains(&bundle.main.id)
+                                })
+                                .map(|bundle| InputChoice {
+                                    id: bundle.main.id.clone(),
+                                    display_name: bundle.main.display_name.clone(),
+                                })
+                                .collect(),
+                        };
+                        job.additional_dictionaries = Some(package::pending_offer(offer.clone()));
+                        job.snapshot.additional_dictionaries = Some(offer);
+                    }
+                })?;
+            }
+        }
         if bundles.len() > 1 && selected.is_none() {
             self.mutate(id, Some((generation, run)), true, |job| {
                 job.snapshot.input_choices = bundles

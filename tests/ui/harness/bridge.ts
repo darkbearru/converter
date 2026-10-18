@@ -15,6 +15,14 @@ export function createHarness(scenario: string | null) {
   let currentId = samples.local.id;
   let nextSequence = 110;
   let nextId = 0;
+  let finishAdditional: (() => void) | undefined;
+  let additionalFailed = false;
+  let additionalHandled = false;
+  const additionalOffer = {
+    id: 'offer-main',
+    main_name: 'Universal (Ch-Ru)',
+    dictionaries: [{ id: 'phrase', display_name: 'PhraseBookRuCh.dsl.dz' }],
+  };
   const emit = (snapshot: JobSnapshot) => {
     snapshot.sequence = ++nextSequence;
     jobs.set(snapshot.id, copy(snapshot));
@@ -90,6 +98,15 @@ export function createHarness(scenario: string | null) {
     job.result!.summary.warnings = 28173;
     jobs.set(currentId, job);
   }
+  if (scenario?.startsWith('additional')) {
+    const job = copy(samples.converting);
+    job.display_name = 'UniversalChRu.dsl.dz';
+    job.additional_dictionaries = copy(additionalOffer);
+    if (scenario === 'additional-long') {
+      job.additional_dictionaries.dictionaries[0]!.display_name = `${'Очень_длинное_имя_'.repeat(20)}.dsl`;
+    }
+    jobs.set(currentId, job);
+  }
   if (scenario === 'awaiting') {
     const job = copy(samples.local);
     job.state = 'awaiting_input';
@@ -143,6 +160,29 @@ export function createHarness(scenario: string | null) {
     },
     async getJobs() {
       return [...jobs.values()].map(copy);
+    },
+    async resolveAdditionalDictionaries(id, offerId, convert) {
+      if (offerId !== additionalOffer.id) throw new Error('Предложение устарело');
+      if (scenario === 'additional-error' && !additionalFailed) {
+        additionalFailed = true;
+        throw new Error('Не удалось сохранить очередь. Повторите попытку.');
+      }
+      if (scenario === 'additional-busy')
+        await new Promise<void>((resolve) => {
+          finishAdditional = resolve;
+        });
+      const parent = copy(jobs.get(id)!);
+      parent.additional_dictionaries = null;
+      emit(parent);
+      if (additionalHandled)
+        return [...jobs.values()].filter((job) => job.id.startsWith('independent-')).map(copy);
+      additionalHandled = true;
+      if (!convert) return [];
+      const child = copy(samples.converting);
+      child.id = `independent-${++nextId}`;
+      child.display_name = 'PhraseBookRuCh.dsl.dz';
+      child.additional_dictionaries = null;
+      return [emit(child)];
     },
     async deleteJob(id) {
       jobs.delete(id);
@@ -235,6 +275,12 @@ export function createHarness(scenario: string | null) {
   return {
     bridge,
     advance: () => {
+      if (finishAdditional) {
+        const finish = finishAdditional;
+        finishAdditional = undefined;
+        finish();
+        return;
+      }
       const job = jobs.get(currentId);
       if (job?.prepare_only) {
         const ready = copy(job);
@@ -259,9 +305,16 @@ export function createHarness(scenario: string | null) {
       return next('converting');
     },
     finish: () => next('succeeded'),
-    stale: () =>
+    stale: () => {
+      if (scenario?.startsWith('additional') && additionalHandled) {
+        const parent = copy(jobs.get(currentId)!);
+        parent.additional_dictionaries = copy(additionalOffer);
+        emit(parent);
+        return;
+      }
       listeners.forEach((listener) =>
         listener({ snapshot: { ...copy(samples.stale), id: currentId } }),
-      ),
+      );
+    },
   };
 }

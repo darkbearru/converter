@@ -235,6 +235,8 @@ impl Renderer<'_> {
                             "ex" => ("<span class=\"dsl-example\">", "</span>"),
                             "com" => ("<span class=\"dsl-comment\">", "</span>"),
                             "t" => ("<span class=\"dsl-transcription\">", "</span>"),
+                            "'" => ("<span class=\"dsl-stress\">", "</span>"),
+                            "*" => ("<span class=\"dsl-optional\">", "</span>"),
                             _ => {
                                 return Err(ConverterError::new(
                                     "invalid_markup",

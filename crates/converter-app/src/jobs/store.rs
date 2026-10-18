@@ -13,6 +13,25 @@ pub enum RegisteredSource {
     Local(PreparedFile),
     Remote(DownloadRequest),
 }
+#[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AdditionalDictionariesState {
+    Pending,
+    Declined,
+    Accepted,
+    Dispatched,
+}
+#[derive(Clone, Serialize, Deserialize)]
+pub struct AdditionalDictionaryChild {
+    pub job_id: String,
+    pub dictionary: InputChoice,
+}
+#[derive(Clone, Serialize, Deserialize)]
+pub struct StoredAdditionalDictionaries {
+    pub offer: AdditionalDictionariesOffer,
+    pub state: AdditionalDictionariesState,
+    pub children: Vec<AdditionalDictionaryChild>,
+}
 #[derive(Clone, Serialize, Deserialize)]
 pub struct StoredJob {
     pub version: u32,
@@ -24,6 +43,8 @@ pub struct StoredJob {
     pub ready: Option<ConvertedArtifacts>,
     #[serde(default)]
     pub staging_path: Option<PathBuf>,
+    #[serde(default)]
+    pub additional_dictionaries: Option<StoredAdditionalDictionaries>,
 }
 pub struct Store {
     pub root: PathBuf,

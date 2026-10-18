@@ -6,6 +6,7 @@ mod markup;
 mod metadata;
 pub mod parser;
 mod references;
+mod relationships;
 pub mod renderer;
 
 use crate::{formats::*, model::*};
@@ -92,6 +93,14 @@ impl DictionaryReader for DslReader {
     ) -> Result<DictionaryMetadata> {
         let encoding = decoder::resolve_encoding(&bundle.main, options.encoding.clone(), ctx)?;
         metadata::inspect_metadata(bundle, &encoding, ctx)
+    }
+    fn relationships(
+        &self,
+        bundle: &InputBundle,
+        options: &ReadOptions,
+        ctx: &RunContext,
+    ) -> Result<Option<SourceRelationships>> {
+        relationships::inspect(bundle, options, ctx).map(Some)
     }
     fn read(
         &self,

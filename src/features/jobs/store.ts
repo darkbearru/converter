@@ -7,6 +7,7 @@ export function createJobStore(bridge: NativeBridge) {
   const error = ref('');
   const pending = reactive<Record<string, boolean>>({});
   const deleted = new Set<string>();
+  const resolvedOffers = reactive(new Set<string>());
   let disposed = false;
   let unsubscribe: (() => void) | undefined;
   function mergeSnapshot(snapshot: JobSnapshot) {
@@ -52,6 +53,7 @@ export function createJobStore(bridge: NativeBridge) {
     jobs,
     error,
     pending,
+    resolvedOffers,
     ready,
     mergeSnapshot,
     startJob: (id: string) => action(id, () => bridge.startJob(id)),
@@ -66,6 +68,12 @@ export function createJobStore(bridge: NativeBridge) {
       }),
     updateJob: (id: string, update: JobOptionsUpdate) =>
       action(id, () => bridge.updateJob(id, update)),
+    resolveAdditional: (id: string, offerId: string, convert: boolean) =>
+      action(`offer:${offerId}`, async () => {
+        const children = await bridge.resolveAdditionalDictionaries(id, offerId, convert);
+        children.forEach(mergeSnapshot);
+        resolvedOffers.add(offerId);
+      }),
     exportResult: (id: string) => action(id, () => bridge.exportResult(id)),
     openResult: (id: string) => action(id, () => bridge.openResult(id)),
     dispose() {

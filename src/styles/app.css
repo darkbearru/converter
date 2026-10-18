@@ -469,6 +469,13 @@ h3 {
 .dialog-fields {
   gap: 16px;
 }
+.additional-dictionary-list {
+  margin: 4px 0;
+  padding-inline-start: 20px;
+  max-height: 25dvh;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+}
 .field-stack > label,
 .job-settings > label,
 .resource-settings > legend {

@@ -21,6 +21,7 @@ fn snapshot() -> JobSnapshot {
         export: ExportSnapshot::default(),
         error: None,
         input_choices: vec![],
+        additional_dictionaries: None,
         diagnostic_count: 0,
         options: ReadOptions::default(),
         metadata: Some(DictionaryMetadata {
