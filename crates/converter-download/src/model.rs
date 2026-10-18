@@ -22,6 +22,13 @@ pub struct CompletedDownload {
     pub display_name: String,
     pub bytes: u64,
     pub sha256: String,
+    #[serde(default)]
+    pub statistics: DownloadStatistics,
+}
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct DownloadStatistics {
+    pub resumes: u64,
+    pub restarts: u64,
 }
 #[derive(Clone, Debug)]
 pub struct DownloadPolicy {
@@ -90,6 +97,8 @@ pub struct DownloadManifest {
     pub(crate) completed: Option<CompletedDownload>,
     #[serde(default)]
     pub(crate) transfer_finished: bool,
+    #[serde(default)]
+    pub(crate) statistics: DownloadStatistics,
 }
 impl fmt::Debug for DownloadManifest {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -97,6 +106,15 @@ impl fmt::Debug for DownloadManifest {
             .field("generation", &self.generation)
             .field("confirmed_bytes", &self.checkpoint.confirmed_bytes)
             .finish_non_exhaustive()
+    }
+}
+impl DownloadManifest {
+    /// Сохранённые счётчики; проверка байтов выполняется fetch перед использованием.
+    pub fn confirmed_bytes(&self) -> u64 {
+        self.checkpoint.confirmed_bytes
+    }
+    pub fn total_bytes(&self) -> Option<u64> {
+        self.total_bytes
     }
 }
 

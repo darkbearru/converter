@@ -55,7 +55,7 @@ fn cli_не_перезаписывает_результат() -> std::result::Re
         );
         assert!(directory.join("dictionary.mdx").is_file());
         assert!(directory.join("dictionary.mdd").is_file());
-        assert!(directory.join("report.json").is_file());
+        assert!(directory.join("conversion-report.json").is_file());
         assert_eq!(summary["results"][0]["summary"]["source_articles"], 2);
         paths.push(directory);
     }

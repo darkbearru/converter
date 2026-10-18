@@ -47,7 +47,7 @@
 
 **Interfaces:** Consumes core/downloader/storage contracts. Produces `JobManager::open(data_dir: PathBuf, storage: Arc<dyn PlatformStorage>) -> AppResult<Self>` и async `import(selection: PlatformSelection) -> AppResult<Vec<ImportedSourceInfo>>`, `create(JobDraft) -> AppResult<JobSnapshot>`, `start(id: &str)`, `pause_download(id: &str)`, `resume_download(id: &str)`, `cancel(id: &str)`, `update(id: &str, options: JobOptionsUpdate)`, `list() -> Vec<JobSnapshot>`, `diagnostics(id: &str, offset: u64, limit: u32) -> DiagnosticPage`, `export(id: &str, ExportChoice) -> AppResult<ExportSnapshot>`. Control-методы возвращают новый `JobSnapshot`. `ImportedSourceInfo { import_id, display_name, bytes: Option<u64>, is_directory: bool }` не раскрывает path. `subscribe() -> broadcast::Receiver<JobEvent>`; `JobOptionsUpdate` содержит только options/metadata/output/resource assignment для `awaiting_input`. Example `export_contract_fixtures` сериализует контролируемые snapshots для frontend tests C2.
 
-- [ ] **Step 1:** В `не_конвертирует_неполный_источник`/`пауза_не_блокирует_очередь` fake storage и controlled HTTP удерживают attachment. В `позднее_событие_не_откатывает_готовность` передать предыдущую generation. Assert:
+- [x] **Step 1:** В `не_конвертирует_неполный_источник`/`пауза_не_блокирует_очередь` fake storage и controlled HTTP удерживают attachment. В `позднее_событие_не_откатывает_готовность` передать предыдущую generation. Assert:
 
   ```rust
   assert_eq!(conversion_invocations_before_all_downloads, 0);
@@ -58,10 +58,10 @@
   ```
 
   Дополнительно crash/reopen: downloads → paused, conversion → interrupted; completed bytes/results сохранены, temporary conversion files очищены. Тест clock выдаёт сотни CoreEvent за секунду: progress ≤5/s, state/final event без задержки.
-- [ ] **Step 2:** Run `cargo test -p converter-app --test job_lifecycle --test progress_contract --test persistence`; ожидается FAIL.
-- [ ] **Step 3:** Реализовать manager и файловый job store с schema version и атомарными snapshots. Идентификаторы и пути создаёт service; imports регистрируются до Local source ID. Native download-cache, jobs, scratch и results — отдельные каталоги. Один активный source transfer и одна активная конвертация, workers освобождаются на паузе/awaiting_input. `spawn_blocking` для core, async для сети. Job download total — `None`, пока хотя бы один remote total неизвестен; завершение скачивания сохраняется при старте core.
-- [ ] **Step 4:** Run Step 2 с `--locked`; PASS. Проверить Ctrl-C/shutdown cancellation, restart generation, отсутствие URL tokens в DTO и отказ удалить in-use cache. В fake storage проверить same-filesystem staging на desktop; `publish` повторно использует A6.
-- [ ] **Step 5:** Commit `feat: добавить очередь и независимые снимки прогресса`.
+- [x] **Step 2:** Run `cargo test -p converter-app --test job_lifecycle --test progress_contract --test persistence`; ожидается FAIL.
+- [x] **Step 3:** Реализовать manager и файловый job store с schema version и атомарными snapshots. Идентификаторы и пути создаёт service; imports регистрируются до Local source ID. Native download-cache, jobs, scratch и results — отдельные каталоги. Один активный source transfer и одна активная конвертация, workers освобождаются на паузе/awaiting_input. `spawn_blocking` для core, async для сети. Job download total — `None`, пока хотя бы один remote total неизвестен; завершение скачивания сохраняется при старте core.
+- [x] **Step 4:** Run Step 2 с `--locked`; PASS. Проверить Ctrl-C/shutdown cancellation, restart generation, отсутствие URL tokens в DTO и отказ удалить in-use cache. В fake storage проверить same-filesystem staging на desktop; `publish` повторно использует A6.
+- [x] **Step 5:** Commit `feat: добавить очередь и независимые снимки прогресса`.
 
 ## Task 2: C2 — Vue UI, формы источников и два прогресса
 

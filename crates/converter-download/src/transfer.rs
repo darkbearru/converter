@@ -40,6 +40,9 @@ impl TransferControl {
             _ => TransferState::Pending,
         }
     }
+    pub async fn wait_for_stop(&self) {
+        self.stopped().await;
+    }
     async fn stopped(&self) {
         loop {
             let future = self.notify.notified();
@@ -194,6 +197,10 @@ impl DownloadManager {
                     self.accept_fresh(id, &opened.metadata, progress).await?;
                 }
                 ResponseAction::Append { .. } => {
+                    let mut manifest = self.cache.required(id)?;
+                    manifest.statistics.resumes += 1;
+                    manifest.generation += 1;
+                    self.cache.save(&manifest)?;
                     progress.value.total_bytes = opened
                         .metadata
                         .content_range
@@ -241,6 +248,9 @@ impl DownloadManager {
         progress: &mut Progress,
     ) -> Result<()> {
         let mut manifest = self.cache.required(id)?;
+        if manifest.checkpoint.confirmed_bytes > 0 {
+            manifest.statistics.restarts += 1;
+        }
         manifest.checkpoint = Checkpoint::default();
         manifest.completed = None;
         manifest.transfer_finished = false;
@@ -483,6 +493,7 @@ impl DownloadManager {
             display_name: manifest.display_name.clone(),
             bytes,
             sha256: hash,
+            statistics: manifest.statistics.clone(),
         };
         manifest.completed = Some(completed.clone());
         manifest.generation += 1;

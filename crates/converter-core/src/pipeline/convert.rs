@@ -123,7 +123,7 @@ pub fn convert_to_staging(
         directory: directory.path.clone(),
         mdx,
         mdd,
-        report: directory.path.join("report.json"),
+        report: directory.path.join("conversion-report.json"),
         summary: ConversionSummary {
             source_articles: spool.articles,
             output_keys: spool.keys,

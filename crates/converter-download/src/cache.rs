@@ -181,6 +181,7 @@ impl DownloadCache {
             display_name: "Словарь".into(),
             completed: None,
             transfer_finished: false,
+            statistics: crate::DownloadStatistics::default(),
         };
         self.save(&manifest)
     }

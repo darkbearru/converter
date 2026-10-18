@@ -1,0 +1,210 @@
+use converter_core::model::{
+    ConversionSummary, Diagnostic, DictionaryMetadata, ReadOptions, StageProgress,
+};
+use converter_download::DownloadProgress;
+use serde::{Deserialize, Serialize};
+use std::{fmt, path::PathBuf};
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AppError {
+    pub code: String,
+    pub message: String,
+}
+impl AppError {
+    pub fn new(code: &str, message: impl Into<String>) -> Self {
+        Self {
+            code: code.into(),
+            message: message.into(),
+        }
+    }
+}
+impl fmt::Display for AppError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}: {}", self.code, self.message)
+    }
+}
+impl std::error::Error for AppError {}
+impl From<std::io::Error> for AppError {
+    fn from(e: std::io::Error) -> Self {
+        Self::new("storage_error", format!("Ошибка хранилища: {:?}", e.kind()))
+    }
+}
+impl From<converter_core::model::ConverterError> for AppError {
+    fn from(e: converter_core::model::ConverterError) -> Self {
+        Self::new(&e.code, e.message)
+    }
+}
+impl From<converter_download::DownloadError> for AppError {
+    fn from(e: converter_download::DownloadError) -> Self {
+        Self::new(&e.code, e.message)
+    }
+}
+impl From<serde_json::Error> for AppError {
+    fn from(_: serde_json::Error) -> Self {
+        Self::new("invalid_store", "Не удалось прочитать состояние приложения")
+    }
+}
+pub type AppResult<T> = Result<T, AppError>;
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum SourceInput {
+    Local {
+        import_id: String,
+    },
+    Remote {
+        url: String,
+        expected_sha256: Option<String>,
+    },
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum OutputChoice {
+    DesktopFolder(PathBuf),
+    AppLibrary,
+}
+#[derive(Clone, Serialize, Deserialize)]
+pub struct JobDraft {
+    pub source: SourceInput,
+    pub resources: Vec<SourceInput>,
+    pub output: OutputChoice,
+    pub options: ReadOptions,
+    pub metadata_override: Option<DictionaryMetadata>,
+    pub auto_start: bool,
+}
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct JobOptionsUpdate {
+    pub options: Option<ReadOptions>,
+    pub metadata_override: Option<DictionaryMetadata>,
+    pub output: Option<OutputChoice>,
+    pub dictionary_id: Option<String>,
+    pub resources: Option<Vec<String>>,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum JobState {
+    Queued,
+    Downloading,
+    DownloadRetryWait,
+    DownloadPaused,
+    DownloadFailed,
+    Importing,
+    Inspecting,
+    AwaitingInput,
+    Converting,
+    Validating,
+    Publishing,
+    Succeeded,
+    SucceededWithWarnings,
+    Failed,
+    Cancelled,
+    Interrupted,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DownloadKind {
+    Local,
+    Remote,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DownloadJobProgress {
+    pub kind: DownloadKind,
+    pub files: Vec<DownloadProgress>,
+    pub received_bytes: u64,
+    pub confirmed_bytes: u64,
+    pub total_bytes: Option<u64>,
+    pub percent: Option<f64>,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ConversionStatus {
+    NotStarted,
+    Running,
+    Succeeded,
+    Failed,
+    Cancelled,
+    Interrupted,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ConversionJobProgress {
+    pub status: ConversionStatus,
+    pub current: Option<StageProgress>,
+    pub completed_stages: Vec<StageProgress>,
+}
+impl Default for ConversionJobProgress {
+    fn default() -> Self {
+        Self {
+            status: ConversionStatus::NotStarted,
+            current: None,
+            completed_stages: vec![],
+        }
+    }
+}
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct ExportSnapshot {
+    pub status: ExportStatus,
+    pub saved_files: Vec<String>,
+    pub error: Option<AppError>,
+}
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ExportStatus {
+    #[default]
+    NotStarted,
+    Running,
+    Succeeded,
+    Failed,
+    Cancelled,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ResultFile {
+    pub name: String,
+    pub bytes: u64,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ResultInfo {
+    pub id: String,
+    pub files: Vec<ResultFile>,
+    pub summary: ConversionSummary,
+    pub can_open: bool,
+    pub can_export: bool,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct InputChoice {
+    pub id: String,
+    pub display_name: String,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct JobSnapshot {
+    pub id: String,
+    pub display_name: String,
+    pub generation: u64,
+    pub run_id: String,
+    pub sequence: u64,
+    pub state: JobState,
+    pub download: DownloadJobProgress,
+    pub conversion: ConversionJobProgress,
+    pub result: Option<ResultInfo>,
+    pub export: ExportSnapshot,
+    pub error: Option<AppError>,
+    pub input_choices: Vec<InputChoice>,
+    pub diagnostic_count: u64,
+    pub options: ReadOptions,
+    pub metadata: Option<DictionaryMetadata>,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct JobEvent {
+    pub snapshot: JobSnapshot,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ImportedSourceInfo {
+    pub import_id: String,
+    pub display_name: String,
+    pub bytes: Option<u64>,
+    pub is_directory: bool,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DiagnosticPage {
+    pub items: Vec<Diagnostic>,
+    pub next_offset: Option<u64>,
+    pub total: u64,
+}
