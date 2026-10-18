@@ -40,6 +40,7 @@ name = "converter-core"
 version = "0.1.0"
 dependencies = [
  "adler2",
+ "encoding_rs",
  "flate2",
  "mdictlib",
  "serde",

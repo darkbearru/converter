@@ -12,6 +12,7 @@ adler2.workspace = true
 zip.workspace = true
 unicode-normalization.workspace = true
 sha2.workspace = true
+encoding_rs.workspace = true
 
 [dev-dependencies]
 mdictlib = "=0.2.8"
