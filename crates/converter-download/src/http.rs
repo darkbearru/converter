@@ -3,7 +3,7 @@ use crate::{
     resume::{ResponseMetadata, content_range, strong_etag},
 };
 use reqwest::{Response, header};
-use std::time::Duration;
+use std::time::SystemTime;
 pub struct OpenResponse {
     pub metadata: ResponseMetadata,
     pub response: Response,
@@ -91,8 +91,7 @@ pub async fn open(
         content_range: text(header::CONTENT_RANGE),
         content_length: response.content_length(),
         retry_after: text(header::RETRY_AFTER)
-            .and_then(|v| v.parse().ok())
-            .map(Duration::from_secs),
+            .and_then(|v| policy::retry_after(&v, SystemTime::now())),
         display_name,
     };
     if metadata

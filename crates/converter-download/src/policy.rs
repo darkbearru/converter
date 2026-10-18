@@ -16,6 +16,17 @@ pub fn validate(policy: &DownloadPolicy) -> Result<()> {
 pub fn retryable(status: u16) -> bool {
     matches!(status, 408 | 429 | 500..=599)
 }
+pub fn retry_after(value: &str, now: std::time::SystemTime) -> Option<std::time::Duration> {
+    value
+        .parse()
+        .ok()
+        .map(std::time::Duration::from_secs)
+        .or_else(|| {
+            httpdate::parse_http_date(value)
+                .ok()
+                .map(|date| date.duration_since(now).unwrap_or_default())
+        })
+}
 pub fn redirect_allowed(previous: &[url::Url], next: &url::Url, max: usize) -> bool {
     previous.len() <= max
         && matches!(next.scheme(), "http" | "https")

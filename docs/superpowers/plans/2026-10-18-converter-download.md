@@ -89,7 +89,7 @@ Test-only API: `FixtureServer::spawn(scenario: Scenario, payload: Vec<u8>) -> Fi
 
 **Interfaces:** Produces `DownloadManager::fetch` и control API из общей карты. Чистая функция `download_percent(received: u64, total: Option<u64>) -> Option<f64>` возвращает `None` при неизвестном/нулевом знаменателе, а не 0%/100%. Эмитируется прогресс одного файла; UI-throttle и групповой агрегат принадлежат C.
 
-- [ ] **Step 1:** В `пауза_сохраняет_порцию_и_сбрасывает_скорость` остановить stream, reopen manager и продолжить. В `неизвестный_размер_не_дает_процент` и `проверяет_готовность_перед_completed` проверить:
+- [x] **Step 1:** В `пауза_сохраняет_порцию_и_сбрасывает_скорость` остановить stream, reopen manager и продолжить. В `неизвестный_размер_не_дает_процент` и `проверяет_готовность_перед_completed` проверить:
 
   ```rust
   assert_eq!(download_percent(1234, None), None);
@@ -100,10 +100,10 @@ Test-only API: `FixtureServer::spawn(scenario: Scenario, payload: Vec<u8>) -> Fi
   ```
 
   Не переводить file в Completed при оборванном framing, превышении max_bytes, паузе во время SHA-проверки или ошибке записи. Самостоятельный SHA без эталона не обозначать как проверку подлинности.
-- [ ] **Step 2:** Run `cargo test -p converter-download --test transfer_control --test download_progress`; ожидается FAIL.
-- [ ] **Step 3:** Реализовать ограниченный потоковый буфер, checkpoint каждые 1 MiB и на управляемой паузе, возобновление с подтверждённого offset, полную SHA-проверку и completed marker. Скорость — измерение по окну последних 2 s с монотонными часами; на паузе/перезапуске окно очищается. Retry policy применяет 2/5/15 s без бесконечного цикла, control прерывает ожидание. При restart выставлять reason и новый начальный счётчик. Sanitized errors не печатают полный URL.
-- [ ] **Step 4:** Run Step 2 с `--locked`; PASS с Tokio paused time/fake clock, включая 429 Retry-After, 403/истёкшую ссылку, 503 с исчерпанием попыток, cancel и повтор после успешного завершения. Последний случай проверяет локальный хеш и не выполняет новый GET.
-- [ ] **Step 5:** Commit `feat: управлять скачиванием и его прогрессом`.
+- [x] **Step 2:** Run `cargo test -p converter-download --test transfer_control --test download_progress`; ожидается FAIL.
+- [x] **Step 3:** Реализовать ограниченный потоковый буфер, checkpoint каждые 1 MiB и на управляемой паузе, возобновление с подтверждённого offset, полную SHA-проверку и completed marker. Скорость — измерение по окну последних 2 s с монотонными часами; на паузе/перезапуске окно очищается. Retry policy применяет 2/5/15 s без бесконечного цикла, control прерывает ожидание. При restart выставлять reason и новый начальный счётчик. Sanitized errors не печатают полный URL.
+- [x] **Step 4:** Run Step 2 с `--locked`; PASS с Tokio paused time/fake clock, включая 429 Retry-After, 403/истёкшую ссылку, 503 с исчерпанием попыток, cancel и повтор после успешного завершения. Последний случай проверяет локальный хеш и не выполняет новый GET.
+- [x] **Step 5:** Commit `feat: управлять скачиванием и его прогрессом`.
 
 ## Task 4: B4 — Рабочий URL → локальный источник → конвертация в CLI
 

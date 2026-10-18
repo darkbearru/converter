@@ -165,7 +165,8 @@ impl DownloadCache {
         let path = self.part_path(&req.source_id)?;
         regular(&path)?;
         OpenOptions::new()
-            .create_new(true)
+            .create(true)
+            .truncate(true)
             .write(true)
             .open(path)?
             .sync_all()?;
@@ -179,6 +180,7 @@ impl DownloadCache {
             checkpoint: Checkpoint::default(),
             display_name: "Словарь".into(),
             completed: None,
+            transfer_finished: false,
         };
         self.save(&manifest)
     }

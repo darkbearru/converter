@@ -88,6 +88,8 @@ pub struct DownloadManifest {
     pub(crate) checkpoint: crate::Checkpoint,
     pub(crate) display_name: String,
     pub(crate) completed: Option<CompletedDownload>,
+    #[serde(default)]
+    pub(crate) transfer_finished: bool,
 }
 impl fmt::Debug for DownloadManifest {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -96,4 +98,33 @@ impl fmt::Debug for DownloadManifest {
             .field("confirmed_bytes", &self.checkpoint.confirmed_bytes)
             .finish_non_exhaustive()
     }
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum TransferState {
+    Pending,
+    Downloading,
+    RetryWait,
+    Paused,
+    Verifying,
+    Completed,
+    Failed,
+    Cancelled,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DownloadProgress {
+    pub source_id: String,
+    pub state: TransferState,
+    pub received_bytes: u64,
+    pub confirmed_bytes: u64,
+    pub total_bytes: Option<u64>,
+    pub bytes_per_second: Option<f64>,
+    pub restart_reason: Option<String>,
+}
+#[derive(Clone, Debug)]
+pub enum TransferOutcome {
+    Completed(CompletedDownload),
+    Paused,
+    Cancelled,
 }

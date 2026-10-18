@@ -1,28 +1,13 @@
-use converter_download::{Checkpoint, ChunkHash, CommitPoint, DownloadCache, DownloadRequest};
-use sha2::{Digest, Sha256};
+use converter_download::{CommitPoint, DownloadCache};
 use std::{
     fs::{self, OpenOptions},
     io::{self, Write},
 };
 
-fn request() -> DownloadRequest {
-    DownloadRequest {
-        source_id: uuid::Uuid::new_v4().to_string(),
-        url: "https://example.org/dict?secret-token"
-            .parse()
-            .expect("URL"),
-        expected_sha256: None,
-    }
+mod support {
+    pub mod cache;
 }
-fn checkpoint(bytes: &[u8]) -> Checkpoint {
-    Checkpoint {
-        confirmed_bytes: bytes.len() as u64,
-        chunk_hashes: vec![ChunkHash {
-            bytes: bytes.len() as u64,
-            sha256: format!("{:x}", Sha256::digest(bytes)),
-        }],
-    }
-}
+use support::cache::{checkpoint, request};
 
 #[test]
 fn восстанавливает_только_подтвержденный_префикс() -> Result<(), Box<dyn std::error::Error>> {
@@ -124,5 +109,17 @@ fn поколения_версия_и_блокировка_кэша() -> Result<
         cache.load(&other.source_id).expect_err("version").code,
         "manifest_version_mismatch"
     );
+    Ok(())
+}
+
+#[test]
+fn восстанавливает_создание_после_сбоя_до_первого_манифеста()
+-> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let cache = DownloadCache::open(temp.path().to_owned())?;
+    let req = request();
+    fs::write(cache.part_path(&req.source_id)?, b"unconfirmed orphan")?;
+    cache.begin(&req)?;
+    assert_eq!(cache.verify_prefix(&req.source_id)?.confirmed_bytes, 0);
     Ok(())
 }
