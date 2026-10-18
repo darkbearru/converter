@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import Accordion from 'primevue/accordion';
 import AccordionPanel from 'primevue/accordionpanel';
 import AccordionHeader from 'primevue/accordionheader';
 import AccordionContent from 'primevue/accordioncontent';
 import Button from 'primevue/button';
+import Dialog from 'primevue/dialog';
 import Icon from '../../shared/ui/Icon.vue';
 import ResultPanel from '../results/ResultPanel.vue';
 import DiagnosticsList from '../results/DiagnosticsList.vue';
@@ -23,6 +24,8 @@ defineEmits<{
   remove: [id: string];
 }>();
 const expanded = ref<string[]>([]);
+const diagnosticsId = ref<string | null>(null);
+const diagnosticsJob = computed(() => props.jobs.find((job) => job.id === diagnosticsId.value));
 const paths = reactive<Record<string, string>>({});
 const pathErrors = reactive<Record<string, string>>({});
 const resultIds = new Map<string, string>();
@@ -92,6 +95,7 @@ function warning(job: JobSnapshot) {
             :count="job.diagnostic_count"
             :bridge="bridge"
             preview
+            @show-all="diagnosticsId = job.id"
           />
           <ResultPanel v-if="job.result" :result="job.result" :export-state="job.export" />
           <div class="history-actions" role="group" aria-label="Действия с конвертацией">
@@ -150,5 +154,30 @@ function warning(job: JobSnapshot) {
         </AccordionContent>
       </AccordionPanel>
     </Accordion>
+    <Dialog
+      :id="diagnosticsJob ? `diagnostics-${diagnosticsJob.id}` : undefined"
+      :visible="Boolean(diagnosticsJob)"
+      modal
+      header="Предупреждения"
+      class="app-dialog diagnostics-dialog"
+      @update:visible="!$event && (diagnosticsId = null)"
+    >
+      <template #closeicon><Icon name="close" /></template>
+      <template v-if="diagnosticsJob">
+        <p class="diagnostics-filename muted" :title="diagnosticsJob.display_name">
+          {{ diagnosticsJob.display_name }}
+        </p>
+        <DiagnosticsList
+          :key="`${diagnosticsJob.id}:${diagnosticsJob.run_id}`"
+          :id="diagnosticsJob.id"
+          :count="diagnosticsJob.diagnostic_count"
+          :bridge="bridge"
+          expanded
+        />
+      </template>
+      <template #footer>
+        <Button label="Закрыть" severity="secondary" outlined @click="diagnosticsId = null" />
+      </template>
+    </Dialog>
   </section>
 </template>

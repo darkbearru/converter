@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/vue';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/vue';
 import CompletedHistory from '../../src/features/jobs/CompletedHistory.vue';
 import fixtures from './fixtures/contracts.json';
 import type { JobSnapshot, NativeBridge } from '../../src/shared/contracts';
@@ -27,6 +27,41 @@ it('сразу показывает текст предупреждения в �
   expect(await screen.findByText('Не найдена статья для ссылки: 儿')).toBeVisible();
   expect(screen.getByText(/ещё 28\s172 предупреждения/)).toBeVisible();
   expect(screen.queryByRole('button', { name: /Показать все/ })).not.toBeInTheDocument();
+});
+
+it('ссылка остальных предупреждений открывает весь журнал с переходом к последней странице', async () => {
+  const job = structuredClone(fixtures.succeeded) as JobSnapshot;
+  job.diagnostic_count = 123;
+  const native = {
+    getResultPath: async () => '/result',
+    readDiagnostics: vi.fn(async (_id: string, offset: number, limit: number) => ({
+      items: Array.from({ length: Math.min(limit, 123 - offset) }, (_, index) => ({
+        code: 'missing_reference',
+        message: `Предупреждение ${offset + index + 1}`,
+        source_location: null,
+      })),
+      total: 123,
+      next_offset: offset + limit < 123 ? offset + limit : null,
+    })),
+  } as unknown as NativeBridge;
+  render(CompletedHistory, { props: { jobs: [job], bridge: native, pending: {} } });
+  await fireEvent.click(screen.getByRole('button', { name: new RegExp(job.display_name) }));
+  const link = await screen.findByRole('link', { name: '(ещё 122 предупреждения)' });
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(native.readDiagnostics).toHaveBeenLastCalledWith(job.id, 0, 1);
+  await fireEvent.click(link);
+  const dialog = await screen.findByRole('dialog', { name: 'Предупреждения' });
+  expect(within(dialog).getByText(job.display_name)).toBeVisible();
+  expect(await within(dialog).findByText('Предупреждение 50')).toBeVisible();
+  expect(within(dialog).queryByText('Предупреждение 51')).not.toBeInTheDocument();
+  expect(native.readDiagnostics).toHaveBeenLastCalledWith(job.id, 0, 50);
+  await fireEvent.click(within(dialog).getByRole('button', { name: 'Последняя страница' }));
+  expect(await within(dialog).findByText('Предупреждение 123')).toBeVisible();
+  expect(within(dialog).queryByText('Предупреждение 50')).not.toBeInTheDocument();
+  expect(native.readDiagnostics).toHaveBeenLastCalledWith(job.id, 100, 50);
+  await fireEvent.click(within(dialog).getAllByRole('button', { name: 'Закрыть' }).at(-1)!);
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  expect(link).toBeVisible();
 });
 
 it('запоздалая ошибка прежнего пути не отменяет новый запрос', async () => {

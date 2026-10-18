@@ -605,6 +605,48 @@ h3 {
 .diagnostic-location {
   color: var(--muted);
 }
+.diagnostics-more {
+  color: var(--muted);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.diagnostics-more:hover {
+  color: var(--text);
+}
+.diagnostics-dialog {
+  height: calc(100dvh - 48px);
+}
+.diagnostics-dialog .p-dialog-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
+}
+.diagnostics-filename {
+  flex-shrink: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 12px;
+}
+.diagnostics-dialog .diagnostics,
+.diagnostics-dialog .diagnostics-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  margin: 0;
+}
+.diagnostics-dialog .diagnostic-list {
+  flex: 1;
+  overflow-y: auto;
+}
+.diagnostics-dialog .p-paginator {
+  flex-shrink: 0;
+  font-size: 12px;
+}
 .phase {
   padding: 12px 0;
 }
@@ -681,7 +723,9 @@ h3 {
 }
 .job-settings select,
 .job-settings button,
-.diagnostics button,
+.diagnostics .disclosure,
+.diagnostics .pagination button,
+.diagnostics-retry,
 .result-panel button:not(.p-button) {
   border: 1px solid var(--border);
   background: var(--surface);

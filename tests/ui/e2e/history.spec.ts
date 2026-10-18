@@ -28,6 +28,58 @@ async function contrast(button: Locator) {
   });
 }
 
+test('ссылка с пунктирным подчёркиванием открывает полный журнал и возвращает фокус', async ({
+  page,
+}) => {
+  await page.goto(screenUrl('warning'));
+  await page.locator('.p-accordionheader').click();
+  const link = page.getByRole('link', { name: /ещё 28\s172 предупреждения/ });
+  await expect(link).toBeVisible();
+  expect(
+    await link.evaluate((el) => ({
+      tag: el.tagName,
+      line: getComputedStyle(el).textDecorationLine,
+      style: getComputedStyle(el).textDecorationStyle,
+    })),
+  ).toEqual({ tag: 'A', line: 'underline', style: 'dotted' });
+  const originalUrl = page.url();
+  await link.focus();
+  await page.keyboard.press('Enter');
+  const dialog = page.getByRole('dialog', { name: 'Предупреждения', exact: true });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText('PhoneticListChCh.dsl.dz', { exact: true })).toBeVisible();
+  const rows = dialog.locator('.diagnostic-list li');
+  await expect(rows).toHaveCount(50);
+  await expect(dialog.locator('.p-paginator-current')).toHaveText('1–50 из 28173');
+  await dialog.getByRole('button', { name: 'Последняя страница', exact: true }).click();
+  await expect(rows).toHaveCount(23);
+  await expect(dialog.locator('.p-paginator-current')).toHaveText('28151–28173 из 28173');
+  await expect(rows.last()).toContainText('строка 28182');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(link).toBeFocused();
+  expect(page.url()).toBe(originalUrl);
+  await page.setViewportSize({ width: 540, height: 400 });
+  await link.click();
+  await expect(dialog.locator('.p-paginator-current')).toHaveText('1–50 из 28173');
+  await expect(rows).toHaveCount(50);
+  await expect(
+    dialog.getByRole('button', { name: 'Последняя страница', exact: true }),
+  ).toBeInViewport({ ratio: 1 });
+  await expect(dialog.getByRole('button', { name: 'Закрыть', exact: true }).last()).toBeInViewport({
+    ratio: 1,
+  });
+  expect(
+    await dialog
+      .locator('.diagnostic-list')
+      .evaluate((el) => el.clientHeight > 40 && el.scrollHeight > el.clientHeight),
+  ).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await dialog.getByRole('button', { name: 'Закрыть', exact: true }).last().click();
+  await expect(dialog).toBeHidden();
+  await expect(link).toBeFocused();
+});
+
 test('предупреждение видно сразу, четыре действия помещаются в строку, удаление подтверждается', async ({
   page,
 }) => {

@@ -101,7 +101,13 @@ export const primeVueOptions = {
     pending: 'Ожидает',
     emptyMessage: 'Нет вариантов',
     emptySearchMessage: 'Ничего не найдено',
-    aria: { close: 'Закрыть' },
+    aria: {
+      close: 'Закрыть',
+      firstPageLabel: 'Первая страница',
+      lastPageLabel: 'Последняя страница',
+      prevPageLabel: 'Предыдущая страница',
+      nextPageLabel: 'Следующая страница',
+    },
   },
 };
 export { PrimeVue };
