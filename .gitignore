@@ -11,3 +11,4 @@
 *.part
 /.impeccable/hook.cache.json
 /.impeccable/review/
+/src-tauri/gen/

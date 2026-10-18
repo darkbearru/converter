@@ -14,6 +14,7 @@ use tokio::{
 pub enum Scenario {
     StableRange,
     DisconnectAt(usize),
+    DisconnectThenHoldAt(usize),
     IgnoreRange,
     ChangeEtag,
     WeakEtag,
@@ -239,12 +240,12 @@ async fn serve(
     response.push_str("\r\n");
     socket.write_all(response.as_bytes()).await?;
     match scenario {
-        Scenario::DisconnectAt(cut) if attempt == 0 => {
+        Scenario::DisconnectAt(cut) | Scenario::DisconnectThenHoldAt(cut) if attempt == 0 => {
             socket
                 .write_all(&payload[offset..cut.min(total).max(offset)])
                 .await?
         }
-        Scenario::HoldAt(cut) => {
+        Scenario::HoldAt(cut) | Scenario::DisconnectThenHoldAt(cut) => {
             let cut = cut.min(total).max(offset);
             socket.write_all(&payload[offset..cut]).await?;
             if let Ok(permit) = release.acquire().await {

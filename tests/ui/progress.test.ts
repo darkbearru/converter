@@ -8,6 +8,13 @@ import { formatBytes } from '../../src/shared/format';
 
 const jobs = fixtures as unknown as Record<string, JobSnapshot>;
 describe('Раздельные этапы задания', () => {
+  it('обозначает завершённую конвертацию значением 100 для доступности', () => {
+    render(ConversionProgress, { props: { progress: jobs.succeeded.conversion } });
+    expect(screen.getByRole('progressbar', { name: 'Конвертация' })).toHaveAttribute(
+      'aria-valuenow',
+      '100',
+    );
+  });
   it('показывает 50% скачивания и ожидание конвертации', () => {
     render(DownloadProgress, { props: { progress: jobs.downloading.download } });
     render(ConversionProgress, { props: { progress: jobs.downloading.conversion } });

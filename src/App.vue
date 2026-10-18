@@ -19,7 +19,7 @@ const selected = ref<string | null>(null);
 const adding = ref(true);
 const jobs = computed(() => Object.values(store.jobs));
 const job = computed(() => (selected.value ? store.jobs[selected.value] : undefined));
-const busy = computed(() => (job.value ? store.pending[job.value.id] : false));
+const busy = computed(() => Boolean(job.value && store.pending[job.value.id]));
 void store.ready.then(() => {
   if (jobs.value.length) {
     selected.value = jobs.value[0].id;
@@ -82,6 +82,14 @@ async function save(update: JobOptionsUpdate) {
               </p>
             </div>
             <div class="button-row">
+              <button
+                v-if="['succeeded', 'succeeded_with_warnings'].includes(job.state)"
+                type="button"
+                :disabled="busy"
+                @click="store.startJob(job.id)"
+              >
+                Повторить конвертацию
+              </button>
               <button
                 v-if="['downloading', 'download_retry_wait'].includes(job.state)"
                 type="button"

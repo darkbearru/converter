@@ -2,6 +2,7 @@ use crate::*;
 use converter_core::model::{ConversionSummary, ConvertedArtifacts, PreparedFile, RunContext};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+pub mod desktop;
 pub enum PlatformSelection {
     LocalPaths(Vec<PathBuf>),
     NativeHandles(Vec<String>),

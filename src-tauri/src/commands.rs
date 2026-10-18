@@ -1,0 +1,114 @@
+use crate::{NativeState, storage::picker};
+use converter_app::{
+    storage::{ExportChoice, PlatformSelection},
+    *,
+};
+use converter_core::formats::{FormatDescriptor, FormatRegistry};
+use tauri::{AppHandle, State};
+use tauri_plugin_opener::OpenerExt;
+
+fn snapshot(state: &NativeState, id: &str) -> AppResult<JobSnapshot> {
+    state
+        .manager
+        .list()?
+        .into_iter()
+        .find(|j| j.id == id)
+        .ok_or_else(|| AppError::new("job_not_found", "Задание не найдено"))
+}
+#[tauri::command]
+pub fn list_formats() -> Vec<FormatDescriptor> {
+    FormatRegistry::builtins().descriptors()
+}
+#[tauri::command]
+pub fn get_jobs(state: State<'_, NativeState>) -> AppResult<Vec<JobSnapshot>> {
+    state.manager.list()
+}
+#[tauri::command]
+pub async fn pick_sources(
+    app: AppHandle,
+    state: State<'_, NativeState>,
+    purpose: String,
+) -> AppResult<Vec<ImportedSourceInfo>> {
+    let paths = picker::sources(app, purpose).await?;
+    state
+        .manager
+        .import(PlatformSelection::LocalPaths(paths))
+        .await
+}
+#[tauri::command]
+pub async fn pick_output(
+    app: AppHandle,
+    state: State<'_, NativeState>,
+) -> AppResult<Option<OutputChoice>> {
+    picker::output(app)
+        .await?
+        .map(|path| state.storage.grant_output(&path))
+        .transpose()
+}
+#[tauri::command]
+pub async fn create_job(state: State<'_, NativeState>, draft: JobDraft) -> AppResult<JobSnapshot> {
+    state.storage.validate_output(&draft.output)?;
+    state.manager.create(draft).await
+}
+#[tauri::command]
+pub async fn start_job(state: State<'_, NativeState>, id: String) -> AppResult<JobSnapshot> {
+    state.manager.start(&id).await
+}
+#[tauri::command]
+pub async fn pause_download(state: State<'_, NativeState>, id: String) -> AppResult<JobSnapshot> {
+    state.manager.pause_download(&id).await
+}
+#[tauri::command]
+pub async fn resume_download(state: State<'_, NativeState>, id: String) -> AppResult<JobSnapshot> {
+    state.manager.resume_download(&id).await
+}
+#[tauri::command]
+pub async fn cancel_job(state: State<'_, NativeState>, id: String) -> AppResult<JobSnapshot> {
+    state.manager.cancel(&id).await
+}
+#[tauri::command]
+pub async fn update_job(
+    state: State<'_, NativeState>,
+    id: String,
+    update: JobOptionsUpdate,
+) -> AppResult<JobSnapshot> {
+    if let Some(output) = &update.output {
+        state.storage.validate_output(output)?;
+    }
+    state.manager.update(&id, update).await
+}
+#[tauri::command]
+pub fn read_diagnostics(
+    state: State<'_, NativeState>,
+    id: String,
+    offset: u64,
+    limit: u32,
+) -> AppResult<DiagnosticPage> {
+    state.manager.diagnostics(&id, offset, limit)
+}
+#[tauri::command]
+pub async fn export_result(
+    app: AppHandle,
+    state: State<'_, NativeState>,
+    id: String,
+) -> AppResult<JobSnapshot> {
+    if let Some(path) = picker::output(app).await? {
+        let OutputChoice::DesktopFolder(path) = state.storage.grant_output(&path)? else {
+            unreachable!()
+        };
+        state
+            .manager
+            .export(&id, ExportChoice::Folder(path))
+            .await?;
+    }
+    snapshot(&state, &id)
+}
+#[tauri::command]
+pub fn open_result(app: AppHandle, state: State<'_, NativeState>, id: String) -> AppResult<()> {
+    let path = state
+        .storage
+        .checked_result_directory(&state.manager.result_directory(&id)?)?;
+    app.opener()
+        .open_path(path.to_string_lossy(), None::<&str>)
+        .map_err(|_| AppError::new("open_failed", "Не удалось открыть папку результата"))
+}

@@ -1,0 +1,28 @@
+[package]
+name = "converter-desktop"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "converter_desktop"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "converter-desktop"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+converter-app = { path = "../crates/converter-app" }
+converter-core = { path = "../crates/converter-core" }
+serde.workspace = true
+tokio.workspace = true
+
+[lints]
+workspace = true

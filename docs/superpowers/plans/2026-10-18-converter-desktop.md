@@ -90,7 +90,7 @@
 
 **Interfaces:** Tauri команды snake_case соответствуют NativeBridge; `pick_sources` регистрирует импорт и возвращает безопасные source IDs, `pick_output` возвращает выбор назначения; `create_job`, `start_job`, `pause_download`, `resume_download`, `cancel_job`, `update_job`, `get_jobs`, `read_diagnostics`, `export_result`, `list_formats`. Event name `job:event`; Rust `run()` имеет mobile entry point через `cfg_attr(mobile, tauri::mobile_entry_point)` для D. Browser bridge по умолчанию недоступен в packaged app, mock включён только dev/test build.
 
-- [ ] **Step 1:** В app integration test `не_экспортирует_за_пределы_результата`/`публикует_в_папку_с_кириллицей` проверить реальные `PlatformStorage` desktop adapters, занятый target и collision suffix:
+- [x] **Step 1:** В app integration test `не_экспортирует_за_пределы_результата`/`публикует_в_папку_с_кириллицей` проверить реальные `PlatformStorage` desktop adapters, занятый target и collision suffix:
 
   ```rust
   assert!(published.directory.starts_with(&chosen_destination));
@@ -100,10 +100,10 @@
   ```
 
   Run `cargo test -p converter-app --test desktop_storage` до реализации adapter; ожидается FAIL.
-- [ ] **Step 2:** Реализовать permissions/capabilities, команды, событийный forwarder и desktop picker. Уважать выбранные источники; открыть результат через ID, не произвольную командную строку. Определить app identifier `dev.dictionary.converter`, productName `Converter`, version `0.1.0`. CLI не упаковывать как sidecar: app линкует Rust-библиотеки.
-- [ ] **Step 3:** Run `cargo test --locked -p converter-app --test desktop_storage`, `npm run typecheck`, `npm run build`; ожидается PASS. Затем `npm run tauri -- dev`: реальный локальный fixture → MDX/MDD в выбранной папке, настоящий диалог и отмена.
-- [ ] **Step 4:** В настоящем Tauri приложении запустить URL controlled-server fixture: обрыв → pause → закрытие → запуск → resume → conversion. Зафиксировать два progress blocks, byte counters после reopen, отсутствие нового GET при повторной конвертации. Это нативный smoke, browser mock его не заменяет.
-- [ ] **Step 5:** Commit `feat: связать Tauri с локальным и URL-конвейером`.
+- [x] **Step 2:** Реализовать permissions/capabilities, команды, событийный forwarder и desktop picker. Уважать выбранные источники; открыть результат через ID, не произвольную командную строку. Определить app identifier `dev.dictionary.converter`, productName `Converter`, version `0.1.0`. CLI не упаковывать как sidecar: app линкует Rust-библиотеки.
+- [x] **Step 3:** Run `cargo test --locked -p converter-app --test desktop_storage`, `npm run typecheck`, `npm run build`; ожидается PASS. Затем `npm run tauri -- dev`: реальный локальный fixture → MDX/MDD в выбранной папке, настоящий диалог и отмена.
+- [x] **Step 4:** В настоящем Tauri приложении запустить URL controlled-server fixture: обрыв → pause → закрытие → запуск → resume → conversion. Зафиксировать два progress blocks, byte counters после reopen, отсутствие нового GET при повторной конвертации. Это нативный smoke, browser mock его не заменяет.
+- [x] **Step 5:** Commit `feat: связать Tauri с локальным и URL-конвейером`.
 
 ## Task 4: C4 — Frontend сценарии, адаптивность и контракт прогресса
 

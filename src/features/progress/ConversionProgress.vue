@@ -4,6 +4,7 @@ import type { ConversionJobProgress } from '../../shared/contracts';
 import { formatCount, stageLabels, stageCounter } from '../../shared/format';
 const props = defineProps<{ progress: ConversionJobProgress }>();
 const percent = computed(() => {
+  if (props.progress.status === 'succeeded') return 100;
   const stage = props.progress.current;
   return props.progress.status === 'running' && stage?.total
     ? Math.min(100, (stage.completed / stage.total) * 100)

@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/converter-core", "crates/converter-cli", "crates/converter-download", "crates/converter-test-support", "crates/converter-app"]
+members = ["crates/converter-core", "crates/converter-cli", "crates/converter-download", "crates/converter-test-support", "crates/converter-app", "src-tauri"]
 resolver = "3"
 
 [workspace.package]

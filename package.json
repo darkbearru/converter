@@ -11,13 +11,16 @@
     "build": "vue-tsc --noEmit && vite build",
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest",
+    "tauri": "tauri",
     "format": "prettier --write src tests/ui *.json *.ts index.html",
     "format:check": "prettier --check src tests/ui *.json *.ts index.html"
   },
   "dependencies": {
+    "@tauri-apps/api": "^2.12.4",
     "vue": "^3.5.44"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.12.3",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/vue": "^8.1.0",
     "@types/node": "^26.6.5",
