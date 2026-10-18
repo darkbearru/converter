@@ -1,6 +1,6 @@
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import type { JobEvent, NativeBridge } from './contracts';
+import type { JobEvent, NativeBridge, SourceDropEvent } from './contracts';
 
 function unavailable(): never {
   throw {
@@ -26,6 +26,11 @@ export const nativeBridge: NativeBridge = {
   readDiagnostics: (id, offset, limit) => call('read_diagnostics', { id, offset, limit }),
   exportResult: (id) => call('export_result', { id }),
   openResult: (id) => call('open_result', { id }),
+  getResultPath: (id) => call('get_result_path', { id }),
+  async onSourceDrop(callback) {
+    if (!isTauri()) unavailable();
+    return listen<SourceDropEvent>('source:drop', (event) => callback(event.payload));
+  },
   async onJobEvent(callback) {
     if (!isTauri()) unavailable();
     return listen<JobEvent>('job:event', (event) => callback(event.payload));

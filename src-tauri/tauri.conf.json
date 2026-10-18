@@ -14,10 +14,11 @@
       {
         "label": "main",
         "title": "Converter",
-        "width": 1180,
-        "height": 820,
-        "minWidth": 740,
-        "minHeight": 580
+        "width": 740,
+        "height": 500,
+        "minWidth": 540,
+        "minHeight": 400,
+        "resizable": true
       }
     ],
     "security": {

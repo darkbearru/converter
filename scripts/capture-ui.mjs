@@ -1,71 +1,111 @@
-import { mkdir, copyFile, writeFile } from 'node:fs/promises';
+import { mkdir, copyFile, readFile, writeFile } from 'node:fs/promises';
 import { chromium, webkit } from '@playwright/test';
 import { createServer } from 'vite';
 
-const server = await createServer({ server: { host: '127.0.0.1', port: 1421, strictPort: true } });
+const review = '.impeccable/review/composer';
+const archive = 'docs/validation/ui/composer';
+const only = process.argv.find((arg) => arg.startsWith('--only='))?.slice(7);
+const cases = [
+  ['empty-dark', 'chromium', 'dark', ''],
+  ['download-dark', 'chromium', 'dark', 'downloading'],
+  ['ready-dark', 'chromium', 'dark', 'ready'],
+  ['active-dark', 'chromium', 'dark', 'converting'],
+  ['stack-dark', 'chromium', 'dark', 'stack'],
+  ['settings-dark', 'chromium', 'dark', '', 'settings'],
+  ['settings-resources', 'chromium', 'dark', 'ready-resources', 'settings'],
+  ['link-dark', 'chromium', 'dark', '', 'link'],
+  ['history-dark', 'chromium', 'dark', 'succeeded', 'history'],
+  ['empty-light', 'chromium', 'light', ''],
+  ['stack-light', 'chromium', 'light', 'stack'],
+  ['history-light', 'chromium', 'light', 'long', 'history'],
+  ['stack-webkit-light', 'webkit', 'light', 'stack'],
+  ['download-webkit-dark', 'webkit', 'dark', 'downloading'],
+  ['settings-small', 'webkit', 'light', '', 'settings', { width: 540, height: 400 }],
+];
+const server = await createServer({ server: { host: '127.0.0.1', port: 1422, strictPort: true } });
 await server.listen();
-await mkdir('.impeccable/review', { recursive: true });
-await mkdir('docs/validation/ui', { recursive: true });
+await Promise.all([mkdir(review, { recursive: true }), mkdir(archive, { recursive: true })]);
 const observations = [];
 try {
-  for (const [engine, browserType] of [
-    ['chromium', chromium],
-    ['webkit', webkit],
-  ]) {
-    const browser = await browserType.launch();
+  for (const engine of ['chromium', 'webkit']) {
+    const browser = await { chromium, webkit }[engine].launch();
     try {
-      for (const [size, viewport] of [
-        ['desktop', { width: 1280, height: 800 }],
-        ['mobile', { width: 390, height: 844 }],
-      ]) {
-        const page = await browser.newPage({ viewport });
+      for (const [name, caseEngine, colorScheme, scenario, action, size] of cases) {
+        if (caseEngine !== engine) continue;
+        if (only && name !== only) continue;
+        const viewport = size ?? { width: 740, height: 500 };
+        const page = await browser.newPage({ viewport, colorScheme });
+        const errors = [];
+        page.on('pageerror', (error) => errors.push(error.message));
         await page.goto(
-          'http://127.0.0.1:1421/tests/ui/harness/index.html?scenario=converting&capture=1',
+          `http://127.0.0.1:1422/tests/ui/harness/index.html?scenario=${scenario}&capture=1`,
         );
-        await page.getByText('Запись MDX', { exact: true }).waitFor();
-        const name = `${size}${engine === 'webkit' ? '-webkit' : ''}.png`;
-        await page.screenshot({
-          path: `.impeccable/review/${name}`,
-          fullPage: true,
-          animations: 'disabled',
+        await page.locator('.source-composer').waitFor();
+        if (scenario === 'stack')
+          await page.waitForFunction(() => document.querySelectorAll('.active-task').length === 2);
+        if (scenario === 'converting') await page.locator('.active-task').waitFor();
+        if (['ready', 'ready-resources'].includes(scenario))
+          await page.getByRole('button', { name: 'Конвертировать', exact: true }).waitFor();
+        if (scenario === 'downloading')
+          await page.getByRole('progressbar', { name: 'Скачивание', exact: true }).waitFor();
+        if (action === 'settings')
+          await page.getByRole('button', { name: 'Настройки конвертации', exact: true }).click();
+        if (action === 'link')
+          await page.getByRole('button', { name: 'Добавить ссылку', exact: true }).click();
+        if (action === 'history') {
+          await page.locator('.p-accordionheader').click();
+          await page.locator('.result-path').waitFor();
+        }
+        await page.evaluate(async () => {
+          await document.fonts.ready;
         });
-        await copyFile(`.impeccable/review/${name}`, `docs/validation/ui/${name}`);
-        observations.push(
-          await page.evaluate(
-            ({ engine, viewport }) => {
-              const text = document.querySelector('.phase h3');
-              const phase = document.querySelector('.phase');
-              return {
-                engine,
-                viewport,
-                documentWidth: document.documentElement.scrollWidth,
-                documentHeight: document.documentElement.scrollHeight,
-                h3: text
-                  ? { size: getComputedStyle(text).fontSize, color: getComputedStyle(text).color }
-                  : null,
-                phasePadding: phase ? getComputedStyle(phase).padding : null,
-                download: document
-                  .querySelector('[aria-label="Скачивание"][role="progressbar"]')
-                  ?.getAttribute('aria-valuenow'),
-                conversion: document
-                  .querySelector('[aria-label="Конвертация"][role="progressbar"]')
-                  ?.getAttribute('aria-valuenow'),
-              };
-            },
-            { engine, viewport },
-          ),
-        );
+        await page.screenshot({ path: `${review}/${name}.png`, animations: 'disabled' });
+        await copyFile(`${review}/${name}.png`, `${archive}/${name}.png`);
+        const bounds = await page.evaluate(() => {
+          const rect = (selector) => {
+            const el = document.querySelector(selector);
+            if (!el) return null;
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          };
+          return {
+            documentWidth: document.documentElement.scrollWidth,
+            documentHeight: document.documentElement.scrollHeight,
+            canvas: getComputedStyle(document.body).backgroundColor,
+            text: getComputedStyle(document.body).color,
+            composer: rect('.source-composer'),
+            stack: rect('.task-stack'),
+            dialog: rect('.p-dialog'),
+            dialogButtons: [...document.querySelectorAll('.p-dialog .p-button')].map((el) => ({
+              label: el.textContent,
+              color: getComputedStyle(el).color,
+              background: getComputedStyle(el).backgroundColor,
+              dialogBackground: getComputedStyle(el.closest('.p-dialog')).backgroundColor,
+            })),
+            progress: [...document.querySelectorAll('[role="progressbar"]')].map((el) => ({
+              label: el.getAttribute('aria-label'),
+              value: el.getAttribute('aria-valuenow'),
+              background: getComputedStyle(el).backgroundColor,
+              fill: getComputedStyle(el.querySelector('.p-progressbar-value')).backgroundColor,
+            })),
+          };
+        });
+        observations.push({ name, engine, colorScheme, viewport, errors, ...bounds });
         await page.close();
       }
     } finally {
       await browser.close();
     }
   }
-  await writeFile(
-    'docs/validation/ui/measurements.json',
-    `${JSON.stringify(observations, null, 2)}\n`,
+  const previous = only ? JSON.parse(await readFile(`${archive}/measurements.json`, 'utf8')) : [];
+  const measurements = [
+    ...previous.filter((item) => !observations.some((current) => current.name === item.name)),
+    ...observations,
+  ];
+  await writeFile(`${archive}/measurements.json`, `${JSON.stringify(measurements, null, 2)}\n`);
+  console.log(
+    `Сохранены ${observations.length} снимков состояний 740×500 и 540×400; ошибок JavaScript: ${observations.reduce((n, item) => n + item.errors.length, 0)}`,
   );
-  console.log('Сохранены 4 снимка Chromium/WebKit и измерения двух прогрессов');
 } finally {
   await server.close();
 }

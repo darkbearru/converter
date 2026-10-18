@@ -6,6 +6,22 @@
     <title>Converter — проверка интерфейса</title>
   </head>
   <body>
+    <style>
+      [data-testid='harness-controls'] {
+        position: fixed;
+        z-index: 9999;
+        inset: 0 auto auto 0;
+        background: white;
+        color: black;
+        font-size: 14px;
+      }
+      [data-testid='harness-controls'] p {
+        margin: 0;
+      }
+      [data-testid='harness-controls'][hidden] {
+        display: none;
+      }
+    </style>
     <div data-testid="harness-controls" aria-label="Управление тестовыми событиями">
       <p>Проверка интерфейса · синтетические события</p>
       <button id="advance">Шаг: конвертация</button><button id="finish">Шаг: готово</button

@@ -4,8 +4,13 @@ use converter_download::{DownloadProgress, TransferState};
 use std::collections::BTreeMap;
 fn snapshot() -> JobSnapshot {
     JobSnapshot {
+        resource_attachments: vec![],
         id: "00000000-0000-4000-8000-000000000001".into(),
         display_name: "Англо-русский словарь".into(),
+        source_bytes: Some(26_214_400),
+        prepare_only: false,
+        had_errors: false,
+        output: OutputChoice::AppLibrary,
         generation: 2,
         run_id: "00000000-0000-4000-8000-000000000002".into(),
         sequence: 10,

@@ -24,6 +24,7 @@ export interface JobDraft {
   options: ReadOptions;
   metadata_override: DictionaryMetadata | null;
   auto_start: boolean;
+  prepare_only?: boolean;
 }
 export interface JobOptionsUpdate {
   options?: ReadOptions;
@@ -31,9 +32,17 @@ export interface JobOptionsUpdate {
   output?: OutputChoice;
   dictionary_id?: string;
   resources?: string[];
+  resource_sources?: SourceInput[];
+  retained_resource_ids?: string[];
+}
+export interface ResourceAttachment {
+  source_id: string;
+  display_name: string;
+  bytes: number | null;
 }
 export type JobState =
   | 'queued'
+  | 'ready'
   | 'downloading'
   | 'download_retry_wait'
   | 'download_paused'
@@ -111,8 +120,13 @@ export interface ExportSnapshot {
   error: AppError | null;
 }
 export interface JobSnapshot {
+  resource_attachments?: ResourceAttachment[];
   id: string;
   display_name: string;
+  source_bytes?: number | null;
+  prepare_only?: boolean;
+  had_errors?: boolean;
+  output?: OutputChoice;
   generation: number;
   run_id: string;
   sequence: number;
@@ -167,5 +181,9 @@ export interface NativeBridge {
   readDiagnostics(id: string, offset: number, limit: number): Promise<DiagnosticPage>;
   exportResult(id: string): Promise<JobSnapshot>;
   openResult(id: string): Promise<void>;
+  getResultPath(id: string): Promise<string>;
+  onSourceDrop(callback: (event: SourceDropEvent) => void): Promise<() => void>;
   onJobEvent(callback: (event: JobEvent) => void): Promise<() => void>;
 }
+export type SourceDropEvent =
+  { kind: 'files'; files: ImportedSourceInfo[] } | { kind: 'error'; error: AppError };

@@ -1,5 +1,110 @@
 mod support;
+#[tokio::test]
+async fn ссылка_сначала_готовит_файл_и_ждет_команды_конвертации()
+-> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let root = temp.path().join("data");
+    let storage = support::TestStorage::new(temp.path());
+    let server = FixtureServer::spawn(
+        Scenario::StableRange,
+        b"#NAME \"Ready\"\nalpha\n\tBody\n".to_vec(),
+    )
+    .await;
+    let mut value = serde_json::to_value(support::draft(support::remote(server.url())))?;
+    value["prepare_only"] = true.into();
+    let manager = JobManager::open(root.clone(), storage.clone())?;
+    let image = temp.path().join("cover.png");
+    std::fs::write(&image, [7; 32])?;
+    let attachment = manager
+        .import(converter_app::storage::PlatformSelection::LocalPaths(vec![
+            image,
+        ]))
+        .await?
+        .remove(0);
+    value["resources"] =
+        serde_json::json!([{ "kind": "local", "import_id": attachment.import_id }]);
+    let job = manager.create(serde_json::from_value(value)?).await?;
+    manager.start(&job.id).await?;
+    let ready = tokio::time::timeout(Duration::from_secs(10), async {
+        loop {
+            let current = manager.list().expect("Jobs").remove(0);
+            if serde_json::to_value(current.state).expect("State") == "ready"
+                || matches!(current.state, JobState::Succeeded | JobState::Failed)
+            {
+                break current;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await?;
+    assert_eq!(serde_json::to_value(ready.state)?, "ready");
+    assert!(ready.result.is_none());
+    assert_eq!(ready.resource_attachments.len(), 1);
+    assert_eq!(ready.resource_attachments[0].display_name, "cover.png");
+    assert_eq!(storage.invocations.load(Ordering::SeqCst), 0);
+    assert!(
+        serde_json::to_value(&ready)?["source_bytes"]
+            .as_u64()
+            .is_some_and(|n| n > 0)
+    );
+    manager.shutdown().await?;
+    drop(manager);
+    drop(server);
+    let manager = JobManager::open(root, storage.clone())?;
+    let output = temp.path().join("назначение");
+    std::fs::create_dir(&output)?;
+    let resource_server = FixtureServer::spawn(Scenario::StableRange, vec![7; 1024]).await;
+    let update: JobOptionsUpdate = serde_json::from_value(
+        serde_json::json!({ "output": { "desktop_folder": output }, "options": { "encoding": { "manual": "utf-8" } }, "retained_resource_ids": [attachment.import_id, attachment.import_id], "resource_sources": [{ "kind": "remote", "url": resource_server.url(), "expected_sha256": null }] }),
+    )?;
+    let updated = manager.update(&job.id, update).await?;
+    assert_eq!(updated.resource_attachments.len(), 2);
+    assert_eq!(
+        updated.resource_attachments[0].source_id,
+        attachment.import_id
+    );
+    let invalid: JobOptionsUpdate = serde_json::from_value(
+        serde_json::json!({ "retained_resource_ids": [updated.download.files[0].source_id] }),
+    )?;
+    assert!(manager.update(&job.id, invalid).await.is_err());
+    manager.start(&job.id).await?;
+    let done = support::wait(&manager, &job.id, &[JobState::Succeeded]).await;
+    assert_eq!(done.download.files.len(), 2);
+    assert_eq!(storage.invocations.load(Ordering::SeqCst), 1);
+    assert!(
+        manager
+            .result_directory(&job.id)?
+            .starts_with(output.canonicalize()?)
+    );
+    manager.shutdown().await?;
+    Ok(())
+}
 use converter_core::model::{EncodingChoice, ReadOptions};
+#[tokio::test]
+async fn ресурсы_готового_задания_можно_удалить_целиком() -> Result<(), Box<dyn std::error::Error>>
+{
+    let temp = tempfile::tempdir()?;
+    let manager = JobManager::open(
+        temp.path().join("data"),
+        support::TestStorage::new(temp.path()),
+    )?;
+    let mut draft = support::local(&manager, temp.path(), "source.dsl").await;
+    let resource = support::local(&manager, temp.path(), "resource.dsl")
+        .await
+        .source;
+    draft.resources = vec![resource];
+    draft.prepare_only = true;
+    let job = manager.create(draft).await?;
+    manager.start(&job.id).await?;
+    support::wait(&manager, &job.id, &[JobState::Ready]).await;
+    let update = serde_json::from_value(
+        serde_json::json!({"resource_sources": [], "retained_resource_ids": []}),
+    )?;
+    let updated = manager.update(&job.id, update).await?;
+    assert!(updated.resource_attachments.is_empty());
+    manager.shutdown().await?;
+    Ok(())
+}
 #[tokio::test]
 async fn недоступный_ready_пересоздается_из_сохраненного_источника()
 -> Result<(), Box<dyn std::error::Error>> {

@@ -56,10 +56,11 @@ pub enum SourceInput {
         expected_sha256: Option<String>,
     },
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum OutputChoice {
     DesktopFolder(PathBuf),
+    #[default]
     AppLibrary,
 }
 #[derive(Clone, Serialize, Deserialize)]
@@ -70,19 +71,24 @@ pub struct JobDraft {
     pub options: ReadOptions,
     pub metadata_override: Option<DictionaryMetadata>,
     pub auto_start: bool,
+    #[serde(default)]
+    pub prepare_only: bool,
 }
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Default, Serialize, Deserialize)]
 pub struct JobOptionsUpdate {
     pub options: Option<ReadOptions>,
     pub metadata_override: Option<DictionaryMetadata>,
     pub output: Option<OutputChoice>,
     pub dictionary_id: Option<String>,
     pub resources: Option<Vec<String>>,
+    pub resource_sources: Option<Vec<SourceInput>>,
+    pub retained_resource_ids: Option<Vec<String>>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum JobState {
     Queued,
+    Ready,
     Downloading,
     DownloadRetryWait,
     DownloadPaused,
@@ -175,8 +181,18 @@ pub struct InputChoice {
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct JobSnapshot {
+    #[serde(default)]
+    pub resource_attachments: Vec<ResourceAttachment>,
     pub id: String,
     pub display_name: String,
+    #[serde(default)]
+    pub source_bytes: Option<u64>,
+    #[serde(default)]
+    pub prepare_only: bool,
+    #[serde(default)]
+    pub had_errors: bool,
+    #[serde(default)]
+    pub output: OutputChoice,
     pub generation: u64,
     pub run_id: String,
     pub sequence: u64,
@@ -201,6 +217,18 @@ pub struct ImportedSourceInfo {
     pub display_name: String,
     pub bytes: Option<u64>,
     pub is_directory: bool,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ResourceAttachment {
+    pub source_id: String,
+    pub display_name: String,
+    pub bytes: Option<u64>,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum SourceDropEvent {
+    Files { files: Vec<ImportedSourceInfo> },
+    Error { error: AppError },
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DiagnosticPage {

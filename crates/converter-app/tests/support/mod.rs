@@ -112,6 +112,7 @@ pub fn draft(source: SourceInput) -> JobDraft {
         options: ReadOptions::default(),
         metadata_override: None,
         auto_start: false,
+        prepare_only: false,
     }
 }
 pub fn remote(url: String) -> SourceInput {

@@ -1,7 +1,12 @@
 {
   "converting": {
+    "resource_attachments": [],
     "id": "00000000-0000-4000-8000-000000000001",
     "display_name": "Англо-русский словарь",
+    "source_bytes": 26214400,
+    "prepare_only": false,
+    "had_errors": false,
+    "output": "app_library",
     "generation": 2,
     "run_id": "00000000-0000-4000-8000-000000000002",
     "sequence": 10,
@@ -66,8 +71,13 @@
     }
   },
   "downloading": {
+    "resource_attachments": [],
     "id": "00000000-0000-4000-8000-000000000001",
     "display_name": "Англо-русский словарь",
+    "source_bytes": 26214400,
+    "prepare_only": false,
+    "had_errors": false,
+    "output": "app_library",
     "generation": 2,
     "run_id": "00000000-0000-4000-8000-000000000002",
     "sequence": 10,
@@ -116,8 +126,13 @@
     }
   },
   "local": {
+    "resource_attachments": [],
     "id": "00000000-0000-4000-8000-000000000001",
     "display_name": "Англо-русский словарь",
+    "source_bytes": 26214400,
+    "prepare_only": false,
+    "had_errors": false,
+    "output": "app_library",
     "generation": 2,
     "run_id": "00000000-0000-4000-8000-000000000002",
     "sequence": 10,
@@ -156,8 +171,13 @@
     }
   },
   "paused": {
+    "resource_attachments": [],
     "id": "00000000-0000-4000-8000-000000000001",
     "display_name": "Англо-русский словарь",
+    "source_bytes": 26214400,
+    "prepare_only": false,
+    "had_errors": false,
+    "output": "app_library",
     "generation": 2,
     "run_id": "00000000-0000-4000-8000-000000000002",
     "sequence": 10,
@@ -206,8 +226,13 @@
     }
   },
   "stale": {
+    "resource_attachments": [],
     "id": "00000000-0000-4000-8000-000000000001",
     "display_name": "Англо-русский словарь",
+    "source_bytes": 26214400,
+    "prepare_only": false,
+    "had_errors": false,
+    "output": "app_library",
     "generation": 1,
     "run_id": "00000000-0000-4000-8000-000000000002",
     "sequence": 999,
@@ -246,8 +271,13 @@
     }
   },
   "succeeded": {
+    "resource_attachments": [],
     "id": "00000000-0000-4000-8000-000000000001",
     "display_name": "Англо-русский словарь",
+    "source_bytes": 26214400,
+    "prepare_only": false,
+    "had_errors": false,
+    "output": "app_library",
     "generation": 2,
     "run_id": "00000000-0000-4000-8000-000000000002",
     "sequence": 100,
@@ -341,8 +371,13 @@
     }
   },
   "unknown": {
+    "resource_attachments": [],
     "id": "00000000-0000-4000-8000-000000000001",
     "display_name": "Англо-русский словарь",
+    "source_bytes": 26214400,
+    "prepare_only": false,
+    "had_errors": false,
+    "output": "app_library",
     "generation": 2,
     "run_id": "00000000-0000-4000-8000-000000000002",
     "sequence": 10,

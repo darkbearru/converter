@@ -1,0 +1,522 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-18T11:15:39.060277Z",
+  "title": "Design System: Converter",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Оранжевый книги",
+        "tonalRamp": [
+          "#401107",
+          "#76291b",
+          "#922c1b",
+          "#b73318",
+          "#F96133",
+          "#ff9876",
+          "#ffe2d4",
+          "#fff3ed"
+        ]
+      },
+      "primary-hover": {
+        "role": "primary",
+        "displayName": "Оранжевый hover",
+        "tonalRamp": [
+          "#401107",
+          "#76291b",
+          "#922c1b",
+          "#b73318",
+          "#F96133",
+          "#ff9876",
+          "#ffe2d4",
+          "#fff3ed"
+        ]
+      },
+      "primary-active": {
+        "role": "primary",
+        "displayName": "Оранжевый active",
+        "tonalRamp": [
+          "#401107",
+          "#76291b",
+          "#922c1b",
+          "#b73318",
+          "#F96133",
+          "#ff9876",
+          "#ffe2d4",
+          "#fff3ed"
+        ]
+      },
+      "primary-ink-light": {
+        "role": "primary",
+        "displayName": "Тёмный оранжевый текста",
+        "tonalRamp": [
+          "#401107",
+          "#76291b",
+          "#922c1b",
+          "#b73318",
+          "#F96133",
+          "#ff9876",
+          "#ffe2d4",
+          "#fff3ed"
+        ]
+      },
+      "transfer": {
+        "role": "secondary",
+        "displayName": "Голубой книги",
+        "tonalRamp": [
+          "oklch(15.00% 0.1071 225.76)",
+          "oklch(26.43% 0.1071 225.76)",
+          "oklch(37.86% 0.1071 225.76)",
+          "oklch(49.29% 0.1071 225.76)",
+          "oklch(60.71% 0.1071 225.76)",
+          "oklch(72.14% 0.1071 225.76)",
+          "oklch(83.57% 0.1071 225.76)",
+          "oklch(95.00% 0.1071 225.76)"
+        ]
+      },
+      "transfer-hover": {
+        "role": "secondary",
+        "displayName": "Голубой hover",
+        "tonalRamp": [
+          "oklch(15.00% 0.1013 230.32)",
+          "oklch(26.43% 0.1013 230.32)",
+          "oklch(37.86% 0.1013 230.32)",
+          "oklch(49.29% 0.1013 230.32)",
+          "oklch(60.71% 0.1013 230.32)",
+          "oklch(72.14% 0.1013 230.32)",
+          "oklch(83.57% 0.1013 230.32)",
+          "oklch(95.00% 0.1013 230.32)"
+        ]
+      },
+      "surface-0": {
+        "role": "neutral",
+        "displayName": "Aura Zinc / surface 0",
+        "tonalRamp": [
+          "#09090b",
+          "#27272a",
+          "#3f3f46",
+          "#71717a",
+          "#a1a1aa",
+          "#d4d4d8",
+          "#f4f4f5",
+          "#fafafa"
+        ]
+      },
+      "surface-50": {
+        "role": "neutral",
+        "displayName": "Aura Zinc / surface 50",
+        "tonalRamp": [
+          "#09090b",
+          "#27272a",
+          "#3f3f46",
+          "#71717a",
+          "#a1a1aa",
+          "#d4d4d8",
+          "#f4f4f5",
+          "#fafafa"
+        ]
+      },
+      "surface-100": {
+        "role": "neutral",
+        "displayName": "Aura Zinc / surface 100",
+        "tonalRamp": [
+          "#09090b",
+          "#27272a",
+          "#3f3f46",
+          "#71717a",
+          "#a1a1aa",
+          "#d4d4d8",
+          "#f4f4f5",
+          "#fafafa"
+        ]
+      },
+      "surface-200": {
+        "role": "neutral",
+        "displayName": "Aura Zinc / surface 200",
+        "tonalRamp": [
+          "#09090b",
+          "#27272a",
+          "#3f3f46",
+          "#71717a",
+          "#a1a1aa",
+          "#d4d4d8",
+          "#f4f4f5",
+          "#fafafa"
+        ]
+      },
+      "surface-300": {
+        "role": "neutral",
+        "displayName": "Aura Zinc / surface 300",
+        "tonalRamp": [
+          "#09090b",
+          "#27272a",
+          "#3f3f46",
+          "#71717a",
+          "#a1a1aa",
+          "#d4d4d8",
+          "#f4f4f5",
+          "#fafafa"
+        ]
+      },
+      "surface-400": {
+        "role": "neutral",
+        "displayName": "Aura Zinc / surface 400",
+        "tonalRamp": [
+          "#09090b",
+          "#27272a",
+          "#3f3f46",
+          "#71717a",
+          "#a1a1aa",
+          "#d4d4d8",
+          "#f4f4f5",
+          "#fafafa"
+        ]
+      },
+      "surface-500": {
+        "role": "neutral",
+        "displayName": "Aura Zinc / surface 500",
+        "tonalRamp": [
+          "#09090b",
+          "#27272a",
+          "#3f3f46",
+          "#71717a",
+          "#a1a1aa",
+          "#d4d4d8",
+          "#f4f4f5",
+          "#fafafa"
+        ]
+      },
+      "surface-600": {
+        "role": "neutral",
+        "displayName": "Aura Zinc / surface 600",
+        "tonalRamp": [
+          "#09090b",
+          "#27272a",
+          "#3f3f46",
+          "#71717a",
+          "#a1a1aa",
+          "#d4d4d8",
+          "#f4f4f5",
+          "#fafafa"
+        ]
+      },
+      "surface-700": {
+        "role": "neutral",
+        "displayName": "Aura Zinc / surface 700",
+        "tonalRamp": [
+          "#09090b",
+          "#27272a",
+          "#3f3f46",
+          "#71717a",
+          "#a1a1aa",
+          "#d4d4d8",
+          "#f4f4f5",
+          "#fafafa"
+        ]
+      },
+      "surface-800": {
+        "role": "neutral",
+        "displayName": "Aura Zinc / surface 800",
+        "tonalRamp": [
+          "#09090b",
+          "#27272a",
+          "#3f3f46",
+          "#71717a",
+          "#a1a1aa",
+          "#d4d4d8",
+          "#f4f4f5",
+          "#fafafa"
+        ]
+      },
+      "surface-900": {
+        "role": "neutral",
+        "displayName": "Aura Zinc / surface 900",
+        "tonalRamp": [
+          "#09090b",
+          "#27272a",
+          "#3f3f46",
+          "#71717a",
+          "#a1a1aa",
+          "#d4d4d8",
+          "#f4f4f5",
+          "#fafafa"
+        ]
+      },
+      "surface-950": {
+        "role": "neutral",
+        "displayName": "Aura Zinc / surface 950",
+        "tonalRamp": [
+          "#09090b",
+          "#27272a",
+          "#3f3f46",
+          "#71717a",
+          "#a1a1aa",
+          "#d4d4d8",
+          "#f4f4f5",
+          "#fafafa"
+        ]
+      },
+      "error-light": {
+        "role": "tertiary",
+        "displayName": "Ошибка, светлая тема",
+        "tonalRamp": [
+          "#450a0a",
+          "#7f1d1d",
+          "#991b1b",
+          "#b91c1c",
+          "#ef4444",
+          "#fca5a5",
+          "#fee2e2",
+          "#fef2f2"
+        ]
+      },
+      "error-dark": {
+        "role": "tertiary",
+        "displayName": "Ошибка, тёмная тема",
+        "tonalRamp": [
+          "#450a0a",
+          "#7f1d1d",
+          "#991b1b",
+          "#b91c1c",
+          "#ef4444",
+          "#fca5a5",
+          "#fee2e2",
+          "#fef2f2"
+        ]
+      },
+      "success-light": {
+        "role": "tertiary",
+        "displayName": "Успех, светлая тема",
+        "tonalRamp": [
+          "#052e16",
+          "#14532d",
+          "#166534",
+          "#15803d",
+          "#22c55e",
+          "#86efac",
+          "#dcfce7",
+          "#f0fdf4"
+        ]
+      },
+      "success-dark": {
+        "role": "tertiary",
+        "displayName": "Успех, тёмная тема",
+        "tonalRamp": [
+          "#052e16",
+          "#14532d",
+          "#166534",
+          "#15803d",
+          "#22c55e",
+          "#86efac",
+          "#dcfce7",
+          "#f0fdf4"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "title": {
+        "displayName": "Заголовок",
+        "purpose": "Название приложения; размер заголовков Dialog."
+      },
+      "body": {
+        "displayName": "Основной текст",
+        "purpose": "Основной интерфейс и инструкция выбора источника."
+      },
+      "source": {
+        "displayName": "Готовый источник",
+        "purpose": "Выбранные имена файлов и размеры."
+      },
+      "field": {
+        "displayName": "Поле",
+        "purpose": "Текст InputText, Select и Textarea в Dialog."
+      },
+      "label": {
+        "displayName": "Подпись",
+        "purpose": "Названия полей и компактные вспомогательные данные."
+      },
+      "caption": {
+        "displayName": "Техническая подпись",
+        "purpose": "Подпись форматов в заголовке и подробные этапы."
+      }
+    },
+    "shadows": [
+      {
+        "name": "aura-field",
+        "value": "0 0 #0000, 0 0 #0000, 0 1px 2px 0 rgba(18, 18, 23, 0.05)",
+        "purpose": "Слабая граница поля Aura."
+      },
+      {
+        "name": "aura-select",
+        "value": "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)",
+        "purpose": "Раскрытый Select."
+      },
+      {
+        "name": "aura-dialog",
+        "value": "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+        "purpose": "Модальная поверхность; стек задач остаётся плоским."
+      }
+    ],
+    "motion": [
+      {
+        "name": "duration-task",
+        "value": "240ms",
+        "purpose": "TransitionGroup: появление, перестановка и уход задач."
+      },
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Пространственное движение строк и шеврон истории."
+      },
+      {
+        "name": "task-enter",
+        "value": "translateY(48px); opacity: 0",
+        "purpose": "Начальное состояние строки под панелью."
+      },
+      {
+        "name": "task-leave",
+        "value": "translateY(-12px); opacity: 0",
+        "purpose": "Уход строки вверх."
+      },
+      {
+        "name": "history-chevron",
+        "value": "160ms",
+        "purpose": "Поворот шеврона при раскрытии."
+      },
+      {
+        "name": "aura-control",
+        "value": "200ms",
+        "purpose": "Стандартные цветовые состояния полей и кнопок Aura."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "opacity 100ms linear",
+        "purpose": "Без translate; шеврон без transition, indeterminate progress без animation."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact-browser",
+        "value": "480px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Основная кнопка",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Aura: оранжевая заливка и тёмная надпись во всех темах.",
+      "html": "<button class=\"ds-primary\">Готово</button>",
+      "css": ".ds-primary{font:500 14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:.5rem .75rem;border-radius:var(--control-radius,6px);cursor:pointer;transition:background .2s,color .2s,border-color .2s,box-shadow .2s,outline-color .2s;background:var(--p-primary-color,#F96133);color:var(--p-primary-contrast-color,#09090b);border:1px solid var(--p-primary-color,#F96133)}.ds-primary:hover{background:var(--p-primary-hover-color,#ff7950);border-color:var(--p-primary-hover-color,#ff7950)}.ds-primary:active{background:var(--p-primary-active-color,#ff9876);border-color:var(--p-primary-active-color,#ff9876)}.ds-primary:focus-visible{outline:2px solid var(--focus,#F96133);outline-offset:3px;}.ds-primary:disabled{opacity:.6;cursor:default}"
+    },
+    {
+      "name": "Контурная кнопка",
+      "kind": "button",
+      "refersTo": "button-outlined-light",
+      "description": "Aura outlined; светлая тема использует primary700, тёмная — основной оранжевый.",
+      "html": "<button class=\"ds-outlined\">Выбрать папку</button>",
+      "css": ".ds-outlined{font:500 14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:.5rem .75rem;border-radius:var(--control-radius,6px);cursor:pointer;transition:background .2s,color .2s,border-color .2s,box-shadow .2s,outline-color .2s;font-size:12px;background:transparent;color:var(--p-button-outlined-primary-color,#b73318);border:1px solid var(--p-button-outlined-primary-border-color,#ffc1a8)}.ds-outlined:hover{background:var(--p-button-outlined-primary-hover-background,#fff3ed)}.ds-outlined:active{background:var(--p-button-outlined-primary-active-background,#ffe2d4)}.ds-outlined:focus-visible{outline:2px solid var(--focus,#F96133);outline-offset:3px;}.ds-outlined:disabled{opacity:.6;cursor:default}"
+    },
+    {
+      "name": "Текстовая кнопка",
+      "kind": "button",
+      "refersTo": "button-text-light",
+      "description": "Вторичное действие в footer и формах.",
+      "html": "<button class=\"ds-text\">Отмена</button>",
+      "css": ".ds-text{font:500 14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:.5rem .75rem;border-radius:var(--control-radius,6px);cursor:pointer;transition:background .2s,color .2s,border-color .2s,box-shadow .2s,outline-color .2s;background:transparent;color:var(--p-button-text-primary-color,#b73318);border:1px solid transparent}.ds-text:hover{background:var(--p-button-text-primary-hover-background,#fff3ed)}.ds-text:active{background:var(--p-button-text-primary-active-background,#ffe2d4)}.ds-text:focus-visible{outline:2px solid var(--focus,#F96133);outline-offset:3px;}.ds-text:disabled{opacity:.6;cursor:default}"
+    },
+    {
+      "name": "Кнопка утилиты",
+      "kind": "button",
+      "refersTo": "button-icon",
+      "description": "Круглая text-кнопка с исходным SVG; aria-label содержит действие.",
+      "html": "<button class=\"ds-icon-button\" aria-label=\"Убрать выбранный источник\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"30\" height=\"30\" viewBox=\"0 0 40 40\" aria-hidden=\"true\"><g transform=\"translate(20 20) scale(2) translate(-20 -20)\"><path d=\"M25,25.5c-0.1,0-0.3,0-0.4-0.1l-10-10c-0.2-0.2-0.2-0.5,0-0.7s0.5-0.2,0.7,0l10,10c0.2,0.2,0.2,0.5,0,0.7\n\t\t\t\tC25.3,25.5,25.1,25.5,25,25.5z\" fill=\"currentColor\"/><path d=\"M15,25.5c-0.1,0-0.3,0-0.4-0.1c-0.2-0.2-0.2-0.5,0-0.7l10-10c0.2-0.2,0.5-0.2,0.7,0s0.2,0.5,0,0.7l-10,10\n\t\t\t\tC15.3,25.5,15.1,25.5,15,25.5z\" fill=\"currentColor\"/></g></svg></button>",
+      "css": ".ds-icon-button{font:500 14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:.5rem .75rem;border-radius:var(--control-radius,6px);cursor:pointer;transition:background .2s,color .2s,border-color .2s,box-shadow .2s,outline-color .2s;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border-radius:50%;background:transparent;border:1px solid transparent;color:var(--muted,#71717a);flex-shrink:0}.ds-icon-button:hover{background:var(--p-button-text-primary-hover-background,#fff3ed)}.ds-icon-button:active{background:var(--p-button-text-primary-active-background,#ffe2d4)}.ds-icon-button:focus-visible{outline:2px solid var(--focus,#F96133);outline-offset:3px;}.ds-icon-button:disabled{opacity:.6;cursor:default}"
+    },
+    {
+      "name": "Запуск конвертации",
+      "kind": "button",
+      "refersTo": "action-convert",
+      "description": "Круглое действие панели; в приложении размещено справа снизу с отступом 12px.",
+      "html": "<button class=\"ds-convert\" aria-label=\"Запуск конвертации\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"38\" height=\"38\" viewBox=\"0 0 40 40\" aria-hidden=\"true\"><g transform=\"translate(20 20) scale(2) translate(-20 -20)\"><path d=\"M17.7,25.5c-1,0-1.7-0.8-1.7-1.7v-7.5c0-1,0.8-1.7,1.7-1.7c0.3,0,0.6,0.1,0.9,0.2l6.5,3.8c0.5,0.3,0.9,0.9,0.9,1.5\n\t\t\ts-0.3,1.2-0.9,1.5l-6.5,3.8C18.3,25.4,18,25.5,17.7,25.5z M17.7,15.5c-0.4,0-0.7,0.3-0.7,0.7v7.5c0,0.6,0.7,0.9,1.1,0.6l6.5-3.8\n\t\t\tc0.2-0.1,0.4-0.4,0.4-0.6s-0.1-0.5-0.4-0.6l-6.5-3.8C18,15.5,17.9,15.5,17.7,15.5z\" fill=\"currentColor\"/></g></svg></button>",
+      "css": ".ds-convert{font:500 14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:.5rem .75rem;border-radius:var(--control-radius,6px);cursor:pointer;transition:background .2s,color .2s,border-color .2s,box-shadow .2s,outline-color .2s;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:0;border-radius:50%;color:var(--p-surface-950,#09090b);background:var(--accent,#F96133);}.ds-convert:hover{background:var(--p-primary-hover-color,#ff7950);}.ds-convert:active{background:var(--p-primary-active-color,#ff9876);}.ds-convert:focus-visible{outline:2px solid var(--focus,#F96133);outline-offset:3px;}.ds-convert:disabled{opacity:.6;cursor:default}"
+    },
+    {
+      "name": "Отмена скачивания",
+      "kind": "button",
+      "refersTo": "action-transfer",
+      "description": "Круглое действие панели; в приложении размещено справа снизу с отступом 12px.",
+      "html": "<button class=\"ds-transfer\" aria-label=\"Отмена скачивания\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"38\" height=\"38\" viewBox=\"0 0 40 40\" aria-hidden=\"true\"><g transform=\"translate(20 20) scale(2) translate(-20 -20)\"><path d=\"M23,25.5h-6c-1.4,0-2.5-1.1-2.5-2.5v-6c0-1.4,1.1-2.5,2.5-2.5h6c1.4,0,2.5,1.1,2.5,2.5v6C25.5,24.4,24.4,25.5,23,25.5z\n\t\t\t M17,15.5c-0.8,0-1.5,0.7-1.5,1.5v6c0,0.8,0.7,1.5,1.5,1.5h6c0.8,0,1.5-0.7,1.5-1.5v-6c0-0.8-0.7-1.5-1.5-1.5H17z\" fill=\"currentColor\"/></g></svg></button>",
+      "css": ".ds-transfer{font:500 14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:.5rem .75rem;border-radius:var(--control-radius,6px);cursor:pointer;transition:background .2s,color .2s,border-color .2s,box-shadow .2s,outline-color .2s;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:0;border-radius:50%;color:var(--p-surface-950,#09090b);background:var(--transfer,#65C8EE);}.ds-transfer:hover{background:var(--p-sky-300,#7dd3fc);}.ds-transfer:active{background:var(--transfer,#65C8EE);}.ds-transfer:focus-visible{outline:2px solid var(--focus,#F96133);outline-offset:3px;}.ds-transfer:disabled{opacity:.6;cursor:default}"
+    },
+    {
+      "name": "Текстовое поле",
+      "kind": "input",
+      "refersTo": "input-light",
+      "description": "Растягивается по ширине Dialog; label связан с полем.",
+      "html": "<label class=\"ds-field-label\" for=\"ds-dictionary-title\">Название словаря</label><input class=\"ds-field\" id=\"ds-dictionary-title\" placeholder=\"Из исходного файла\"/>",
+      "css": ".ds-field-label{display:block;margin-bottom:8px;font:600 12px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--text,#3f3f46)}.ds-field{font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:block;width:100%;min-width:0;padding:.5rem .75rem;border:1px solid var(--p-form-field-border-color,#d4d4d8);border-radius:var(--control-radius,6px);background:var(--p-form-field-background,#ffffff);color:var(--p-form-field-color,#3f3f46);caret-color:var(--accent,#F96133);box-shadow:var(--p-form-field-shadow,0 1px 2px 0 rgba(18,18,23,.05));transition:border-color .2s,box-shadow .2s,outline-color .2s}.ds-field::placeholder{color:var(--p-form-field-placeholder-color,#71717a)}.ds-field:hover{border-color:var(--p-form-field-hover-border-color,#a1a1aa)}.ds-field:focus{border-color:var(--p-form-field-focus-border-color,#F96133)}.ds-field:focus-visible{outline:2px solid var(--focus,#F96133);outline-offset:3px;}.ds-field:disabled{background:var(--p-form-field-disabled-background,#e4e4e7);color:var(--p-form-field-disabled-color,#71717a)}"
+    },
+    {
+      "name": "Панель источника",
+      "kind": "card",
+      "refersTo": "source-composer",
+      "description": "FileUpload в пустом состоянии; геометрия и исходный рисунок области выбора.",
+      "html": "<section class=\"ds-composer\" aria-label=\"Новый словарь\"><button class=\"ds-dropzone\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"48\" height=\"48\" viewBox=\"0 0 40 40\" aria-hidden=\"true\"><g transform=\"translate(20 20) scale(2) translate(-20 -20)\"><path d=\"M26.1,23H25c-0.3,0-0.5-0.2-0.5-0.5S24.7,22,25,22h1.1c0.4,0,0.8-0.2,1.1-0.5c0.3-0.3,0.4-0.7,0.3-1.2\n\t\t\t\t\tc-0.1-0.5-0.6-1-1.2-1.1l-0.6-0.1c-0.7-0.1-1.1-0.8-1-1.4l0.1-0.7c0-0.2,0-0.3,0-0.4c0-0.8-0.3-1.5-0.8-2s-1.3-0.8-2-0.8\n\t\t\t\t\tc-1,0-2,0.7-2.4,1.7l-0.2,0.4c-0.2,0.5-0.7,0.8-1.3,0.7l-0.5-0.1c-0.9-0.1-1.9,0.5-2.2,1.4l-0.1,0.4c-0.2,0.5-0.5,0.8-1,0.8\n\t\t\t\t\tl-0.5,0.1c-0.4,0.1-0.8,0.3-1,0.7c-0.2,0.4-0.3,0.8-0.1,1.2c0.2,0.5,0.8,0.9,1.4,0.9h1c0.3,0,0.5,0.2,0.5,0.5S15.3,23,15,23h-1\n\t\t\t\t\tc-1.1,0-2-0.6-2.3-1.6c-0.2-0.7-0.2-1.4,0.2-2c0.4-0.6,1-1,1.7-1.1l0.5-0.1c0.1,0,0.2-0.1,0.2-0.2l0.1-0.4\n\t\t\t\t\tc0.4-1.2,1.6-2.1,2.9-2.1c0.1,0,0.2,0,0.3,0l0.5,0.1c0.1,0,0.2,0,0.3-0.1l0.2-0.4c0.6-1.3,1.9-2.2,3.3-2.3c1,0,2,0.3,2.8,1\n\t\t\t\t\tc0.7,0.7,1.2,1.7,1.2,2.7c0,0.2,0,0.4-0.1,0.6l-0.1,0.7c0,0.1,0.1,0.3,0.2,0.3l0.6,0.1c1,0.2,1.8,0.9,2,1.9c0.1,0.7,0,1.4-0.5,2\n\t\t\t\t\tC27.5,22.7,26.8,23,26.1,23z\" fill=\"currentColor\"/><path d=\"M21.5,24.1c-0.1,0-0.3,0-0.4-0.1L20,22.8l-1.2,1.2c-0.2,0.2-0.5,0.2-0.7,0s-0.2-0.5,0-0.7l1.5-1.5\n\t\t\t\t\t\tc0.2-0.2,0.5-0.2,0.7,0l1.5,1.5c0.2,0.2,0.2,0.5,0,0.7C21.8,24,21.7,24.1,21.5,24.1z\" fill=\"currentColor\"/><path d=\"M20,27.6c-0.3,0-0.5-0.2-0.5-0.5v-5c0-0.3,0.2-0.5,0.5-0.5s0.5,0.2,0.5,0.5v5\n\t\t\t\t\t\tC20.5,27.3,20.3,27.6,20,27.6z\" fill=\"currentColor\"/></g></svg><span>Перетащите файлы сюда или нажмите для просмотра</span></button></section>",
+      "css": ".ds-composer{position:relative;z-index:2;background:var(--composer-surface,#f4f4f5);border-radius:24px}.ds-dropzone{font:600 14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;width:100%;height:188px;padding:40px 64px 32px;border:0;border-radius:24px;background:transparent;color:var(--text,#3f3f46);text-align:center;cursor:pointer}.ds-dropzone span{max-width:420px}.ds-dropzone:hover{background:transparent}.ds-dropzone:focus-visible{outline:2px solid var(--focus,#F96133);outline-offset:3px;}@media(max-width:480px){.ds-dropzone{padding-inline:32px;font-size:13px}}"
+    },
+    {
+      "name": "Активная задача",
+      "kind": "custom",
+      "refersTo": "active-task",
+      "description": "Имя, тонкий прогресс и отмена; внешний стек в приложении управляет нахлёстом и движением.",
+      "html": "<article class=\"ds-task\"><button class=\"ds-task-name\">main.dsl</button><div class=\"ds-task-meter\" role=\"progressbar\" aria-label=\"Запись MDX\" aria-valuenow=\"25\" aria-valuemin=\"0\" aria-valuemax=\"100\"><span></span></div><button class=\"ds-task-cancel\" aria-label=\"Отменить main.dsl\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"30\" height=\"30\" viewBox=\"0 0 40 40\" aria-hidden=\"true\"><g transform=\"translate(20 20) scale(2) translate(-20 -20)\"><path d=\"M27,18.5H13c-0.3,0-0.5-0.2-0.5-0.5v-2c0-0.8,0.7-1.5,1.5-1.5h12c0.8,0,1.5,0.7,1.5,1.5v2\n\t\t\t\tC27.5,18.2,27.3,18.5,27,18.5z M13.5,17.5h13V16c0-0.3-0.2-0.5-0.5-0.5H14c-0.3,0-0.5,0.2-0.5,0.5V17.5z\" fill=\"currentColor\"/><path d=\"M24,28.5h-8c-1.4,0-2.5-1.1-2.5-2.5v-8c0-0.3,0.2-0.5,0.5-0.5s0.5,0.2,0.5,0.5v8c0,0.8,0.7,1.5,1.5,1.5h8\n\t\t\t\tc0.8,0,1.5-0.7,1.5-1.5v-8c0-0.3,0.2-0.5,0.5-0.5s0.5,0.2,0.5,0.5v8C26.5,27.4,25.4,28.5,24,28.5z\" fill=\"currentColor\"/><path d=\"M22.5,15h-1v-2c0-0.3-0.2-0.5-0.5-0.5h-2c-0.3,0-0.5,0.2-0.5,0.5v2h-1v-2c0-0.8,0.7-1.5,1.5-1.5h2\n\t\t\t\tc0.8,0,1.5,0.7,1.5,1.5V15z\" fill=\"currentColor\"/><path d=\"M17,25.5c-0.3,0-0.5-0.2-0.5-0.5v-4c0-0.3,0.2-0.5,0.5-0.5s0.5,0.2,0.5,0.5v4\n\t\t\t\tC17.5,25.3,17.3,25.5,17,25.5z\" fill=\"currentColor\"/><path d=\"M20,25.5c-0.3,0-0.5-0.2-0.5-0.5v-4c0-0.3,0.2-0.5,0.5-0.5s0.5,0.2,0.5,0.5v4\n\t\t\t\tC20.5,25.3,20.3,25.5,20,25.5z\" fill=\"currentColor\"/><path d=\"M23,25.5c-0.3,0-0.5-0.2-0.5-0.5v-4c0-0.3,0.2-0.5,0.5-0.5s0.5,0.2,0.5,0.5v4\n\t\t\t\tC23.5,25.3,23.3,25.5,23,25.5z\" fill=\"currentColor\"/></g></svg></button></article>",
+      "css": ".ds-task{display:flex;align-items:center;gap:12px;height:68px;padding:8px 12px 26px;border:1px solid var(--border,#e4e4e7);border-radius:18px 18px 0 0;background:var(--task-surface,#e4e4e7);color:var(--text,#3f3f46)}.ds-task-name{font:450 14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;flex:0 1 130px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer}.ds-task-meter{flex:1;min-width:48px;height:6px;border-radius:6px;overflow:hidden;background:var(--p-surface-400,#a1a1aa)}.ds-task-meter span{display:block;width:25%;height:100%;background:var(--accent,#F96133)}.ds-task-cancel{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted,#71717a);cursor:pointer}.ds-task-name:hover,.ds-task-cancel:hover{background:var(--p-button-text-primary-hover-background,#fff3ed)}.ds-task-name:focus-visible,.ds-task-cancel:focus-visible{outline:2px solid var(--focus,#F96133);outline-offset:3px;}@media(prefers-reduced-motion:reduce){.ds-task{transform:none;transition:opacity 100ms linear}}"
+    },
+    {
+      "name": "История Accordion",
+      "kind": "custom",
+      "refersTo": "history-header",
+      "description": "Раскрываемая история; нативный details в snippet передаёт визуальный рисунок без Vue runtime.",
+      "html": "<details class=\"ds-history\"><summary class=\"ds-history-header\"><span>Большой русско-английский словарь.dsl</span><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"30\" height=\"30\" viewBox=\"0 0 40 40\" aria-hidden=\"true\"><g transform=\"translate(20 20) scale(2) translate(-20 -20)\"><path d=\"M20,23.7c-0.7,0-1.3-0.3-1.8-0.7l-4.6-4.6c-0.2-0.2-0.2-0.5,0-0.7s0.5-0.2,0.7,0l4.6,4.6\n\t\t\t\tc0.6,0.6,1.5,0.6,2.1,0l4.6-4.6c0.2-0.2,0.5-0.2,0.7,0s0.2,0.5,0,0.7l-4.6,4.6C21.3,23.4,20.7,23.7,20,23.7z\" fill=\"currentColor\"/></g></svg></summary><div class=\"ds-history-content\"><p>Готово</p><strong>Результат</strong><p>dictionary.mdx · dictionary.mdd</p></div></details>",
+      "css": ".ds-history{font:400 14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--text,#3f3f46);border-bottom:1px solid var(--border,#e4e4e7)}.ds-history-header{display:flex;align-items:center;gap:10px;padding:12px 10px;font-weight:550;cursor:pointer;list-style:none;background:var(--p-accordion-header-background,#ffffff)}.ds-history-header::-webkit-details-marker{display:none}.ds-history-header span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ds-history-header svg{flex-shrink:0;transition:transform 160ms cubic-bezier(.23,1,.32,1)}.ds-history[open] .ds-history-header svg{transform:rotate(180deg)}.ds-history-header:hover{background:var(--p-accordion-header-hover-background,#f4f4f5)}.ds-history-header:focus-visible{outline:2px solid var(--focus,#F96133);outline-offset:3px;}.ds-history-content{padding:2px 10px 16px}.ds-history-content p{font-size:12px;color:var(--muted,#71717a);margin:0 0 10px}@media(prefers-reduced-motion:reduce){.ds-history-header svg{transition:none}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Постоянная рабочая панель",
+    "overview": "Спокойная настольная утилита: источник и следующее действие остаются в пределах одного компактного окна, а состояние работы читается через короткие подписи, прогресс и расположение элементов. Визуальный язык — PrimeVue 4 Aura, системная типографика, нейтральная шкала Zinc и два цвета из предоставленной книги. Смена светлой и тёмной темы следует настройке операционной системы.\n\nСистема извлечена из реализованных компонентов, `src/styles/tokens.css`, `src/styles/app.css` и `src/shared/theme.ts`. Пользователь задал композицию непосредственно по image1–image5; отдельные визуальные концепты не создавались. Компоновка текущего окна зафиксирована в `.impeccable/surfaces/src-app-vue.md`; её применение описано ниже, но не объявлено обязательной композицией любого будущего экрана.",
+    "keyCharacteristics": [
+      "Сдержанные нейтральные поверхности и локальный цвет действия.",
+      "Постоянная панель источника, перекрывающийся стек задач и раскрываемая история.",
+      "Оригинальная книга и согласованный набор тонких SVG-иконок.",
+      "Явные подписи, клавиатурный фокус и сокращённое движение по системной настройке."
+    ],
+    "rules": [
+      {
+        "name": "The Читаемое действие Rule",
+        "body": "Основная оранжевая заливка сохраняет тёмные надписи во всех темах и состояниях; светлые текстовые действия используют более тёмный оранжевый.",
+        "section": "colors"
+      },
+      {
+        "name": "The Пространственная очередь Rule",
+        "body": "Задачи читаются как слои над панелью источника; движение и перекрытие объясняют их положение без добавления декоративной глубины.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** использовать общие токены Aura и системную тему для всех повторных контролов.",
+      "**Do** сохранять тёмную надпись основных оранжевых кнопок и более тёмный оранжевый для светлых outlined/text действий.",
+      "**Do** повторно использовать `Icon`, оригинальные SVG и полноцветную книгу с сохранением её границ.",
+      "**Do** обеспечивать подпись, видимый фокус и текстовое состояние наряду с цветом.",
+      "**Do** оставлять длинным путям перенос, а внутренним спискам и Dialog — доступную прокрутку.",
+      "**Do** соблюдать сокращённое движение и связь анимации с расположением задач."
+    ],
+    "donts": [
+      "**Don't** подменять исходный набор SVG текстовыми символами или несогласованными иконками.",
+      "**Don't** применять светлые надписи к основной оранжевой заливке небольших кнопок.",
+      "**Don't** обозначать конвертацию кнопкой паузы: пауза принадлежит скачиванию.",
+      "**Don't** растягивать историю или содержимое Dialog так, чтобы основные действия вышли за пределы окна.",
+      "**Don't** заменять подтверждённую системную типографику декоративным display-шрифтом."
+    ]
+  }
+}

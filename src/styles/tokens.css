@@ -1,21 +1,31 @@
 :root {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: #202731;
-  background: #f3f5f8;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  --surface: #ffffff;
-  --canvas: #f3f5f8;
-  --text: #202731;
-  --muted: #596575;
-  --border: #d5dbe4;
-  --accent: #175cd3;
-  --accent-hover: #124aa9;
-  --accent-soft: #eaf1fd;
-  --error: #a32c2c;
-  --error-soft: #fff2f1;
-  --success: #22613e;
-  --focus: #175cd3;
-  --control-radius: 6px;
+  color-scheme: light dark;
+  --surface: var(--p-content-background);
+  --canvas: var(--p-surface-50);
+  --composer-surface: var(--p-surface-100);
+  --task-surface: var(--p-surface-200);
+  --text: var(--p-text-color);
+  --muted: var(--p-text-muted-color);
+  --border: var(--p-content-border-color);
+  --accent: #f96133;
+  --transfer: #65c8ee;
+  --focus: var(--p-primary-color);
+  --error: var(--p-red-700);
+  --success: var(--p-green-700);
+  --control-radius: var(--p-border-radius-md);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --duration-task: 240ms;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --canvas: var(--p-surface-950);
+    --composer-surface: var(--p-surface-800);
+    --task-surface: var(--p-surface-700);
+    --error: var(--p-red-300);
+    --success: var(--p-green-300);
+  }
 }

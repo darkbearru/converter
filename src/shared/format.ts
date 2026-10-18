@@ -28,6 +28,7 @@ export const stageLabels: Record<Stage, string> = {
 };
 export const stateLabels: Record<JobState, string> = {
   queued: 'В очереди',
+  ready: 'Файл готов',
   downloading: 'Скачивание',
   download_retry_wait: 'Ожидание повтора',
   download_paused: 'Скачивание на паузе',

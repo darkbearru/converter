@@ -12,19 +12,19 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium-desktop',
-      use: { browserName: 'chromium', viewport: { width: 1280, height: 800 } },
+      use: { browserName: 'chromium', viewport: { width: 740, height: 500 }, colorScheme: 'light' },
     },
     {
       name: 'webkit-desktop',
-      use: { browserName: 'webkit', viewport: { width: 1280, height: 800 } },
+      use: { browserName: 'webkit', viewport: { width: 740, height: 500 }, colorScheme: 'light' },
     },
     {
-      name: 'chromium-mobile',
-      use: { browserName: 'chromium', viewport: { width: 390, height: 844 } },
+      name: 'chromium-dark',
+      use: { browserName: 'chromium', viewport: { width: 740, height: 500 }, colorScheme: 'dark' },
     },
     {
-      name: 'webkit-mobile',
-      use: { browserName: 'webkit', viewport: { width: 390, height: 844 } },
+      name: 'webkit-dark',
+      use: { browserName: 'webkit', viewport: { width: 740, height: 500 }, colorScheme: 'dark' },
     },
   ],
   webServer: {

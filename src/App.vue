@@ -1,46 +1,58 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue';
+import Dialog from 'primevue/dialog';
 import bookIcon from '../book.svg';
-import type { JobOptionsUpdate, JobSnapshot, NativeBridge } from './shared/contracts';
+import type { JobOptionsUpdate, NativeBridge } from './shared/contracts';
 import { nativeBridge } from './shared/native';
-import { isActive, stateLabels } from './shared/format';
+import { isActive } from './shared/format';
+import Icon from './shared/ui/Icon.vue';
 import { createJobStore } from './features/jobs/store';
-import JobQueue from './features/jobs/JobQueue.vue';
+import SourceComposer from './features/composer/SourceComposer.vue';
+import CompletedHistory from './features/jobs/CompletedHistory.vue';
+import ActiveTasks from './features/jobs/ActiveTasks.vue';
 import JobSettings from './features/jobs/JobSettings.vue';
-import SourceForm from './features/sources/SourceForm.vue';
 import DownloadProgress from './features/progress/DownloadProgress.vue';
 import ConversionProgress from './features/progress/ConversionProgress.vue';
-import ResultPanel from './features/results/ResultPanel.vue';
 import DiagnosticsList from './features/results/DiagnosticsList.vue';
 const props = defineProps<{ bridge?: NativeBridge }>();
 const bridge = props.bridge ?? nativeBridge;
 const store = createJobStore(bridge);
 const { error } = store;
-const selected = ref<string | null>(null);
-const adding = ref(true);
 const jobs = computed(() => Object.values(store.jobs));
-const job = computed(() => (selected.value ? store.jobs[selected.value] : undefined));
-const busy = computed(() => Boolean(job.value && store.pending[job.value.id]));
-void store.ready.then(() => {
-  if (jobs.value.length) {
-    selected.value = jobs.value[0].id;
-    adding.value = false;
-  }
-});
+const active = computed(() =>
+  jobs.value.filter(
+    (job) =>
+      !job.prepare_only &&
+      (isActive(job.state) || ['download_paused', 'download_failed'].includes(job.state)),
+  ),
+);
+const history = computed(() =>
+  jobs.value
+    .filter((job) =>
+      [
+        'succeeded',
+        'succeeded_with_warnings',
+        'failed',
+        'cancelled',
+        'interrupted',
+        'awaiting_input',
+      ].includes(job.state),
+    )
+    .reverse(),
+);
+const selected = ref<string | null>(null);
+const detail = computed(() => (selected.value ? store.jobs[selected.value] : undefined));
 onBeforeUnmount(store.dispose);
-function created(snapshot: JobSnapshot) {
-  store.mergeSnapshot(snapshot);
-  selected.value = snapshot.id;
-  adding.value = false;
-}
 async function save(update: JobOptionsUpdate) {
-  if (!job.value) return;
-  const id = job.value.id;
+  if (!detail.value) return;
+  const id = detail.value.id;
   await store.updateJob(id, update);
-  if (!error.value) await store.startJob(id);
+  if (!error.value) {
+    await store.startJob(id);
+    if (selected.value === id) selected.value = null;
+  }
 }
 </script>
-
 <template>
   <div class="app-shell">
     <header class="app-header">
@@ -48,103 +60,52 @@ async function save(update: JobOptionsUpdate) {
         <img class="app-logo" :src="bookIcon" alt="" width="40" height="36" />
         <h1>Converter</h1>
       </div>
-      <span class="app-caption">Словари в MDX + MDD</span>
+      <span class="app-caption">DSL → MDX + MDD</span>
     </header>
-    <div class="workspace">
-      <JobQueue
-        :jobs="jobs"
-        :selected="adding ? null : selected"
-        @select="
-          selected = $event;
-          adding = false;
-        "
-        @add="adding = true"
+    <main class="conversion-workspace" id="main-content">
+      <CompletedHistory
+        :jobs="history"
+        :bridge="bridge"
+        :pending="store.pending"
+        @open="store.openResult"
+        @export="store.exportResult"
+        @retry="store.startJob"
+        @repair="selected = $event"
       />
-      <main id="main-content" class="main-content">
-        <p v-if="error" role="alert" class="error-message app-error">{{ error }}</p>
-        <SourceForm v-if="adding || !job" :bridge="bridge" @created="created" />
-        <article v-else class="job-detail" aria-labelledby="job-title">
-          <header class="job-heading">
-            <div>
-              <h2 id="job-title">{{ job.display_name }}</h2>
-              <p class="job-status" :data-state="job.state" role="status">
-                {{ stateLabels[job.state] }}
-              </p>
-            </div>
-            <div class="button-row">
-              <button
-                v-if="['succeeded', 'succeeded_with_warnings'].includes(job.state)"
-                type="button"
-                :disabled="busy"
-                @click="store.startJob(job.id)"
-              >
-                Повторить конвертацию
-              </button>
-              <button
-                v-if="['downloading', 'download_retry_wait'].includes(job.state)"
-                type="button"
-                :disabled="busy"
-                @click="store.pauseDownload(job.id)"
-              >
-                Приостановить скачивание</button
-              ><button
-                v-if="['download_paused', 'download_failed'].includes(job.state)"
-                type="button"
-                class="primary"
-                :disabled="busy"
-                @click="store.resumeDownload(job.id)"
-              >
-                Продолжить скачивание</button
-              ><button
-                v-if="['failed', 'cancelled', 'interrupted'].includes(job.state)"
-                type="button"
-                class="primary"
-                :disabled="busy"
-                @click="store.startJob(job.id)"
-              >
-                Запустить заново</button
-              ><button
-                v-if="isActive(job.state) || job.state === 'download_paused'"
-                type="button"
-                :disabled="busy"
-                @click="store.cancelJob(job.id)"
-              >
-                Отменить задание
-              </button>
-            </div>
-          </header>
-          <p v-if="job.error" role="alert" class="error-message">{{ job.error.message }}</p>
-          <JobSettings
-            v-if="job.state === 'awaiting_input'"
-            :key="job.id"
-            :job="job"
-            :bridge="bridge"
-            :busy="busy"
-            @save="save"
-          />
-          <div class="progress-stack">
-            <DownloadProgress :progress="job.download" /><ConversionProgress
-              :progress="job.conversion"
-            />
-          </div>
-          <ResultPanel
-            v-if="job.result"
-            :result="job.result"
-            :export-state="job.export"
-            :busy="busy"
-            @open="store.openResult(job.id)"
-            @export="store.exportResult(job.id)"
-          /><DiagnosticsList
-            :key="job.id"
-            :id="job.id"
-            :count="job.diagnostic_count"
-            :bridge="bridge"
-          />
-        </article>
-      </main>
-    </div>
-    <footer class="app-footer">
-      <span>Локальная конвертация</span><span>Источники сохраняются · 0.1.0</span>
-    </footer>
+      <div class="composer-workspace">
+        <p v-if="error" role="alert" class="app-error error-message">{{ error }}</p>
+        <ActiveTasks
+          :jobs="active"
+          :pending="store.pending"
+          @cancel="store.cancelJob"
+          @pause="store.pauseDownload"
+          @resume="store.resumeDownload"
+          @details="selected = $event"
+        />
+        <SourceComposer :bridge="bridge" :jobs="jobs" @snapshot="store.mergeSnapshot" />
+      </div>
+    </main>
+    <Dialog
+      :visible="Boolean(detail)"
+      modal
+      :header="detail?.display_name"
+      class="app-dialog task-dialog"
+      @update:visible="!$event && (selected = null)"
+      ><template #closeicon><Icon name="close" /></template
+      ><template v-if="detail"
+        ><p v-if="detail.error" role="alert" class="error-message">{{ detail.error.message }}</p>
+        <JobSettings
+          v-if="detail.state === 'awaiting_input'"
+          :key="detail.id"
+          :job="detail"
+          :bridge="bridge"
+          :busy="Boolean(store.pending[detail.id])"
+          @save="save" /><DownloadProgress :progress="detail.download" /><ConversionProgress
+          :progress="detail.conversion" /><DiagnosticsList
+          :key="detail.id"
+          :id="detail.id"
+          :count="detail.diagnostic_count"
+          :bridge="bridge" /></template
+    ></Dialog>
   </div>
 </template>

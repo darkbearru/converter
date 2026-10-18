@@ -24,6 +24,7 @@
     "capture:ui": "node scripts/capture-ui.mjs"
   },
   "dependencies": {
+    "@primeuix/themes": "2.0.3",
     "@tauri-apps/api": "^2.12.4",
     "primevue": "4.5.5",
     "vue": "^3.5.44"

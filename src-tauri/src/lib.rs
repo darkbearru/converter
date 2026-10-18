@@ -6,7 +6,7 @@ use std::sync::{
     Arc,
     atomic::{AtomicBool, Ordering},
 };
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 pub struct NativeState {
     manager: JobManager,
@@ -56,9 +56,25 @@ pub fn run() {
             commands::update_job,
             commands::read_diagnostics,
             commands::export_result,
-            commands::open_result
+            commands::open_result,
+            commands::get_result_path
         ])
         .on_window_event(move |window, event| {
+            if let tauri::WindowEvent::DragDrop(tauri::DragDropEvent::Drop { paths, .. }) = event {
+                let app = window.app_handle().clone();
+                let manager = app.state::<NativeState>().manager.clone();
+                let paths = paths.clone();
+                tauri::async_runtime::spawn(async move {
+                    let event = match manager
+                        .import(converter_app::storage::PlatformSelection::LocalPaths(paths))
+                        .await
+                    {
+                        Ok(files) => converter_app::SourceDropEvent::Files { files },
+                        Err(error) => converter_app::SourceDropEvent::Error { error },
+                    };
+                    let _ = app.emit("source:drop", event);
+                });
+            }
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
                 shutdown(window.app_handle().clone(), &window_closing);

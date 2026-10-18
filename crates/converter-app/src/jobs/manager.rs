@@ -29,6 +29,70 @@ struct Runtime {
     controls: BTreeMap<String, Controls>,
     gates: BTreeMap<String, ProgressGate>,
 }
+fn source_id(source: &RegisteredSource) -> &str {
+    match source {
+        RegisteredSource::Local(file) => &file.id,
+        RegisteredSource::Remote(request) => &request.source_id,
+    }
+}
+fn resource_attachments(
+    sources: &[RegisteredSource],
+    snapshot: &JobSnapshot,
+) -> Vec<ResourceAttachment> {
+    sources
+        .iter()
+        .skip(1)
+        .map(|source| match source {
+            RegisteredSource::Local(file) => ResourceAttachment {
+                source_id: file.id.clone(),
+                display_name: file.display_name.clone(),
+                bytes: fs::metadata(&file.path)
+                    .ok()
+                    .filter(|meta| meta.is_file())
+                    .map(|meta| meta.len()),
+            },
+            RegisteredSource::Remote(request) => snapshot
+                .resource_attachments
+                .iter()
+                .find(|item| item.source_id == request.source_id)
+                .cloned()
+                .unwrap_or(ResourceAttachment {
+                    source_id: request.source_id.clone(),
+                    display_name: "Ресурс по ссылке".into(),
+                    bytes: None,
+                }),
+        })
+        .collect()
+}
+fn refresh_downloads(job: &mut StoredJob) {
+    job.snapshot.download = aggregate_downloads(
+        job.sources
+            .iter()
+            .filter_map(|source| {
+                let RegisteredSource::Remote(request) = source else {
+                    return None;
+                };
+                Some(
+                    job.snapshot
+                        .download
+                        .files
+                        .iter()
+                        .find(|file| file.source_id == request.source_id)
+                        .cloned()
+                        .unwrap_or(DownloadProgress {
+                            source_id: request.source_id.clone(),
+                            state: TransferState::Pending,
+                            received_bytes: 0,
+                            confirmed_bytes: 0,
+                            total_bytes: None,
+                            bytes_per_second: None,
+                            restart_reason: None,
+                        }),
+                )
+            })
+            .collect(),
+    );
+}
 struct Inner {
     store: Store,
     storage: Arc<dyn PlatformStorage>,
@@ -104,6 +168,7 @@ impl JobManager {
                 fs::remove_dir_all(scratch)?;
             }
             store.cleanup_staging(job)?;
+            job.snapshot.resource_attachments = resource_attachments(&job.sources, &job.snapshot);
             store.save(job)?;
         }
         let (events, _) = broadcast::channel(256);
@@ -250,9 +315,19 @@ impl JobManager {
             })
             .collect();
         let id = uuid::Uuid::new_v4().to_string();
-        let snapshot = JobSnapshot {
+        let mut snapshot = JobSnapshot {
+            resource_attachments: vec![],
             id: id.clone(),
             display_name,
+            source_bytes: match &sources[0] {
+                RegisteredSource::Local(file) => {
+                    fs::metadata(&file.path).ok().map(|meta| meta.len())
+                }
+                _ => None,
+            },
+            prepare_only: draft.prepare_only,
+            had_errors: false,
+            output: draft.output.clone(),
             generation: 0,
             run_id: uuid::Uuid::new_v4().to_string(),
             sequence: 0,
@@ -265,8 +340,9 @@ impl JobManager {
             input_choices: vec![],
             diagnostic_count: 0,
             options: draft.options.clone(),
-            metadata: None,
+            metadata: draft.metadata_override.clone(),
         };
+        snapshot.resource_attachments = resource_attachments(&sources, &snapshot);
         let auto = draft.auto_start;
         let job = StoredJob {
             version: 1,
@@ -347,6 +423,7 @@ impl JobManager {
         if matches!(
             self.job(id)?.snapshot.state,
             JobState::Succeeded
+                | JobState::Ready
                 | JobState::SucceededWithWarnings
                 | JobState::DownloadPaused
                 | JobState::DownloadFailed
@@ -372,6 +449,10 @@ impl JobManager {
                     "input_required",
                     "Сначала уточните параметры задания",
                 ));
+            }
+            if job.snapshot.state == JobState::Ready {
+                job.draft.prepare_only = false;
+                job.snapshot.prepare_only = false;
             }
             job.snapshot.generation += 1;
             job.snapshot.run_id = uuid::Uuid::new_v4().to_string();
@@ -440,6 +521,7 @@ impl JobManager {
                         job.snapshot.state = JobState::Failed;
                         job.snapshot.conversion.status = ConversionStatus::Failed;
                     }
+                    job.snapshot.had_errors |= error.code != "cancelled";
                     job.snapshot.error = Some(error);
                 });
             }
@@ -540,7 +622,8 @@ impl JobManager {
             .expect("current job"))
     }
     pub async fn update(&self, id: &str, update: JobOptionsUpdate) -> AppResult<JobSnapshot> {
-        if self.job(id)?.snapshot.state != JobState::AwaitingInput {
+        let prepared = self.job(id)?.snapshot.state == JobState::Ready;
+        if !prepared && self.job(id)?.snapshot.state != JobState::AwaitingInput {
             return Err(AppError::new(
                 "job_not_awaiting",
                 "Параметры можно менять, пока задание ожидает ввода",
@@ -548,19 +631,85 @@ impl JobManager {
         }
         self.wait_idle(id).await?;
         let mut update = update;
-        let resources = update
-            .resources
-            .as_ref()
-            .map(|ids| {
-                ids.iter()
-                    .map(|id| {
-                        self.register(&SourceInput::Local {
-                            import_id: id.clone(),
+        let old_sources = self.job(id)?.sources;
+        let resources = if update.resource_sources.is_some()
+            || update.retained_resource_ids.is_some()
+        {
+            let mut selected = Vec::new();
+            for id in update.retained_resource_ids.as_deref().unwrap_or_default() {
+                let source = old_sources
+                    .iter()
+                    .skip(1)
+                    .find(|source| source_id(source) == id)
+                    .ok_or_else(|| {
+                        AppError::new("resource_not_found", "Ресурс не принадлежит этому заданию")
+                    })?;
+                if !selected.iter().any(|item| source_id(item) == id) {
+                    selected.push(source.clone());
+                }
+            }
+            for source in update
+                .resource_sources
+                .as_deref()
+                .unwrap_or_default()
+                .iter()
+                .map(|selection| {
+                    let existing =
+                        old_sources
+                            .iter()
+                            .skip(1)
+                            .find(|source| match (source, selection) {
+                                (
+                                    RegisteredSource::Local(file),
+                                    SourceInput::Local { import_id },
+                                ) => &file.id == import_id,
+                                (
+                                    RegisteredSource::Remote(request),
+                                    SourceInput::Remote {
+                                        url,
+                                        expected_sha256,
+                                    },
+                                ) => {
+                                    url.parse::<url::Url>().ok().as_ref() == Some(&request.url)
+                                        && request
+                                            .expected_sha256
+                                            .as_ref()
+                                            .map(|v| v.to_ascii_lowercase())
+                                            == expected_sha256
+                                                .as_ref()
+                                                .map(|v| v.to_ascii_lowercase())
+                                }
+                                _ => false,
+                            });
+                    existing
+                        .cloned()
+                        .map_or_else(|| self.register(selection), Ok)
+                })
+                .collect::<AppResult<Vec<_>>>()?
+            {
+                if !selected
+                    .iter()
+                    .any(|item| source_id(item) == source_id(&source))
+                {
+                    selected.push(source);
+                }
+            }
+            Some(selected)
+        } else {
+            update
+                .resources
+                .as_ref()
+                .map(|ids| {
+                    ids.iter()
+                        .map(|id| {
+                            self.register(&SourceInput::Local {
+                                import_id: id.clone(),
+                            })
                         })
-                    })
-                    .collect::<AppResult<Vec<_>>>()
-            })
-            .transpose()?;
+                        .collect::<AppResult<Vec<_>>>()
+                })
+                .transpose()?
+        };
         let mut child_ids = Vec::new();
         if update.dictionary_id.as_deref() == Some("*") {
             let template = self.job(id)?;
@@ -593,11 +742,15 @@ impl JobManager {
                     child.draft.metadata_override = Some(metadata.clone());
                 }
                 if let Some(output) = &update.output {
+                    child.snapshot.output = output.clone();
                     child.draft.output = output.clone();
                 }
                 if let Some(resources) = &resources {
                     child.sources.truncate(1);
                     child.sources.extend(resources.clone());
+                    refresh_downloads(&mut child);
+                    child.snapshot.resource_attachments =
+                        resource_attachments(&child.sources, &child.snapshot);
                 }
                 self.inner.store.save(&child)?;
                 self.inner
@@ -626,9 +779,11 @@ impl JobManager {
                     {
                         job.ready = None;
                     }
+                    job.snapshot.metadata = Some(metadata.clone());
                     job.draft.metadata_override = Some(metadata);
                 }
                 if let Some(output) = update.output {
+                    job.snapshot.output = output.clone();
                     job.draft.output = output;
                 }
                 if let Some(id) = update.dictionary_id {
@@ -638,26 +793,16 @@ impl JobManager {
                     job.ready = None;
                     job.sources.truncate(1);
                     job.sources.extend(resources);
-                    let ids: Vec<_> = job
-                        .sources
-                        .iter()
-                        .filter_map(|s| match s {
-                            RegisteredSource::Remote(r) => Some(r.source_id.as_str()),
-                            _ => None,
-                        })
-                        .collect();
-                    job.snapshot.download = aggregate_downloads(
-                        job.snapshot
-                            .download
-                            .files
-                            .iter()
-                            .filter(|f| ids.contains(&f.source_id.as_str()))
-                            .cloned()
-                            .collect(),
-                    );
+                    refresh_downloads(job);
+                    job.snapshot.resource_attachments =
+                        resource_attachments(&job.sources, &job.snapshot);
                 }
                 job.snapshot.error = None;
-                job.snapshot.state = JobState::Queued;
+                job.snapshot.state = if prepared {
+                    JobState::Ready
+                } else {
+                    JobState::Queued
+                };
             })?
             .expect("current job");
         for child in child_ids {
@@ -912,6 +1057,13 @@ impl JobManager {
                                             TransferState::Cancelled => JobState::Cancelled,
                                             _ => JobState::Downloading,
                                         };
+                                        if matches!(
+                                            progress.state,
+                                            TransferState::RetryWait | TransferState::Failed
+                                        ) || progress.restart_reason.is_some()
+                                        {
+                                            job.snapshot.had_errors = true;
+                                        }
                                         if let Some(file) = job
                                             .snapshot
                                             .download
@@ -941,6 +1093,23 @@ impl JobManager {
                     }
                     match outcome? {
                         TransferOutcome::Completed(done) => {
+                            self.mutate(id, Some((generation, run)), true, |job| {
+                                if let Some(resource) = job
+                                    .snapshot
+                                    .resource_attachments
+                                    .iter_mut()
+                                    .find(|resource| resource.source_id == done.source_id)
+                                {
+                                    resource.display_name = done.display_name.clone();
+                                    resource.bytes = Some(done.bytes);
+                                }
+                            })?;
+                            if files.is_empty() {
+                                self.mutate(id, Some((generation, run)), true, |job| {
+                                    job.snapshot.display_name = done.display_name.clone();
+                                    job.snapshot.source_bytes = Some(done.bytes);
+                                })?;
+                            }
                             audits.push(super::report::SourceAudit::remote(done.clone()));
                             files.push(PreparedFile {
                                 id: done.source_id,
@@ -952,6 +1121,14 @@ impl JobManager {
                     }
                 }
             }
+        }
+        if job.draft.prepare_only {
+            self.mutate(id, Some((generation, run)), true, |job| {
+                if job.snapshot.state != JobState::Cancelled {
+                    job.snapshot.state = JobState::Ready;
+                }
+            })?;
+            return Ok(());
         }
         controls.conversion.check()?;
         let _permit = tokio::select! { biased; _ = controls.download.wait_for_stop() => { self.stopped_download(id, generation, run, &controls)?; return Ok(()); }, permit = self.inner.conversion.acquire() => permit.map_err(|_| lock_error())? };

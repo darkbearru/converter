@@ -112,3 +112,11 @@ pub fn open_result(app: AppHandle, state: State<'_, NativeState>, id: String) ->
         .open_path(path.to_string_lossy(), None::<&str>)
         .map_err(|_| AppError::new("open_failed", "Не удалось открыть папку результата"))
 }
+#[tauri::command]
+pub fn get_result_path(state: State<'_, NativeState>, id: String) -> AppResult<String> {
+    Ok(state
+        .storage
+        .checked_result_directory(&state.manager.result_directory(&id)?)?
+        .to_string_lossy()
+        .into_owned())
+}
