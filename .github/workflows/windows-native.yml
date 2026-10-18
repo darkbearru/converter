@@ -55,12 +55,10 @@ jobs:
           Expand-Archive .work/edgedriver.zip .work/edgedriver
           cargo install tauri-driver --version 2.0.5 --locked
           $driver = (Resolve-Path .work/edgedriver/msedgedriver.exe).Path
-          Start-Process tauri-driver -ArgumentList "--native-driver `"$driver`"" -RedirectStandardOutput .work/tauri-driver.log -RedirectStandardError .work/tauri-driver-error.log
+          "CONVERTER_NATIVE_DRIVER=$driver" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Run installed application smoke
         shell: pwsh
         run: |
-          Get-Process tauri-driver,msedgedriver -ErrorAction SilentlyContinue | Select-Object Id,ProcessName
-          Get-Content .work/tauri-driver*.log -ErrorAction SilentlyContinue
           node scripts/windows-native-smoke.mjs "$env:CONVERTER_EXE"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()

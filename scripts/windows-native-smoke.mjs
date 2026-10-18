@@ -4,11 +4,25 @@ import { createHash } from 'node:crypto';
 import { mkdir, writeFile, readFile, readdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { createWriteStream } from 'node:fs';
 
 if (process.platform !== 'win32') throw new Error('Этот smoke запускается на Windows');
 const application = resolve(process.argv[2]);
 const output = resolve('.work/windows-native');
 await mkdir(output, { recursive: true });
+// GitHub завершает дочерний процесс PowerShell при выходе шага.
+// Драйвер принадлежит тому же живому процессу, что и его проверки.
+const driver = spawn('tauri-driver', ['--native-driver', process.env.CONVERTER_NATIVE_DRIVER], {
+  stdio: ['ignore', 'pipe', 'pipe'],
+});
+driver.stdout.pipe(createWriteStream('.work/tauri-driver.log'));
+driver.stderr.pipe(createWriteStream('.work/tauri-driver-error.log'));
+let driverFailure;
+driver.on('error', (error) => (driverFailure = error));
+driver.on('exit', (code, signal) => {
+  driverFailure = new Error(`tauri-driver exited: ${code ?? signal}`);
+});
 const payload = Buffer.from(
   '#NAME "Тест Windows"\nalpha\n\t[b]Пример[/b]\n' +
     Array.from(
@@ -138,7 +152,10 @@ async function open() {
   await wait(() => hasText('Converter'), 'native frontend');
 }
 try {
-  await wait(async () => (await fetch('http://127.0.0.1:4444/status')).ok, 'tauri-driver');
+  await wait(async () => {
+    if (driverFailure) throw driverFailure;
+    return (await fetch('http://127.0.0.1:4444/status')).ok;
+  }, 'tauri-driver');
   await open();
   await newSource(sourceUrl);
   await wait(() => hasText('1 МиБ'), 'checkpoint');
@@ -240,6 +257,7 @@ try {
   console.log('Windows native smoke PASS: HTTP failure/pause/reopen/range/convert/cache/cancel');
 } finally {
   if (session) await request(`/session/${session}`, undefined, 'DELETE').catch(() => {});
+  driver.kill();
   for (const { response } of held) response.destroy();
   await new Promise((resolveClose) => server.close(resolveClose));
 }
