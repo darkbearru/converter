@@ -3,10 +3,7 @@ use super::{
     lexer::Lexer,
     metadata::directive,
 };
-use crate::{
-    formats::{EntrySink, ReadSummary},
-    model::*,
-};
+use crate::{formats::ReadSummary, model::*};
 
 #[derive(Debug)]
 pub struct ArticleAst {
@@ -15,6 +12,11 @@ pub struct ArticleAst {
     pub parent_id: Option<u64>,
     pub headwords: Vec<String>,
     pub body: String,
+}
+
+pub(super) trait AstSink {
+    fn push(&mut self, article: ArticleAst) -> Result<()>;
+    fn diagnostic(&mut self, diagnostic: Diagnostic) -> Result<()>;
 }
 
 struct Group {
@@ -27,7 +29,7 @@ struct Group {
 struct Parser<'a> {
     source: &'a str,
     ctx: &'a RunContext,
-    sink: &'a mut dyn EntrySink,
+    sink: &'a mut dyn AstSink,
     lexer: Lexer,
     group: Option<Group>,
     heads: Vec<String>,
@@ -36,10 +38,10 @@ struct Parser<'a> {
     summary: ReadSummary,
 }
 
-pub(super) fn parse(
+pub(super) fn parse_raw(
     bundle: &InputBundle,
     encoding: &ResolvedEncoding,
-    sink: &mut dyn EntrySink,
+    sink: &mut dyn AstSink,
     ctx: &RunContext,
 ) -> Result<ReadSummary> {
     let mut parser = Parser {
@@ -109,6 +111,13 @@ impl Parser<'_> {
         let indented = text.starts_with([' ', '\t']);
         if !indented {
             self.flush_group()?;
+            if self.heads.len() >= self.ctx.limits.max_headword_variants {
+                return Err(ConverterError::new(
+                    "headword_variants_limit",
+                    "Превышен лимит заголовков статьи",
+                )
+                .at(self.source, line.number));
+            }
             if self.heads.is_empty() {
                 self.head_line = line.number;
             }
@@ -167,6 +176,13 @@ impl Parser<'_> {
                 }
                 group.children.push(child);
             } else if let Some(child) = group.child.as_mut().filter(|child| child.body.is_empty()) {
+                if child.headwords.len() >= self.ctx.limits.max_headword_variants {
+                    return Err(ConverterError::new(
+                        "headword_variants_limit",
+                        "Превышен лимит заголовков подстатьи",
+                    )
+                    .at(self.source, line.number));
+                }
                 child.headwords.push(name.into());
             } else {
                 if let Some(child) = group.child.take() {
@@ -243,30 +259,8 @@ impl Parser<'_> {
 
     fn emit(&mut self, ast: ArticleAst) -> Result<()> {
         self.ctx.control.check()?;
-        let html = ast
-            .body
-            .replace('&', "&amp;")
-            .replace('<', "&lt;")
-            .replace('>', "&gt;");
-        let display_headword = ast.headwords.first().cloned().unwrap_or_default();
-        self.sink.push(DictionaryEntry {
-            id: ast.id,
-            source_line: ast.source_line,
-            parent_id: ast.parent_id,
-            headwords: ast.headwords,
-            display_headword,
-            html,
-            resource_keys: Vec::new(),
-        })?;
+        self.sink.push(ast)?;
         self.summary.source_articles += 1;
-        self.ctx.emit(CoreEvent::Progress(StageProgress {
-            stage: ConversionStage::Read,
-            completed: self.summary.source_articles,
-            total: None,
-            unit: ProgressUnit::Entries,
-            articles: self.summary.source_articles,
-            resources: 0,
-        }));
         Ok(())
     }
 }

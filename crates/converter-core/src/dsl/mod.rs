@@ -1,7 +1,12 @@
+mod abbreviations;
 pub mod decoder;
+pub mod headwords;
 mod lexer;
+mod markup;
 mod metadata;
 pub mod parser;
+mod references;
+pub mod renderer;
 
 use crate::{formats::*, model::*};
 
@@ -68,6 +73,93 @@ impl DictionaryReader for DslReader {
         ctx: &RunContext,
     ) -> Result<ReadSummary> {
         let encoding = decoder::resolve_encoding(&bundle.main, options.encoding.clone(), ctx)?;
-        parser::parse(bundle, &encoding, sink, ctx)
+        let mut rendered = RenderSink {
+            bundle,
+            options,
+            ctx,
+            sink,
+            articles: 0,
+            warnings: 0,
+            abbreviations: abbreviations::AbbreviationCache::default(),
+        };
+        let mut summary = parser::parse_raw(bundle, &encoding, &mut rendered, ctx)?;
+        summary.warnings += rendered.warnings;
+        ctx.emit(CoreEvent::StageCompleted(StageProgress {
+            stage: ConversionStage::Read,
+            completed: summary.source_articles,
+            total: Some(summary.source_articles),
+            unit: ProgressUnit::Entries,
+            articles: summary.source_articles,
+            resources: 0,
+        }));
+        Ok(summary)
+    }
+}
+
+struct RenderSink<'a> {
+    bundle: &'a InputBundle,
+    options: &'a ReadOptions,
+    ctx: &'a RunContext,
+    sink: &'a mut dyn EntrySink,
+    articles: u64,
+    warnings: u64,
+    abbreviations: abbreviations::AbbreviationCache,
+}
+
+impl parser::AstSink for RenderSink<'_> {
+    fn push(&mut self, ast: parser::ArticleAst) -> Result<()> {
+        let mut headwords = Vec::new();
+        let first = ast.headwords.first().map_or("", String::as_str);
+        for (index, raw) in ast.headwords.iter().enumerate() {
+            let raw = if index == 0 {
+                raw.clone()
+            } else {
+                references::substitute_tilde(raw, first)
+            };
+            for key in headwords::expand_headwords(&raw, self.ctx.limits.max_headword_variants)? {
+                if !headwords.contains(&key) {
+                    headwords.push(key);
+                }
+                if headwords.len() > self.ctx.limits.max_headword_variants {
+                    return Err(ConverterError::new(
+                        "headword_variants_limit",
+                        "Превышен лимит вариантов всех заголовков статьи",
+                    ));
+                }
+            }
+        }
+        let rendered = renderer::render_with_context(
+            &ast,
+            self.bundle,
+            self.options,
+            self.ctx,
+            &mut self.abbreviations,
+        )?;
+        self.warnings += rendered.diagnostics.len() as u64;
+        for diagnostic in rendered.diagnostics {
+            self.sink.diagnostic(diagnostic)?;
+        }
+        self.sink.push(DictionaryEntry {
+            id: ast.id,
+            source_line: ast.source_line,
+            parent_id: ast.parent_id,
+            headwords,
+            display_headword: headwords::display_headword(first)?,
+            html: rendered.html,
+            resource_keys: rendered.resource_keys,
+        })?;
+        self.articles += 1;
+        self.ctx.emit(CoreEvent::Progress(StageProgress {
+            stage: ConversionStage::Read,
+            completed: self.articles,
+            total: None,
+            unit: ProgressUnit::Entries,
+            articles: self.articles,
+            resources: 0,
+        }));
+        Ok(())
+    }
+    fn diagnostic(&mut self, diagnostic: Diagnostic) -> Result<()> {
+        self.sink.diagnostic(diagnostic)
     }
 }
