@@ -1,6 +1,6 @@
 # Converter Download Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Получать словари по прямым HTTP/HTTPS-ссылкам с отдельным прогрессом, проверкой локальной копии и восстановлением после обрыва/перезапуска до начала конвертации.
 
@@ -46,7 +46,7 @@
 
 **Interfaces:** Produces публичные модели выше, `DownloadCache::open(root: PathBuf) -> Result<Self>`, `load(source_id: &str) -> Result<Option<DownloadManifest>>`, `verify_prefix(source_id: &str) -> Result<ResumePoint>`, `commit_checkpoint(source_id: &str, checkpoint: Checkpoint) -> Result<()>`, `completed(source_id: &str) -> Result<Option<CompletedDownload>>`, `remove(source_id: &str) -> Result<()>`. `Checkpoint { confirmed_bytes, chunk_hashes }`; `ResumePoint { confirmed_bytes, validator, effective_url, total_bytes }`. URL и validator доступны только downloader, наружу не сериализуются.
 
-- [ ] **Step 1:** В `восстанавливает_только_подтвержденный_префикс` сохранить порцию, записать checkpoint и дописать неподтверждённый хвост; пересоздать cache и проверить:
+- [x] **Step 1:** В `восстанавливает_только_подтвержденный_префикс` сохранить порцию, записать checkpoint и дописать неподтверждённый хвост; пересоздать cache и проверить:
 
   ```rust
   assert_eq!(cache.verify_prefix(&id)?.confirmed_bytes, 1_048_576);
@@ -56,10 +56,10 @@
   ```
 
   Fault injection отдельно моделирует сбой до/после flush, до/после замены манифеста и ошибку записи при исчерпании места. Метаданные никогда не опережают сохранённые байты; неправильный source ID не даёт путь наружу.
-- [ ] **Step 2:** Run `cargo test -p converter-download --test checkpoint_recovery`; ожидается FAIL.
-- [ ] **Step 3:** Реализовать manifest version 1, `sync_data` перед checkpoint, атомарную replace-операцию для манифеста с отдельной Windows-проверкой. Хранить committed generation так, чтобы при сбое можно выбрать последнюю целую версию; не считать простой `rename` с overwrite одинаковым на всех ОС. Проверять размер и хеши порций потоково; файлы кэша называются source ID, не HTTP-именем. Отдельный completed marker устанавливать только после полной проверки.
-- [ ] **Step 4:** Run Step 2 с `--locked`; PASS для всех crash points, hash mismatch, manifest version mismatch, очистки только собственного source ID и cache reopen. Защитить неполную загрузку от одновременных writers одного source ID.
-- [ ] **Step 5:** Commit `feat: сохранить контрольные точки скачивания`.
+- [x] **Step 2:** Run `cargo test -p converter-download --test checkpoint_recovery`; ожидается FAIL.
+- [x] **Step 3:** Реализовать manifest version 1, `sync_data` перед checkpoint, атомарную replace-операцию для манифеста с отдельной Windows-проверкой. Хранить committed generation так, чтобы при сбое можно выбрать последнюю целую версию; не считать простой `rename` с overwrite одинаковым на всех ОС. Проверять размер и хеши порций потоково; файлы кэша называются source ID, не HTTP-именем. Отдельный completed marker устанавливать только после полной проверки.
+- [x] **Step 4:** Run Step 2 с `--locked`; PASS для всех crash points, hash mismatch, manifest version mismatch, очистки только собственного source ID и cache reopen. Защитить неполную загрузку от одновременных writers одного source ID.
+- [x] **Step 5:** Commit `feat: сохранить контрольные точки скачивания`.
 
 ## Task 2: B2 — HTTP-докачка и смена версии источника
 
@@ -69,7 +69,7 @@
 
 Test-only API: `FixtureServer::spawn(scenario: Scenario, payload: Vec<u8>) -> FixtureServer` асинхронно запускает сервер; `url(&self) -> String`, `requests(&self) -> Vec<RecordedRequest>`, `release(&self)` управляют адресом, журналом и удержанным ответом. `RecordedRequest { method: String, headers: BTreeMap<String, String>, range_start: Option<u64> }`. Example `serve_fixture` обслуживает тот же протокол для нативных smoke-сценариев, не входит в packaged app.
 
-- [ ] **Step 1:** В `докачивает_неизменный_ресурс` fixture server обрывает файл после checkpoint и принимает продолжение; в `не_склеивает_версии` прогнать сценарии `200`, `416`, changed/weak/no ETag, wrong start/total, redirect to another final URL:
+- [x] **Step 1:** В `докачивает_неизменный_ресурс` fixture server обрывает файл после checkpoint и принимает продолжение; в `не_склеивает_версии` прогнать сценарии `200`, `416`, changed/weak/no ETag, wrong start/total, redirect to another final URL:
 
   ```rust
   assert_eq!(request_headers["range"], "bytes=1048576-");
@@ -78,10 +78,10 @@ Test-only API: `FixtureServer::spawn(scenario: Scenario, payload: Vec<u8>) -> Fi
   assert!(!matches!(bad_range_action, ResponseAction::Append { .. }));
   ```
 
-- [ ] **Step 2:** Run `cargo test -p converter-download --test http_resume`; ожидается FAIL.
-- [ ] **Step 3:** Реализовать GET без обязательного HEAD, `Accept-Encoding: identity`, отключённые gzip/brotli/deflate/zstd features и rejected non-identity response. Привязать ResumePoint к конечному URI и сильному ETag; проверять арифметику Content-Range и лимит bytes до записи. Redirect policy ограничивает 10 переходов и запрещает HTTPS→HTTP. `200`/`416`/ненадёжный validator запускают новый файл с нулевого offset, не append. Сохранять пригодную старую генерацию до принятия новых headers.
-- [ ] **Step 4:** Run Step 2 с `--locked`; PASS, включая HEAD=405, URL без расширения, query token, CORS-неразрешённый сервер, неожиданное HTTP encoding, redirect loop, timeout и ответ короче объявленного Content-Length. Проверить, что cookies/auth не заимствуются из браузера.
-- [ ] **Step 5:** Commit `feat: добавить проверяемую HTTP-докачку`.
+- [x] **Step 2:** Run `cargo test -p converter-download --test http_resume`; ожидается FAIL.
+- [x] **Step 3:** Реализовать GET без обязательного HEAD, `Accept-Encoding: identity`, отключённые gzip/brotli/deflate/zstd features и rejected non-identity response. Привязать ResumePoint к конечному URI и сильному ETag; проверять арифметику Content-Range и лимит bytes до записи. Redirect policy ограничивает 10 переходов и запрещает HTTPS→HTTP. `200`/`416`/ненадёжный validator запускают новый файл с нулевого offset, не append. Сохранять пригодную старую генерацию до принятия новых headers.
+- [x] **Step 4:** Run Step 2 с `--locked`; PASS, включая HEAD=405, URL без расширения, query token, CORS-неразрешённый сервер, неожиданное HTTP encoding, redirect loop, timeout и ответ короче объявленного Content-Length. Проверить, что cookies/auth не заимствуются из браузера.
+- [x] **Step 5:** Commit `feat: добавить проверяемую HTTP-докачку`.
 
 ## Task 3: B3 — Управление передачей, завершение и отдельный прогресс
 

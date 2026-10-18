@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/converter-core", "crates/converter-cli", "crates/converter-download"]
+members = ["crates/converter-core", "crates/converter-cli", "crates/converter-download", "crates/converter-test-support"]
 resolver = "3"
 
 [workspace.package]
@@ -22,6 +22,8 @@ ctrlc = "3"
 url = { version = "2", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 atomicwrites = "0.4.4"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "io-util", "sync", "time", "fs", "signal", "test-util"] }
+reqwest = { version = "0.13", default-features = false, features = ["rustls", "stream"] }
 rusqlite = { version = "0.40.2", default-features = false, features = ["bundled", "cache", "hooks"] }
 
 [workspace.lints.rust]

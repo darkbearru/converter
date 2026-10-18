@@ -11,9 +11,12 @@ sha2.workspace = true
 url.workspace = true
 uuid.workspace = true
 atomicwrites.workspace = true
+tokio.workspace = true
+reqwest.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
+converter-test-support = { path = "../converter-test-support" }
 
 [lints]
 workspace = true

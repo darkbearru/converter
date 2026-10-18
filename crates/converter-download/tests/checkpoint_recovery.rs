@@ -121,7 +121,7 @@ fn поколения_версия_и_блокировка_кэша() -> Result<
     value["version"] = 999.into();
     fs::write(path, serde_json::to_vec(&value)?)?;
     assert_eq!(
-        cache.load(&other.source_id).err().expect("version").code,
+        cache.load(&other.source_id).expect_err("version").code,
         "manifest_version_mismatch"
     );
     Ok(())

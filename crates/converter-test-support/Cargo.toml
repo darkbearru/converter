@@ -1,0 +1,11 @@
+[package]
+name = "converter-test-support"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+tokio.workspace = true
+
+[lints]
+workspace = true
