@@ -10,7 +10,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-fn prepared(path: PathBuf, id: String) -> Result<PreparedFile> {
+pub(crate) fn prepared(path: PathBuf, id: String) -> Result<PreparedFile> {
     let path = std::fs::canonicalize(path)?;
     let display_name = path
         .file_name()
@@ -52,11 +52,12 @@ fn output_name(file: &PreparedFile) -> String {
 }
 
 pub(crate) fn run(
-    source: PathBuf,
-    resources: Vec<PathBuf>,
+    source: PreparedFile,
+    attachments: Vec<PreparedFile>,
     output: PathBuf,
     encoding: Encoding,
     profile: Profile,
+    control: RunControl,
 ) -> Result<serde_json::Value> {
     std::fs::create_dir_all(&output)?;
     let output = std::fs::canonicalize(output)?;
@@ -67,17 +68,14 @@ pub(crate) fn run(
     if matches!(profile, Profile::Mobile) {
         ctx.limits = Limits::mobile();
     }
-    let control = ctx.control.clone();
-    ctrlc::set_handler(move || control.cancel()).map_err(|error| {
-        ConverterError::new(
-            "signal_handler",
-            format!("Не удалось включить обработчик Ctrl-C: {error}"),
-        )
-    })?;
+    ctx.control = control;
     let previous = Mutex::new((None, Instant::now()));
     ctx.progress = Arc::new(move |event| match event {
         CoreEvent::Diagnostic(diagnostic) => {
-            eprintln!("Предупреждение: {}", diagnostic.message.escape_debug())
+            eprintln!(
+                "{}",
+                serde_json::json!({"phase": "conversion", "diagnostic": diagnostic})
+            )
         }
         CoreEvent::Progress(progress) | CoreEvent::StageCompleted(progress) => {
             if let Ok(mut previous) = previous.lock() {
@@ -86,35 +84,22 @@ pub(crate) fn run(
                     || previous.1.elapsed() >= Duration::from_millis(200)
                     || terminal
                 {
-                    let unit = match progress.unit {
-                        ProgressUnit::Bytes => "байт",
-                        ProgressUnit::Entries => "записей",
-                        ProgressUnit::Resources => "ресурсов",
-                    };
-                    match progress.total {
-                        Some(total) => eprintln!(
-                            "{}: {}/{} {}",
-                            label(progress.stage),
-                            progress.completed,
-                            total,
-                            unit
-                        ),
-                        None => {
-                            eprintln!("{}: {} {}", label(progress.stage), progress.completed, unit)
-                        }
-                    }
+                    eprintln!(
+                        "{}",
+                        serde_json::json!({"phase": "conversion", "label": label(progress.stage), "progress": progress})
+                    );
                     *previous = (Some(progress.stage), Instant::now());
                 }
             }
         }
     });
-    let source = prepared(source, "main".into())?;
-    let attachments = resources
-        .into_iter()
-        .enumerate()
-        .map(|(index, path)| prepared(path, format!("attachment-{index}")))
-        .collect::<Result<Vec<_>>>()?;
     let bundles = prepare_source(&source, &attachments, &ctx)?;
+    if bundles.len() > 1 {
+        return Err(ConverterError::new(
+            "dictionary_selection_required",
+            "В ZIP несколько основных словарей. Выберите отдельный словарь в приложении или подготовьте ZIP с одним словарём для CLI",
+        ));
+    }
     let encoding = match encoding {
         Encoding::Auto => EncodingChoice::Auto,
         Encoding::Utf8 => EncodingChoice::Manual("utf-8".into()),

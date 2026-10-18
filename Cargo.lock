@@ -246,10 +246,17 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "converter-core",
+ "converter-download",
+ "converter-test-support",
  "ctrlc",
+ "mdictlib",
  "serde_json",
  "sha2",
  "tempfile",
+ "tokio",
+ "url",
+ "uuid",
+ "zip",
 ]
 
 [[package]]

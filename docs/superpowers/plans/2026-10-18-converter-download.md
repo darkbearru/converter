@@ -111,7 +111,7 @@ Test-only API: `FixtureServer::spawn(scenario: Scenario, payload: Vec<u8>) -> Fi
 
 **Interfaces:** CLI `fetch --url URL --cache DIR [--sha256 HASH]` либо `fetch --source-id ID --cache DIR` для resume; stdout содержит только CompletedDownload/source ID, stderr — отдельный прогресс. `convert --url URL [--resources-url URL] --cache DIR --output DIR` сначала получает все удалённые файлы, отображает их итоги, затем вызывает A `prepare_source/convert_to_staging/publish_local`. `--source` и `--url` взаимоисключающие. Преобразование `CompletedDownload → PreparedFile` выполняет CLI, не downloader.
 
-- [ ] **Step 1:** В `не_начинает_конвертацию_до_получения_ресурсов` server удерживает второй файл; первый готов. После отключения сети источник повторно конвертируется из cache. Проверить:
+- [x] **Step 1:** В `не_начинает_конвертацию_до_получения_ресурсов` server удерживает второй файл; первый готов. После отключения сети источник повторно конвертируется из cache. Проверить:
 
   ```rust
   assert!(conversion_events_before_second_file.is_empty());
@@ -120,9 +120,9 @@ Test-only API: `FixtureServer::spawn(scenario: Scenario, payload: Vec<u8>) -> Fi
   assert!(!public_output.contains("secret-token"));
   ```
 
-- [ ] **Step 2:** Run `cargo test -p converter-cli --test remote_convert`; ожидается FAIL.
-- [ ] **Step 3:** Реализовать CLI связывание без копирования сетевой логики, Ctrl-C → pause/cancel с пригодным `.part`, sniff HTML vs input bundle после завершения. ZIP с несколькими DSL обрабатывается по правилам A2; при неоднозначности CLI завершает preflight с понятной диагностикой, GUI позднее предложит выбор.
-- [ ] **Step 4:** Run `cargo test --locked -p converter-download -p converter-cli`; PASS. В `docs/validation/download.md` записать размер источника, прерванный/возобновлённый offset, исходный/итоговый SHA, фактические HTTP-запросы тестового сервера и успешное чтение результата. Два прогресса в CLI представлены разными phase-полями, не одной шкалой.
-- [ ] **Step 5:** Commit `feat: конвертировать словари по ссылке через CLI`.
+- [x] **Step 2:** Run `cargo test -p converter-cli --test remote_convert`; ожидается FAIL.
+- [x] **Step 3:** Реализовать CLI связывание без копирования сетевой логики, Ctrl-C → pause/cancel с пригодным `.part`, sniff HTML vs input bundle после завершения. ZIP с несколькими DSL обрабатывается по правилам A2; при неоднозначности CLI завершает preflight с понятной диагностикой, GUI позднее предложит выбор.
+- [x] **Step 4:** Run `cargo test --locked -p converter-download -p converter-cli`; PASS. В `docs/validation/download.md` записать размер источника, прерванный/возобновлённый offset, исходный/итоговый SHA, фактические HTTP-запросы тестового сервера и успешное чтение результата. Два прогресса в CLI представлены разными phase-полями, не одной шкалой.
+- [x] **Step 5:** Commit `feat: конвертировать словари по ссылке через CLI`.
 
 После B4 готов результат B общего плана. Следующая часть — [настольное приложение C](2026-10-18-converter-desktop.md).

@@ -278,6 +278,13 @@ async fn обрыв_докачивается_а_превышение_лимит�
     );
     assert_eq!(completed.sha256, expected);
     assert_eq!(server.requests()[1].range_start, Some(1_048_576));
+    println!(
+        "Докачка: bytes={} offset=1048576 original_sha={} completed_sha={} requests={:?}",
+        completed.bytes,
+        expected,
+        completed.sha256,
+        server.requests()
+    );
     let server = FixtureServer::spawn(Scenario::UnknownLength, vec![9; 200_000]).await;
     let temp = tempfile::tempdir()?;
     let cache = DownloadCache::open(temp.path().to_owned())?;
