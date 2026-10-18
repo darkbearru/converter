@@ -131,7 +131,7 @@
 
 **Interfaces:** Produces `convert_to_staging(request: &ConversionRequest, ctx: &RunContext) -> Result<ConvertedArtifacts>`; `EntrySpool: EntrySink`, `ExternalSort::finish(&mut self) -> Result<impl Iterator<Item = Result<MdxRecord>>>`; сигнатура сортировочного iterator внутри модуля может быть именованным `SortedRecords`, публичный pipeline не раскрывает её. `validate_artifacts(&ConvertedArtifacts, &RunContext) -> Result<()>` проверяет структуру/checksum/счётчики без удержания всех записей; тестовая независимая проверка по-прежнему использует mdictlib. В `ConversionSummary` отдельны `source_articles`, `output_keys`, `resources`, `warnings` и финальные счётчики этапов.
 
-- [ ] **Step 1:** В `конвертирует_через_несколько_проходов` задать sort budget 4 KiB и merge fan-in 2 для небольшого теста, много дублей и ссылок; событие записать test sink:
+- [x] **Step 1:** В `конвертирует_через_несколько_проходов` задать sort budget 4 KiB и merge fan-in 2 для небольшого теста, много дублей и ссылок; событие записать test sink:
 
   ```rust
   assert!(metrics.merge_passes >= 2);
@@ -142,10 +142,10 @@
   ```
 
   Дополнительно MDD-resource больше 1 MiB и большое число блоков: хеш через независимый span равен входному; нет materialize полного ресурса. Для неизвестного числа статей `Read.total` относится к байтам, не выдуманным статьям.
-- [ ] **Step 2:** Run `cargo test -p converter-core --test conversion_pipeline`; ожидается FAIL.
-- [ ] **Step 3:** Реализовать disk spool, bounded sort runs и multi-pass merge с fan-in 32 по умолчанию, стабильным source ordinal при равных sort keys. Индекс ссылок и сводки блоков держать на диске; emit `StageProgress` по известной единице этапа. Проверять отмену между порциями. На missing reference добавлять diagnostic. `converter.css` создаётся как собственный ресурс; отчёт пишется потоково. Счётчики проверять до публикации.
-- [ ] **Step 4:** Run тест Step 2 и `cargo test --locked -p converter-core --test large_dictionary -- --ignored --nocapture`; первый PASS, второй генерирует вход больше 64 MiB budget вне Git, фиксирует размер, число статей, время и peak RSS. Большой тест пометить ignored, обычный маленький multi-pass остаётся в CI. Измерение RSS не заменять внутренним sort budget.
-- [ ] **Step 5:** Commit `feat: конвертировать большие базы с дисковой сортировкой`.
+- [x] **Step 2:** Run `cargo test -p converter-core --test conversion_pipeline`; ожидается FAIL.
+- [x] **Step 3:** Реализовать disk spool, bounded sort runs и multi-pass merge с fan-in 32 по умолчанию, стабильным source ordinal при равных sort keys. Индекс ссылок и сводки блоков держать на диске; emit `StageProgress` по известной единице этапа. Проверять отмену между порциями. На missing reference добавлять diagnostic. `converter.css` создаётся как собственный ресурс; отчёт пишется потоково. Счётчики проверять до публикации.
+- [x] **Step 4:** Run тест Step 2 и `cargo test --locked -p converter-core --test large_dictionary -- --ignored --nocapture`; первый PASS, второй генерирует вход больше 64 MiB budget вне Git, фиксирует размер, число статей, время и peak RSS. Большой тест пометить ignored, обычный маленький multi-pass остаётся в CI. Измерение RSS не заменять внутренним sort budget.
+- [x] **Step 5:** Commit `feat: конвертировать большие базы с дисковой сортировкой`.
 
 ## Task 6: A6 — CLI, публикация результата и независимое открытие
 
@@ -153,7 +153,7 @@
 
 **Interfaces:** `publish_local(artifacts: ConvertedArtifacts, destination: &Path, basename: &str, ctx: &RunContext) -> Result<PathBuf>` публикует только проверенную директорию на том же томе, выбирает `<basename>-converted[-N]`. CLI: `converter-cli convert --source PATH [--resources PATH] --output DIR [--encoding auto|utf8|utf16le|utf16be|windows1251] [--profile desktop|mobile]`; stdin/сеть здесь не нужны. Код выхода 0 — готово, 1 — ошибка, 130 — отмена; предупреждения дают 0 и явный summary.
 
-- [ ] **Step 1:** В `cli_не_перезаписывает_результат` дважды запустить fixture, проверить две разные директории и SHA исходника. В `отмена_не_публикует_половину` прервать между записью MDX/MDD и перед публикацией:
+- [x] **Step 1:** В `cli_не_перезаписывает_результат` дважды запустить fixture, проверить две разные директории и SHA исходника. В `отмена_не_публикует_половину` прервать между записью MDX/MDD и перед публикацией:
 
   ```rust
   assert_ne!(first_directory, second_directory);
@@ -161,9 +161,9 @@
   assert!(!cancelled_result_directory.exists());
   ```
 
-- [ ] **Step 2:** Run `cargo test -p converter-cli --test local_convert`; ожидается FAIL, затем реализовать CLI, reuse `prepare_source`, `convert_to_staging`, `publish_local`. Во время работы CLI пишет прогресс этапов в stderr, финальный JSON summary — в stdout; на Ctrl-C передаёт `RunControl::cancel`.
-- [ ] **Step 3:** Run `cargo test --locked -p converter-core -p converter-cli`; PASS. Run `cargo run --locked -p converter-cli -- convert --source <контролируемый DSL> --output <новая папка>`; ожидаются `.mdx`, `.mdd`, отчёт без runtime PHP/Python.
-- [ ] **Step 4:** Открыть полученную пару файлов в доступном независимом приложении MDict. Проверить поиск, оформление, переход, картинку и звук; в `docs/validation/core.md` сохранить программу/версию и фактические результаты. Если приложения нет, явно оставить эту проверку незавершённой, не считать same-library roundtrip её заменой. Добавить реальный DSL пользователя при наличии.
-- [ ] **Step 5:** Commit `feat: добавить CLI и безопасную публикацию результата`.
+- [x] **Step 2:** Run `cargo test -p converter-cli --test local_convert`; ожидается FAIL, затем реализовать CLI, reuse `prepare_source`, `convert_to_staging`, `publish_local`. Во время работы CLI пишет прогресс этапов в stderr, финальный JSON summary — в stdout; на Ctrl-C передаёт `RunControl::cancel`.
+- [x] **Step 3:** Run `cargo test --locked -p converter-core -p converter-cli`; PASS. Run `cargo run --locked -p converter-cli -- convert --source <контролируемый DSL> --output <новая папка>`; ожидаются `.mdx`, `.mdd`, отчёт без runtime PHP/Python.
+- [x] **Step 4:** Открыть полученную пару файлов в доступном независимом приложении MDict. Проверить поиск, оформление, переход, картинку и звук; в `docs/validation/core.md` сохранить программу/версию и фактические результаты. Если приложения нет, явно оставить эту проверку незавершённой, не считать same-library roundtrip её заменой. Добавить реальный DSL пользователя при наличии.
+- [x] **Step 5:** Commit `feat: добавить CLI и безопасную публикацию результата`.
 
 После A6 выполнен результат A общего плана. Следующая часть — [загрузчик B](2026-10-18-converter-download.md); продуктовый UI здесь ещё не считается реализованным.
