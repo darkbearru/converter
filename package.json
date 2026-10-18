@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "packageManager": "npm@12.2.0",
   "engines": {
     "node": ">=24.12.0"
   },
@@ -12,6 +13,9 @@
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest",
     "tauri": "tauri",
+    "build:macos": "tauri build --target aarch64-apple-darwin -- --locked && node scripts/collect-packages.mjs aarch64-apple-darwin",
+    "build:macos:intel": "tauri build --target x86_64-apple-darwin -- --locked && node scripts/collect-packages.mjs x86_64-apple-darwin",
+    "build:windows": "tauri build --target x86_64-pc-windows-msvc --bundles nsis --config src-tauri/tauri.windows.conf.json -- --locked && node scripts/collect-packages.mjs x86_64-pc-windows-msvc",
     "dev:harness": "vite --host 127.0.0.1 --port 1421 --strictPort",
     "test:e2e": "playwright test",
     "check:contracts": "node scripts/check-contracts.mjs",
