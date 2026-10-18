@@ -1,0 +1,68 @@
+name: Windows native smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_run:
+        description: ID успешного запуска Desktop packages
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  native:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PACKAGE_RUN: ${{ inputs.package_run }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .node-version
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: 1.99.1
+      - name: Download exact installer and verify SHA
+        shell: pwsh
+        run: |
+          [long]$run = $env:PACKAGE_RUN
+          gh run download $run --pattern 'Converter-x86_64-pc-windows-msvc-*' --dir .work/windows-package
+          $infoFile = Get-ChildItem .work/windows-package -Recurse -Filter build-info.json | Select-Object -First 1
+          $info = Get-Content $infoFile.FullName -Raw | ConvertFrom-Json
+          $installer = Get-ChildItem .work/windows-package -Recurse -Filter '*-setup.exe' | Select-Object -First 1
+          $expected = ($info.artifacts | Where-Object file -eq $installer.Name).sha256
+          if ((Get-FileHash $installer.FullName -Algorithm SHA256).Hash.ToLower() -ne $expected) { throw 'Installer SHA mismatch' }
+          $install = Join-Path $env:RUNNER_TEMP 'Converter-Нативный-тест'
+          $process = Start-Process $installer.FullName -ArgumentList "/S /D=$install" -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "NSIS exit $($process.ExitCode)" }
+          $exe = Get-ChildItem $install -Recurse -Filter converter-desktop.exe | Select-Object -First 1
+          if (-not $exe) { throw 'Installed application not found' }
+          "CONVERTER_EXE=$($exe.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          Copy-Item $infoFile.FullName .work/installed-build-info.json
+      - name: Official Edge driver matching installed WebView2
+        shell: pwsh
+        run: |
+          $runtime = Get-ChildItem "${env:ProgramFiles(x86)}\Microsoft\EdgeWebView\Application\*\msedgewebview2.exe" | Sort-Object { [version]$_.VersionInfo.ProductVersion } -Descending | Select-Object -First 1
+          if (-not $runtime) { throw 'WebView2 runtime not found' }
+          $version = $runtime.VersionInfo.ProductVersion
+          Write-Host "WebView2 $version"
+          Invoke-WebRequest "https://msedgedriver.microsoft.com/$version/edgedriver_win64.zip" -OutFile .work/edgedriver.zip
+          Expand-Archive .work/edgedriver.zip .work/edgedriver
+          cargo install tauri-driver --version 2.0.5 --locked
+          $driver = (Resolve-Path .work/edgedriver/msedgedriver.exe).Path
+          Start-Process tauri-driver -ArgumentList "--native-driver `"$driver`"" -RedirectStandardOutput .work/tauri-driver.log -RedirectStandardError .work/tauri-driver-error.log
+      - run: node scripts/windows-native-smoke.mjs "$env:CONVERTER_EXE"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: windows-native-${{ github.run_id }}
+          path: |
+            .work/windows-native/
+            .work/installed-build-info.json
+            .work/tauri-driver*.log
+          if-no-files-found: warn
