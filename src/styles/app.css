@@ -275,10 +275,11 @@ h3 {
   align-items: center;
   gap: 12px;
 }
-.composer-tools .icon-button.p-button {
+.composer-tools .icon-button.p-button,
+.composer-tools .icon-button.p-button:is(:hover, :active) {
   width: var(--tool-size);
   height: var(--tool-size);
-  border: 0;
+  border: 0 solid transparent;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
@@ -621,7 +622,18 @@ h3 {
   color: var(--text);
 }
 .diagnostics-dialog {
+  --close-button-size: 24px;
+  --close-icon-size: 16px;
   height: calc(100dvh - 48px);
+}
+.diagnostics-dialog .p-dialog-close-button.p-button {
+  width: var(--close-button-size);
+  height: var(--close-button-size);
+  padding: 0;
+}
+.diagnostics-dialog .p-dialog-close-button .app-icon {
+  width: var(--close-icon-size);
+  height: var(--close-icon-size);
 }
 .diagnostics-dialog .p-dialog-content {
   display: flex;
