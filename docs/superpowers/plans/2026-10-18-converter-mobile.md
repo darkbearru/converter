@@ -10,6 +10,8 @@
 
 **Spec:** [Спецификация](../specs/2026-10-18-dsl-mdx-converter-design.md), §5.2, §8–11. Обязательны [общий план](2026-10-18-converter-implementation.md) и `PlatformStorage`/JobManager/NativeBridge из [C](2026-10-18-converter-desktop.md).
 
+**Статус исполнения:** отложено по прямому указанию пользователя. Сначала выполняются реализация и все проверки macOS/Windows из A–C; мобильные SDK до этого не устанавливаются.
+
 ## Global Constraints
 
 - Минимальная версия приложения — iOS 15; Android 10/API 29.

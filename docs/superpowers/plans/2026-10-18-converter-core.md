@@ -47,7 +47,7 @@
 
 **Interfaces:** Produces типы выше; `write_mdx<W: Write + Seek>(records: impl Iterator<Item = Result<MdxRecord>>, metadata: &DictionaryMetadata, out: W, ctx: &RunContext) -> Result<WriteSummary>`; `write_mdd<W: Write + Seek>(resources: impl Iterator<Item = Result<ResourceRecord>>, out: W, ctx: &RunContext) -> Result<WriteSummary>`. Входы уже отсортированы; writer проверяет порядок, хранит сводки на диске. Test helpers `read_mdx(&Path) -> Vec<(String, String)>`, `read_mdd(&Path) -> Vec<(String, Vec<u8>)>` используют mdictlib с проверкой checksum, не собственный parser; `context(&Path) -> RunContext` создаёт конечные тестовые лимиты.
 
-- [ ] **Step 1:** Установить per-project stable Rust, определить его точную версию через `rustup run stable rustc --version`, записать её в `rust-toolchain.toml`; создать минимальный workspace и conformance-тест до writer. Проверить MSRV mdictlib и Tauri, сохранить `Cargo.lock`. Не менять глобальный Rust default.
+- [ ] **Step 1:** Использовать глобальный stable Rust, обновлённый по прямому запросу пользователя; определить точную версию через `rustup run stable rustc --version` и записать её в `rust-toolchain.toml` (проверенная версия — `1.99.1`). Создать минимальный workspace и conformance-тест до writer. Проверить MSRV mdictlib и Tauri, сохранить `Cargo.lock`. Повторное обновление глобального stable не требуется; точная версия в rust-toolchain.toml может вызвать установку одноимённого versioned toolchain, при этом глобальный default остаётся stable.
 - [ ] **Step 2:** В `пишет_совместимые_блоки_и_дубликаты` сформировать отсортированные `MdxRecord` с `a-b`, `ab`, двумя `яблоко` и CJK; принудительно малые блоки. Assert:
 
   ```rust
