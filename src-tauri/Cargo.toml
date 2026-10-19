@@ -28,6 +28,11 @@ url.workspace = true
 reqwest.workspace = true
 serde_json.workspace = true
 semver = "1"
+sys-locale = "0.3.2"
+atomicwrites.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
 
 [lints]
 workspace = true

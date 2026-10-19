@@ -1,3 +1,4 @@
+import en from '../../locales/en.json';
 import PrimeVue from 'primevue/config';
 import Aura from '@primeuix/themes/aura';
 import { definePreset } from '@primeuix/themes';
@@ -97,22 +98,6 @@ const ConverterPreset = definePreset(Aura, {
 });
 export const primeVueOptions = {
   theme: { preset: ConverterPreset, options: { darkModeSelector: 'system' } },
-  locale: {
-    fileSizeTypes: ['байт', 'Кб', 'Мб', 'Гб', 'Тб'],
-    choose: 'Выбрать',
-    upload: 'Загрузить',
-    cancel: 'Отмена',
-    completed: 'Готово',
-    pending: 'Ожидает',
-    emptyMessage: 'Нет вариантов',
-    emptySearchMessage: 'Ничего не найдено',
-    aria: {
-      close: 'Закрыть',
-      firstPageLabel: 'Первая страница',
-      lastPageLabel: 'Последняя страница',
-      prevPageLabel: 'Предыдущая страница',
-      nextPageLabel: 'Следующая страница',
-    },
-  },
+  locale: en.primevue,
 };
 export { PrimeVue };

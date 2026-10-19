@@ -219,3 +219,29 @@ pub fn get_result_path(state: State<'_, NativeState>, id: String) -> AppResult<S
         .to_string_lossy()
         .into_owned())
 }
+
+#[tauri::command]
+pub fn get_app_preferences(
+    state: State<'_, NativeState>,
+) -> AppResult<crate::preferences::AppPreferences> {
+    Ok(state
+        .preferences
+        .lock()
+        .map_err(|_| AppError::new("preferences_busy", "Не удалось прочитать настройки языка"))?
+        .get())
+}
+#[tauri::command]
+pub fn set_app_language(
+    app: AppHandle,
+    state: State<'_, NativeState>,
+    language: crate::preferences::LanguagePreference,
+) -> AppResult<crate::preferences::AppPreferences> {
+    let saved = state
+        .preferences
+        .lock()
+        .map_err(|_| AppError::new("preferences_busy", "Не удалось прочитать настройки языка"))?
+        .set(language)?;
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
+    crate::app_menu::set_language(&app, saved.locale);
+    Ok(saved)
+}

@@ -1,3 +1,4 @@
+import { preferencesFor, type LanguagePreference } from '../../../src/shared/i18n/preferences';
 import type {
   DiagnosticPage,
   JobDraft,
@@ -160,7 +161,15 @@ export function createHarness(scenario: string | null) {
     job.download.files[0]!.state = 'failed';
     jobs.set(currentId, job);
   }
+  let language: LanguagePreference = 'system';
   const bridge: NativeBridge = {
+    async getAppPreferences() {
+      return preferencesFor(language, 'ru-RU');
+    },
+    async setAppLanguage(next) {
+      language = next;
+      return preferencesFor(language, 'ru-RU');
+    },
     async getAppVersion() {
       return '0.2.3';
     },

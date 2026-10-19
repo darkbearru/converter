@@ -1,3 +1,4 @@
+import type { AppPreferences, LanguagePreference } from './i18n/preferences';
 export interface AppError {
   code: string;
   message: string;
@@ -177,6 +178,8 @@ export interface DiagnosticPage {
 }
 export type SourcePurpose = 'dictionaries' | 'resources' | 'resource_directory';
 export interface NativeBridge {
+  getAppPreferences(): Promise<AppPreferences>;
+  setAppLanguage(language: LanguagePreference): Promise<AppPreferences>;
   getAppVersion(): Promise<string>;
   checkForUpdates(): Promise<{ version: string | null }>;
   openReleasePage(): Promise<void>;

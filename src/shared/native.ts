@@ -13,6 +13,8 @@ async function call<T>(command: string, args?: Record<string, unknown>): Promise
   return invoke<T>(command, args);
 }
 export const nativeBridge: NativeBridge = {
+  getAppPreferences: () => call('get_app_preferences'),
+  setAppLanguage: (language) => call('set_app_language', { language }),
   getAppVersion: () => call('get_app_version'),
   checkForUpdates: () => call('check_for_updates'),
   openReleasePage: () => call('open_release_page'),

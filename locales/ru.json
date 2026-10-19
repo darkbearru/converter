@@ -1,0 +1,30 @@
+{
+  "app": { "close": "Закрыть" },
+  "native": {
+    "about": "О программе",
+    "pick_dictionaries": "Выберите словари",
+    "dictionary_filter": "Словари и архивы",
+    "pick_resources": "Выберите ресурсы или ZIP",
+    "pick_resource_directory": "Выберите папку ресурсов",
+    "pick_output": "Выберите папку результата"
+  },
+  "messages": {},
+  "issues": {},
+  "primevue": {
+    "fileSizeTypes": ["байт", "Кб", "Мб", "Гб", "Тб"],
+    "choose": "Выбрать",
+    "upload": "Загрузить",
+    "cancel": "Отмена",
+    "completed": "Готово",
+    "pending": "Ожидает",
+    "emptyMessage": "Нет вариантов",
+    "emptySearchMessage": "Ничего не найдено",
+    "aria": {
+      "close": "Закрыть",
+      "firstPageLabel": "Первая страница",
+      "lastPageLabel": "Последняя страница",
+      "prevPageLabel": "Предыдущая страница",
+      "nextPageLabel": "Следующая страница"
+    }
+  }
+}

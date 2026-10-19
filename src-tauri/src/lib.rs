@@ -3,16 +3,19 @@ mod app_menu;
 mod commands;
 mod events;
 mod issue_report;
+mod localization;
+mod preferences;
 mod storage;
 mod updates;
 use converter_app::{JobManager, storage::desktop::DesktopStorage};
 use std::sync::{
-    Arc,
+    Arc, Mutex,
     atomic::{AtomicBool, Ordering},
 };
 use tauri::{Emitter, Manager};
 
 pub struct NativeState {
+    preferences: Mutex<preferences::PreferencesStore>,
     manager: JobManager,
     storage: Arc<DesktopStorage>,
 }
@@ -41,17 +44,26 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .setup(|app| {
+            let preferences = preferences::PreferencesStore::open(
+                app.path().app_config_dir()?.join("preferences.json"),
+            );
             #[cfg(not(any(target_os = "android", target_os = "ios")))]
-            app_menu::install(app)?;
+            app_menu::install(app, preferences.get().locale)?;
             let root = app.path().app_data_dir()?;
             let storage = Arc::new(DesktopStorage::open(root.clone())?);
             let manager = JobManager::open(root, storage.clone())?;
             events::forward(app.handle().clone(), manager.clone());
-            app.manage(NativeState { manager, storage });
+            app.manage(NativeState {
+                manager,
+                storage,
+                preferences: Mutex::new(preferences),
+            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             commands::get_app_version,
+            commands::get_app_preferences,
+            commands::set_app_language,
             commands::check_for_updates,
             commands::open_release_page,
             commands::read_clipboard_text,

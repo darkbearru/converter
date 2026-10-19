@@ -1,0 +1,30 @@
+{
+  "app": { "close": "Close" },
+  "native": {
+    "about": "About Converter",
+    "pick_dictionaries": "Choose dictionaries",
+    "dictionary_filter": "Dictionaries and archives",
+    "pick_resources": "Choose resources or ZIP",
+    "pick_resource_directory": "Choose a resource folder",
+    "pick_output": "Choose an output folder"
+  },
+  "messages": {},
+  "issues": {},
+  "primevue": {
+    "fileSizeTypes": ["bytes", "KB", "MB", "GB", "TB"],
+    "choose": "Choose",
+    "upload": "Upload",
+    "cancel": "Cancel",
+    "completed": "Completed",
+    "pending": "Pending",
+    "emptyMessage": "No options available",
+    "emptySearchMessage": "No results found",
+    "aria": {
+      "close": "Close",
+      "firstPageLabel": "First page",
+      "lastPageLabel": "Last page",
+      "prevPageLabel": "Previous page",
+      "nextPageLabel": "Next page"
+    }
+  }
+}
