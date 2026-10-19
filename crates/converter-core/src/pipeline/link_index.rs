@@ -7,6 +7,10 @@ pub(super) fn sql_error(error: rusqlite::Error) -> ConverterError {
         "spool_database",
         format!("Ошибка промежуточного индекса: {error}"),
     )
+    .with_message(
+        "messages.spool_database",
+        crate::model::message_args([("error", error.to_string())]),
+    )
 }
 
 pub(super) struct LinkIndex {
@@ -74,8 +78,15 @@ impl LinkIndex {
             let bytes: Vec<u8> = row.get(1).map_err(sql_error)?;
             let line = u64::from_be_bytes(bytes.try_into().map_err(|_| {
                 ConverterError::new("corrupt_spool", "Повреждён номер строки в индексе ссылок")
+                    .with_message("messages.corrupt_spool_2", crate::model::message_args([]))
             })?);
             emit(Diagnostic {
+                message_key: Some("messages.missing_reference".into()),
+                message_args: serde_json::from_value(crate::model::message_args([(
+                    "target",
+                    target.to_string(),
+                )]))
+                .unwrap_or_default(),
                 code: "missing_reference".into(),
                 message: format!("Не найдена статья для ссылки: {target}"),
                 severity: DiagnosticSeverity::Warning,
@@ -103,15 +114,20 @@ fn decode_uri(encoded: &str) -> Result<String> {
                     return Err(ConverterError::new(
                         "invalid_reference",
                         "Неправильная кодировка внутренней ссылки",
-                    ));
+                    )
+                    .with_message("messages.invalid_reference", crate::model::message_args([])));
                 }
             }
         } else {
             bytes.push(byte);
         }
     }
-    String::from_utf8(bytes)
-        .map_err(|_| ConverterError::new("invalid_reference", "Цель ссылки не является UTF-8"))
+    String::from_utf8(bytes).map_err(|_| {
+        ConverterError::new("invalid_reference", "Цель ссылки не является UTF-8").with_message(
+            "messages.invalid_reference_2",
+            crate::model::message_args([]),
+        )
+    })
 }
 
 #[cfg(test)]

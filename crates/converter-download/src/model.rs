@@ -57,12 +57,24 @@ impl Default for DownloadPolicy {
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DownloadError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message_key: Option<Box<str>>,
+    #[serde(default, skip_serializing_if = "message_args_empty")]
+    pub message_args: Box<std::collections::BTreeMap<String, serde_json::Value>>,
     pub code: String,
     pub message: String,
 }
 impl DownloadError {
+    pub fn with_message(mut self, key: &str, args: serde_json::Value) -> Self {
+        self.message_key = Some(key.into());
+        self.message_args = serde_json::from_value(args).unwrap_or_default();
+        self
+    }
+
     pub fn new(code: &str, message: &str) -> Self {
         Self {
+            message_key: None,
+            message_args: Default::default(),
             code: code.into(),
             message: message.into(),
         }
@@ -79,6 +91,10 @@ impl From<std::io::Error> for DownloadError {
         Self::new(
             "download_io",
             &format!("Ошибка хранилища: {:?}", value.kind()),
+        )
+        .with_message(
+            "messages.download_io",
+            crate::message_args([("arg0", format!("{:?}", value.kind()))]),
         )
     }
 }
@@ -131,6 +147,22 @@ pub enum TransferState {
     Cancelled,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct LocalizedMessage {
+    pub message: String,
+    pub message_key: Option<Box<str>>,
+    #[serde(default)]
+    pub message_args: Box<std::collections::BTreeMap<String, serde_json::Value>>,
+}
+impl LocalizedMessage {
+    pub fn new(message: String, key: &str) -> Self {
+        Self {
+            message,
+            message_key: Some(key.into()),
+            message_args: Default::default(),
+        }
+    }
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DownloadProgress {
     pub source_id: String,
     pub state: TransferState,
@@ -139,10 +171,27 @@ pub struct DownloadProgress {
     pub total_bytes: Option<u64>,
     pub bytes_per_second: Option<f64>,
     pub restart_reason: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub restart_message: Option<LocalizedMessage>,
 }
 #[derive(Clone, Debug)]
 pub enum TransferOutcome {
     Completed(CompletedDownload),
     Paused,
     Cancelled,
+}
+
+// Keep argument construction out of recursive DSL parser/renderer stack frames.
+#[inline(never)]
+pub fn message_args<const N: usize>(pairs: [(&str, String); N]) -> serde_json::Value {
+    serde_json::Value::Object(
+        pairs
+            .into_iter()
+            .map(|(key, value)| (key.to_owned(), serde_json::Value::String(value)))
+            .collect(),
+    )
+}
+
+fn message_args_empty(args: &std::collections::BTreeMap<String, serde_json::Value>) -> bool {
+    args.is_empty()
 }

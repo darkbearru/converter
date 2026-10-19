@@ -1,9 +1,14 @@
 <script setup lang="ts">
+import { errorState } from '../../shared/i18n/errors';
+
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
+
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import Message from 'primevue/message';
 import Paginator, { type PageState } from 'primevue/paginator';
 import type { DiagnosticPage, NativeBridge } from '../../shared/contracts';
-import { errorMessage, formatCount, formatQuantity } from '../../shared/format';
+import { errorMessage, formatCount } from '../../shared/format';
 const props = defineProps<{
   id: string;
   count: number;
@@ -19,7 +24,7 @@ const offset = ref(0);
 const previous = ref<number[]>([]);
 const page = ref<DiagnosticPage>({ items: [], next_offset: null, total: 0 });
 const busy = ref(false);
-const error = ref('');
+const error = errorState();
 let generation = 0;
 async function load() {
   const run = ++generation;
@@ -33,7 +38,7 @@ async function load() {
     );
     if (run === generation) page.value = result;
   } catch (e) {
-    if (run === generation) error.value = errorMessage(e);
+    if (run === generation) error.value = e;
   } finally {
     if (run === generation) busy.value = false;
   }
@@ -89,17 +94,19 @@ function showAll(event: MouseEvent) {
       :aria-expanded="open"
       @click="open = !open"
     >
-      Журнал · {{ formatCount(count) }}
-      <span>{{ open ? 'Скрыть' : 'Показать' }}</span>
+      {{ t('app.log') }} · {{ formatCount(count) }}
+      <span>{{ open ? t('app.hide') : t('app.show') }}</span>
     </button>
     <div v-if="isOpen || preview" class="diagnostics-body" :aria-busy="busy">
       <div v-if="error">
         <Message severity="error">{{ error }}</Message>
-        <button type="button" class="diagnostics-retry" @click="load">Повторить чтение</button>
+        <button type="button" class="diagnostics-retry" @click="load">
+          {{ t('app.retry_read') }}
+        </button>
       </div>
-      <p v-else-if="busy" role="status" class="muted">Чтение журнала…</p>
+      <p v-else-if="busy" role="status" class="muted">{{ t('app.reading_log') }}</p>
       <p v-else-if="!page.items.length" class="muted">
-        {{ count ? 'Не удалось найти записи журнала.' : 'Предупреждений нет.' }}
+        {{ count ? t('app.log_missing') : t('app.no_warnings') }}
       </p>
       <ol
         v-else
@@ -116,7 +123,7 @@ function showAll(event: MouseEvent) {
             :severity="preview ? (severity ?? 'warn') : undefined"
           >
             <p>
-              <span>{{ item.message }}</span
+              <span>{{ errorMessage(item) }}</span
               >{{ ' '
               }}<a
                 v-if="preview && count > 1"
@@ -126,18 +133,26 @@ function showAll(event: MouseEvent) {
                 class="diagnostics-more"
                 @click.prevent="showAll"
               >
-                (ещё
-                {{
-                  formatQuantity(count - 1, ['предупреждение', 'предупреждения', 'предупреждений'])
-                }})</a
+                {{ t('app.more_warnings', { count: formatCount(count - 1) }, count - 1) }}</a
               >
             </p>
             <p v-if="(item.occurrences ?? 1) > 1" class="hint">
-              Встречается {{ formatQuantity(item.occurrences ?? 1, ['раз', 'раза', 'раз']) }}.
+              {{
+                t(
+                  'app.occurrences',
+                  { count: formatCount(item.occurrences ?? 1) },
+                  item.occurrences ?? 1,
+                )
+              }}
             </p>
             <span v-if="item.source_location" class="hint"
-              >{{ (item.occurrences ?? 1) > 1 ? 'Первое упоминание: ' : ''
-              }}{{ item.source_location.source }}, строка {{ item.source_location.line }}</span
+              >{{ (item.occurrences ?? 1) > 1 ? t('app.first_mention') : ''
+              }}{{
+                t('app.source_line', {
+                  source: item.source_location.source,
+                  line: item.source_location.line,
+                })
+              }}</span
             >
           </component>
         </li>
@@ -148,7 +163,9 @@ function showAll(event: MouseEvent) {
         :rows="50"
         :total-records="page.total"
         template="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
-        current-page-report-template="{first}–{last} из {totalRecords}"
+        :current-page-report-template="
+          t('app.page_report', { first: '{first}', last: '{last}', totalRecords: '{totalRecords}' })
+        "
         @page="changePage"
       />
       <nav
@@ -160,15 +177,16 @@ function showAll(event: MouseEvent) {
           !error &&
           (previous.length || page.next_offset !== null)
         "
-        aria-label="Страницы журнала"
+        :aria-label="t('app.log_pages')"
         class="pagination"
       >
-        <button type="button" :disabled="busy || !previous.length" @click="back">Назад</button
+        <button type="button" :disabled="busy || !previous.length" @click="back">
+          {{ t('app.back') }}</button
         ><span class="muted"
-          >{{ formatCount(offset + 1) }}–{{ formatCount(offset + page.items.length) }} из
-          {{ formatCount(page.total) }}</span
+          >{{ formatCount(offset + 1) }}–{{ formatCount(offset + page.items.length) }}
+          {{ t('app.of') }} {{ formatCount(page.total) }}</span
         ><button type="button" :disabled="busy || page.next_offset === null" @click="next">
-          Далее
+          {{ t('app.next') }}
         </button>
       </nav>
     </div>

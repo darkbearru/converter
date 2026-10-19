@@ -21,6 +21,10 @@ impl FormatRegistry {
             return Err(ConverterError::new(
                 "duplicate_format",
                 format!("Формат уже зарегистрирован или не имеет ID: {id}"),
+            )
+            .with_message(
+                "messages.duplicate_format",
+                crate::model::message_args([("id", id.to_string())]),
             ));
         }
         self.readers.push(Box::new(reader));
@@ -36,6 +40,10 @@ impl FormatRegistry {
             .map(|r| r.as_ref())
             .ok_or_else(|| {
                 ConverterError::new("unsupported_format", format!("Неизвестный формат: {id}"))
+                    .with_message(
+                        "messages.unsupported_format",
+                        crate::model::message_args([("id", id.to_string())]),
+                    )
             })
     }
     pub fn detect(&self, prefix: &[u8], name: &str) -> Result<String> {
@@ -57,10 +65,15 @@ impl FormatRegistry {
             return Err(ConverterError::new(
                 "ambiguous_format",
                 "Несколько читателей определили формат с одинаковой уверенностью",
-            ));
+            )
+            .with_message("messages.ambiguous_format", crate::model::message_args([])));
         }
         selected.ok_or_else(|| {
             ConverterError::new("unsupported_format", "Формат источника не поддерживается")
+                .with_message(
+                    "messages.unsupported_format_2",
+                    crate::model::message_args([]),
+                )
         })
     }
 }

@@ -75,15 +75,16 @@ pub fn publish_local(
         return Err(ConverterError::new(
             "invalid_staging",
             "Staging не может быть символической ссылкой",
-        ));
+        )
+        .with_message("messages.invalid_staging", crate::model::message_args([])));
     }
     let source = std::fs::canonicalize(&artifacts.directory)?;
     let destination = std::fs::canonicalize(destination)?;
     if !destination.is_dir() {
-        return Err(ConverterError::new(
-            "invalid_output",
-            "Место сохранения должно быть папкой",
-        ));
+        return Err(
+            ConverterError::new("invalid_output", "Место сохранения должно быть папкой")
+                .with_message("messages.invalid_output", crate::model::message_args([])),
+        );
     }
     let expected = [&artifacts.mdx, &artifacts.mdd, &artifacts.report];
     for path in expected {
@@ -92,7 +93,8 @@ pub fn publish_local(
             return Err(ConverterError::new(
                 "invalid_staging",
                 "Результат должен содержать обычные файлы в одном staging-каталоге",
-            ));
+            )
+            .with_message("messages.invalid_staging_2", crate::model::message_args([])));
         }
     }
     let mut count = 0;
@@ -101,17 +103,24 @@ pub fn publish_local(
         count += 1;
     }
     if count != expected.len() {
-        return Err(ConverterError::new(
-            "invalid_staging",
-            "Staging содержит посторонние файлы",
-        ));
+        return Err(
+            ConverterError::new("invalid_staging", "Staging содержит посторонние файлы")
+                .with_message("messages.invalid_staging_3", crate::model::message_args([])),
+        );
     }
     validate_artifacts(&artifacts, ctx)?;
     let mut report = serde_json::Deserializer::from_reader(File::open(&artifacts.report)?);
-    serde::de::IgnoredAny::deserialize(&mut report)
-        .map_err(|e| ConverterError::new("invalid_report", format!("Повреждён отчёт: {e}")))?;
+    serde::de::IgnoredAny::deserialize(&mut report).map_err(|e| {
+        ConverterError::new("invalid_report", format!("Повреждён отчёт: {e}")).with_message(
+            "messages.invalid_report",
+            crate::model::message_args([("e", e.to_string())]),
+        )
+    })?;
     report.end().map_err(|e| {
-        ConverterError::new("invalid_report", format!("Лишние данные в отчёте: {e}"))
+        ConverterError::new("invalid_report", format!("Лишние данные в отчёте: {e}")).with_message(
+            "messages.invalid_report_2",
+            crate::model::message_args([("e", e.to_string())]),
+        )
     })?;
     drop(report);
     let base = basename(name);
@@ -154,12 +163,16 @@ pub fn publish_local(
                 return Err(ConverterError::new(
                     "cross_device_output",
                     "Staging и папка результата находятся на разных томах. Создайте staging рядом с результатом",
-                ));
+                ).with_message("messages.cross_device_output", crate::model::message_args([])));
             }
             Err(error) => {
                 return Err(ConverterError::new(
                     "publication_failed",
                     format!("Не удалось опубликовать результат: {error}"),
+                )
+                .with_message(
+                    "messages.publication_failed",
+                    crate::model::message_args([("error", error.to_string())]),
                 ));
             }
         }
@@ -167,5 +180,9 @@ pub fn publish_local(
     Err(ConverterError::new(
         "output_names_exhausted",
         "Не найдено свободное имя результата",
+    )
+    .with_message(
+        "messages.output_names_exhausted",
+        crate::model::message_args([]),
     ))
 }

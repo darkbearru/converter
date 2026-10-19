@@ -110,6 +110,10 @@ impl PreferencesStore {
                 "preferences_write_failed",
                 "Не удалось сохранить язык приложения",
             )
+            .with_message(
+                "messages.preferences_write_failed",
+                converter_core::model::message_args([]),
+            )
         })?;
         self.language = language;
         self.locale = resolve_locale(language, sys_locale::get_locale().as_deref());

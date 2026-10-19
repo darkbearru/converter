@@ -5,7 +5,8 @@ import type { JobEvent, NativeBridge, SourceDropEvent } from './contracts';
 function unavailable(): never {
   throw {
     code: 'native_unavailable',
-    message: 'Откройте Converter как приложение, чтобы работать с файлами.',
+    message: 'Open the Converter desktop application to work with files.',
+    message_key: 'app.native_required',
   };
 }
 async function call<T>(command: string, args?: Record<string, unknown>): Promise<T> {

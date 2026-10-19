@@ -21,7 +21,10 @@ struct Release {
 }
 
 fn unavailable() -> AppError {
-    AppError::new("update_check_failed", "Не удалось проверить обновления")
+    AppError::new("update_check_failed", "Не удалось проверить обновления").with_message(
+        "messages.update_check_failed",
+        converter_core::model::message_args([]),
+    )
 }
 
 fn parse_release(bytes: &[u8], installed: &str) -> AppResult<UpdateInfo> {

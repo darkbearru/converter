@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { errorState } from './shared/i18n/errors';
+
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
+
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import Dialog from 'primevue/dialog';
 import Message from 'primevue/message';
@@ -24,14 +29,16 @@ import DownloadProgress from './features/progress/DownloadProgress.vue';
 import ConversionProgress from './features/progress/ConversionProgress.vue';
 import DiagnosticsList from './features/results/DiagnosticsList.vue';
 import AdditionalDictionariesDialog from './features/jobs/AdditionalDictionariesDialog.vue';
+import { useLocalization } from './shared/i18n';
 import AppDialogs from './features/updates/AppDialogs.vue';
 const props = defineProps<{ bridge?: NativeBridge }>();
 const bridge = props.bridge ?? nativeBridge;
+const localization = useLocalization();
 const store = createJobStore(bridge);
 const { error } = store;
 const openingSupport = ref(false);
-const supportError = ref('');
-const issueError = ref('');
+const supportError = errorState();
+const issueError = errorState();
 async function openSupportPage() {
   if (openingSupport.value) return;
   openingSupport.value = true;
@@ -39,7 +46,7 @@ async function openSupportPage() {
   try {
     await bridge.openSupportPage();
   } catch (e) {
-    supportError.value = errorMessage(e);
+    supportError.value = e;
   } finally {
     openingSupport.value = false;
   }
@@ -68,8 +75,8 @@ const history = computed(() =>
 );
 const selected = ref<string | null>(null);
 const deleting = ref<JobSnapshot | null>(null);
-const deleteError = ref('');
-const additionalError = ref('');
+const deleteError = errorState();
+const additionalError = errorState();
 const additionalJob = computed(() =>
   jobs.value.find(
     (job) =>
@@ -98,7 +105,7 @@ async function decideAdditional(convert: boolean) {
   const resolved = await store.resolveAdditional(current.jobId, current.offer.id, convert);
   if (presentedOffer.value?.offer.id !== current.offer.id) return;
   if (resolved) presentedOffer.value = null;
-  else additionalError.value = error.value;
+  else additionalError.value = error.source.value;
 }
 function dismissAdditional() {
   if (!presentedOffer.value) return;
@@ -115,7 +122,7 @@ async function confirmDelete() {
   const removed = await store.deleteJob(id);
   if (deleting.value?.id !== id) return;
   if (removed) deleting.value = null;
-  else deleteError.value = error.value;
+  else deleteError.value = error.source.value;
 }
 const detail = computed(() => (selected.value ? store.jobs[selected.value] : undefined));
 onBeforeUnmount(store.dispose);
@@ -140,10 +147,11 @@ async function save(update: JobOptionsUpdate) {
       <div class="app-header-actions">
         <span class="app-caption">DSL → MDX + MDD</span>
         <Button
+          v-if="localization.preferences.support_url"
           class="icon-button support-button"
           text
-          aria-label="Поддержать разработчика"
-          title="Поддержать разработчика"
+          :aria-label="t('app.support')"
+          :title="t('app.support')"
           :disabled="openingSupport"
           @click="openSupportPage"
           ><Icon name="cash"
@@ -191,27 +199,27 @@ async function save(update: JobOptionsUpdate) {
       :close-button-props="dialogCloseButtonProps"
       :visible="Boolean(deleting)"
       modal
-      header="Удалить из истории"
+      :header="t('app.delete_history')"
       class="app-dialog delete-dialog"
       :closable="!deleting || !store.pending[deleting.id]"
       :close-on-escape="!deleting || !store.pending[deleting.id]"
       @update:visible="!$event && (deleting = null)"
     >
       <template #closeicon><Icon name="close" /></template>
-      <p>Вы действительно хотите удалить</p>
+      <p>{{ t('app.confirm_delete') }}</p>
       <p class="delete-filename">{{ deleting?.display_name }}?</p>
-      <p class="hint">Исходный словарь и готовые файлы останутся на диске.</p>
+      <p class="hint">{{ t('app.keep_files') }}</p>
       <p v-if="deleteError" class="error-message" role="alert">{{ deleteError }}</p>
       <template #footer>
         <Button
-          label="Отмена"
+          :label="t('app.cancel')"
           outlined
           autofocus
           :disabled="Boolean(deleting && store.pending[deleting.id])"
           @click="deleting = null"
         />
         <Button
-          label="Удалить"
+          :label="t('app.delete')"
           severity="danger"
           :loading="Boolean(deleting && store.pending[deleting.id])"
           :disabled="Boolean(deleting && store.pending[deleting.id])"
@@ -228,7 +236,7 @@ async function save(update: JobOptionsUpdate) {
       @update:visible="!$event && (selected = null)"
       ><template #closeicon><Icon name="close" /></template>
       <div v-if="detail" class="dialog-fields" tabindex="-1" autofocus>
-        <Message v-if="detail.error" severity="error">{{ detail.error.message }}</Message>
+        <Message v-if="detail.error" severity="error">{{ errorMessage(detail.error) }}</Message>
         <JobSettings
           v-if="detail.state === 'awaiting_input'"
           :key="detail.id"

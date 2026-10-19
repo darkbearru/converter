@@ -88,7 +88,8 @@ pub fn convert_to_staging_with_registry(
         return Err(ConverterError::new(
             "count_mismatch",
             "Число статей читателя не совпало с промежуточным хранилищем",
-        ));
+        )
+        .with_message("messages.count_mismatch", crate::model::message_args([])));
     }
     let (records, metrics) = spool.finish(&request.bundle.main.display_name)?;
     let mdx = directory.path.join("dictionary.mdx");
@@ -102,7 +103,8 @@ pub fn convert_to_staging_with_registry(
         return Err(ConverterError::new(
             "count_mismatch",
             "При записи MDX изменилось число ключей",
-        ));
+        )
+        .with_message("messages.count_mismatch_2", crate::model::message_args([])));
     }
     let css = working.path().join("converter.css");
     std::fs::write(&css, CONVERTER_CSS.as_bytes())?;
@@ -125,7 +127,8 @@ pub fn convert_to_staging_with_registry(
         return Err(ConverterError::new(
             "count_mismatch",
             "При записи MDD изменилось число ресурсов",
-        ));
+        )
+        .with_message("messages.count_mismatch_3", crate::model::message_args([])));
     }
     let mut artifacts = ConvertedArtifacts {
         directory: directory.path.clone(),

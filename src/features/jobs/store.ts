@@ -1,10 +1,10 @@
-import { reactive, ref } from 'vue';
+import { errorState } from '../../shared/i18n/errors';
+import { reactive } from 'vue';
 import type { JobOptionsUpdate, JobSnapshot, NativeBridge } from '../../shared/contracts';
-import { errorMessage } from '../../shared/format';
 
 export function createJobStore(bridge: NativeBridge) {
   const jobs = reactive<Record<string, JobSnapshot>>({});
-  const error = ref('');
+  const error = errorState();
   const pending = reactive<Record<string, boolean>>({});
   const deleted = new Set<string>();
   const resolvedOffers = reactive(new Set<string>());
@@ -31,7 +31,7 @@ export function createJobStore(bridge: NativeBridge) {
       const initial = await bridge.getJobs();
       initial.forEach(mergeSnapshot);
     } catch (e) {
-      if (!disposed) error.value = errorMessage(e);
+      if (!disposed) error.value = e;
     }
   })();
   async function action(id: string, run: () => Promise<JobSnapshot | void>) {
@@ -43,7 +43,7 @@ export function createJobStore(bridge: NativeBridge) {
       if (snapshot) mergeSnapshot(snapshot);
       return true;
     } catch (e) {
-      error.value = errorMessage(e);
+      error.value = e;
       return false;
     } finally {
       pending[id] = false;

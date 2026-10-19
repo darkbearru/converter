@@ -162,11 +162,12 @@ impl JobManager {
         let snapshots = {
             // Решение, дочерние записи и удаление истории используют один замок.
             let mut runtime = self.inner.runtime.lock().map_err(|_| lock_error())?;
-            let mut parent = runtime
-                .jobs
-                .get(id)
-                .cloned()
-                .ok_or_else(|| AppError::new("job_not_found", "Задание не найдено"))?;
+            let mut parent = runtime.jobs.get(id).cloned().ok_or_else(|| {
+                AppError::new("job_not_found", "Задание не найдено").with_message(
+                    "messages.invalid_job_id",
+                    converter_core::model::message_args([]),
+                )
+            })?;
             let plan = parent
                 .additional_dictionaries
                 .as_ref()
@@ -175,6 +176,10 @@ impl JobManager {
                     AppError::new(
                         "additional_offer_not_found",
                         "Предложение словарей уже недоступно",
+                    )
+                    .with_message(
+                        "messages.additional_offer_not_found",
+                        converter_core::model::message_args([]),
                     )
                 })?;
             if plan.state == AdditionalDictionariesState::Declined {
@@ -189,6 +194,10 @@ impl JobManager {
                 return Err(AppError::new(
                     "additional_offer_already_accepted",
                     "Согласие уже сохранено. Повторите создание словарей или закройте окно",
+                )
+                .with_message(
+                    "messages.additional_offer_already_accepted",
+                    converter_core::model::message_args([]),
                 ));
             }
             if plan.state == AdditionalDictionariesState::Pending {

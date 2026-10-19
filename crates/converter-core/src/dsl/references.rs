@@ -99,6 +99,7 @@ pub(super) fn subentry_reference(raw: &str, limit: usize) -> crate::model::Resul
     let keys = super::headwords::expand_headwords(raw, limit)?;
     let key = keys.first().ok_or_else(|| {
         crate::model::ConverterError::new("invalid_headword", "Подстатья не содержит ключа")
+            .with_message("messages.invalid_headword", crate::model::message_args([]))
     })?;
     let display = super::headwords::display_headword(raw)?;
     Ok(format!(

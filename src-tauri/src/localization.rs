@@ -31,3 +31,25 @@ pub fn native_text(locale: Locale, key: &str) -> String {
         .unwrap_or(key)
         .to_owned()
 }
+
+pub fn native_format(locale: Locale, key: &str, args: &[(&str, String)]) -> String {
+    let template = native_text(locale, key);
+    let mut rest = template.as_str();
+    let mut out = String::new();
+    while let Some(start) = rest.find('{') {
+        out.push_str(&rest[..start]);
+        let Some(end) = rest[start..].find('}') else {
+            out.push_str(&rest[start..]);
+            return out;
+        };
+        let name = &rest[start + 1..start + end];
+        if let Some((_, value)) = args.iter().find(|(key, _)| *key == name) {
+            out.push_str(value);
+        } else {
+            out.push_str(&rest[start..start + end + 1]);
+        }
+        rest = &rest[start + end + 1..];
+    }
+    out.push_str(rest);
+    out
+}

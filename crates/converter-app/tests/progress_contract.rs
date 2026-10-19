@@ -42,6 +42,7 @@ fn смешанный_размер_не_дает_общего_процента()
         total_bytes: total,
         bytes_per_second: None,
         restart_reason: None,
+        restart_message: None,
     };
     let progress = aggregate_downloads(vec![file("one", Some(100)), file("two", None)]);
     assert!(progress.total_bytes.is_none());

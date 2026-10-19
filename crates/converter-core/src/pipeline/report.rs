@@ -48,21 +48,33 @@ impl Drop for ReportNotifications {
 }
 
 pub(super) fn json_error(error: serde_json::Error) -> ConverterError {
-    ConverterError::new("report_error", format!("Ошибка отчёта: {error}"))
+    ConverterError::new("report_error", format!("Ошибка отчёта: {error}")).with_message(
+        "messages.report_error",
+        crate::model::message_args([("error", error.to_string())]),
+    )
 }
 fn sql_error(error: rusqlite::Error) -> ConverterError {
     ConverterError::new(
         "report_error",
         format!("Ошибка индекса диагностики: {error}"),
     )
+    .with_message(
+        "messages.report_error_2",
+        crate::model::message_args([("error", error.to_string())]),
+    )
 }
 
 fn group_key(diagnostic: &Diagnostic, ordinal: i64) -> Result<String> {
+    let structured = || {
+        serde_json::to_string(&(&diagnostic.message_key, &diagnostic.message_args))
+            .map_err(json_error)
+    };
     let subject = match diagnostic.code.as_str() {
         "missing_resource" => Some(
             diagnostic
-                .message
-                .strip_prefix("Отсутствует ресурс: ")
+                .message_args
+                .get("raw")
+                .and_then(serde_json::Value::as_str)
                 .unwrap_or(&diagnostic.message)
                 .replace('\\', "/")
                 .trim_start_matches('/')
@@ -70,8 +82,18 @@ fn group_key(diagnostic: &Diagnostic, ordinal: i64) -> Result<String> {
                 .nfc()
                 .collect::<String>(),
         ),
-        "missing_abbreviation" => Some(diagnostic.message.clone()),
-        _ if diagnostic.severity == DiagnosticSeverity::Info => Some(diagnostic.message.clone()),
+        "missing_abbreviation" => Some(if diagnostic.message_key.is_some() {
+            structured()?
+        } else {
+            diagnostic.message.clone()
+        }),
+        _ if diagnostic.severity == DiagnosticSeverity::Info => {
+            Some(if diagnostic.message_key.is_some() {
+                structured()?
+            } else {
+                diagnostic.message.clone()
+            })
+        }
         _ => None,
     };
     serde_json::to_string(&(
@@ -100,6 +122,7 @@ fn poisoned() -> ConverterError {
         "report_error",
         "Не удалось получить доступ к журналу конвертации",
     )
+    .with_message("messages.report_error_3", crate::model::message_args([]))
 }
 
 impl ReportLog {
@@ -124,12 +147,14 @@ impl ReportLog {
     fn record(&mut self, diagnostic: &Diagnostic) -> Result<()> {
         let ordinal = self.records.checked_add(1).ok_or_else(|| {
             ConverterError::new("report_error", "Переполнение числа сообщений диагностики")
+                .with_message("messages.report_error_4", crate::model::message_args([]))
         })?;
         let occurrences = i64::try_from(diagnostic.occurrences)
             .ok()
             .filter(|value| *value > 0)
             .ok_or_else(|| {
                 ConverterError::new("report_error", "Переполнение числа вхождений диагностики")
+                    .with_message("messages.report_error_5", crate::model::message_args([]))
             })?;
         let raw = serde_json::to_string(diagnostic).map_err(json_error)?;
         self.writer.write_all(raw.as_bytes())?;
@@ -297,6 +322,20 @@ mod tests {
     use super::*;
 
     #[test]
+    fn группировка_не_зависит_от_перевода_сообщения() {
+        let make = |message: &str| {
+            serde_json::from_value::<Diagnostic>(serde_json::json!({
+            "code":"missing_resource", "message":message, "message_key":"messages.missing_resource",
+            "message_args":{"raw":"café.png"}, "source_location":{"source":"a.dsl","line":1}
+        })).expect("diagnostic")
+        };
+        assert_eq!(
+            group_key(&make("Отсутствует ресурс: café.png"), 1).expect("key"),
+            group_key(&make("Missing resource: café.png"), 2).expect("key")
+        );
+    }
+
+    #[test]
     fn группировка_сохраняет_границы_источников_и_отдельные_неизвестные_теги()
     -> std::result::Result<(), Box<dyn std::error::Error>> {
         let temp = tempfile::tempdir()?;
@@ -316,6 +355,8 @@ mod tests {
             ("b.dsl", 1, "café.png"),
         ] {
             inner.emit(CoreEvent::Diagnostic(Diagnostic {
+                message_key: None,
+                message_args: Default::default(),
                 code: "missing_resource".into(),
                 message: format!("Отсутствует ресурс: {name}"),
                 source_location: Some(SourceLocation {
@@ -328,6 +369,8 @@ mod tests {
         }
         for line in [5, 7] {
             inner.emit(CoreEvent::Diagnostic(Diagnostic {
+                message_key: None,
+                message_args: Default::default(),
                 code: "unknown_tag".into(),
                 message: "Неизвестный тег: [other]".into(),
                 source_location: Some(SourceLocation {

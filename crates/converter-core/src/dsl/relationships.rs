@@ -26,6 +26,7 @@ impl parser::AstSink for References<'_> {
             } else if let Some(target) = rest.strip_prefix("<<") {
                 let end = reference_end(target).ok_or_else(|| {
                     ConverterError::new("invalid_markup", "Не закрыта ссылка <<…>>")
+                        .with_message("messages.invalid_markup_2", crate::model::message_args([]))
                 })?;
                 position += end + 4;
             } else if rest.starts_with('[') {
@@ -43,6 +44,10 @@ impl parser::AstSink for References<'_> {
                             return Err(ConverterError::new(
                                 "analysis_limit",
                                 "Слишком много межсловарных зависимостей",
+                            )
+                            .with_message(
+                                "messages.analysis_limit",
+                                crate::model::message_args([]),
                             ));
                         }
                     }
@@ -71,6 +76,10 @@ pub(super) fn inspect(
         return Err(ConverterError::new(
             "encoding_required",
             "Подтвердите кодировку перед анализом пакета",
+        )
+        .with_message(
+            "messages.encoding_required_2",
+            crate::model::message_args([]),
         ));
     }
     let meta = metadata::inspect_metadata(bundle, &encoding, ctx)?;

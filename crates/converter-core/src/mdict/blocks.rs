@@ -9,6 +9,7 @@ pub(super) fn add(a: u64, b: u64) -> Result<u64> {
             "size_overflow",
             "Размер словаря превышает возможности формата",
         )
+        .with_message("messages.size_overflow_4", crate::model::message_args([]))
     })
 }
 

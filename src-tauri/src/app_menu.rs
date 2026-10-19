@@ -34,12 +34,10 @@ pub fn set_language(app: &tauri::AppHandle, locale: crate::preferences::Locale) 
     if let Some(menu) = app.menu()
         && let Some(item) = menu.get("converter-about")
         && let Some(item) = item.as_menuitem()
-    {
-        if item
+        && item
             .set_text(crate::localization::native_text(locale, "native.about"))
             .is_err()
-        {
-            eprintln!("Could not update the About menu label");
-        }
+    {
+        eprintln!("Could not update the About menu label");
     }
 }

@@ -1,11 +1,14 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
+
 import { nextTick, ref, watch } from 'vue';
 import ProgressBar from 'primevue/progressbar';
 import Button from 'primevue/button';
 import Icon from '../../shared/ui/Icon.vue';
 import { focusDialogOpener } from '../../shared/ui/dialog';
 import type { JobSnapshot } from '../../shared/contracts';
-import { stageLabels, stateLabels } from '../../shared/format';
+import { stageLabel, stateLabel } from '../../shared/format';
 const props = defineProps<{ jobs: JobSnapshot[]; pending: Record<string, boolean> }>();
 const stack = ref<{ $el: HTMLElement }>();
 watch(
@@ -35,10 +38,8 @@ function label(job: JobSnapshot) {
   if (
     ['downloading', 'download_retry_wait', 'download_paused', 'download_failed'].includes(job.state)
   )
-    return stateLabels[job.state];
-  return job.conversion.current
-    ? stageLabels[job.conversion.current.stage]
-    : stateLabels[job.state];
+    return stateLabel(job.state);
+  return job.conversion.current ? stageLabel(job.conversion.current.stage) : stateLabel(job.state);
 }
 </script>
 <template>
@@ -47,7 +48,7 @@ function label(job: JobSnapshot) {
     name="task"
     tag="section"
     class="task-stack"
-    aria-label="Активные задачи"
+    :aria-label="t('app.active_tasks')"
   >
     <article
       v-for="(job, index) in jobs"
@@ -82,8 +83,8 @@ function label(job: JobSnapshot) {
         <div class="task-controls">
           <Button
             class="icon-button"
-            :aria-label="`Отменить ${job.display_name}`"
-            title="Отменить задачу"
+            :aria-label="t('app.cancel_named', { name: job.display_name })"
+            :title="t('app.cancel_job')"
             text
             rounded
             :disabled="pending[job.id]"
@@ -92,7 +93,7 @@ function label(job: JobSnapshot) {
           ><Button
             v-if="['downloading', 'download_retry_wait'].includes(job.state)"
             class="icon-button"
-            :aria-label="`Приостановить скачивание ${job.display_name}`"
+            :aria-label="t('app.pause_named', { name: job.display_name })"
             text
             rounded
             :disabled="pending[job.id]"
@@ -101,7 +102,7 @@ function label(job: JobSnapshot) {
           ><Button
             v-if="['download_paused', 'download_failed'].includes(job.state)"
             class="icon-button"
-            :aria-label="`Продолжить скачивание ${job.display_name}`"
+            :aria-label="t('app.resume_named', { name: job.display_name })"
             text
             rounded
             :disabled="pending[job.id]"

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
+
 import Dialog from 'primevue/dialog';
 import { dialogCloseButtonProps } from '../../shared/ui/dialog';
 import Button from 'primevue/button';
@@ -21,7 +24,7 @@ function close() {
     :close-button-props="dialogCloseButtonProps"
     :visible="Boolean(offer)"
     modal
-    header="Другие словари в архиве"
+    :header="t('app.other_dictionaries')"
     class="app-dialog additional-dictionaries-dialog"
     :closable="!busy"
     :close-on-escape="!busy"
@@ -30,28 +33,28 @@ function close() {
     <template #closeicon><Icon name="close" /></template>
     <div class="dialog-fields">
       <p>
-        Основной словарь — <strong>{{ offer?.main_name }}</strong
+        {{ t('app.main_dictionary') }} <strong>{{ offer?.main_name }}</strong
         >.
       </p>
-      <p>Найдены независимые словари. Сконвертировать их отдельными заданиями?</p>
+      <p>{{ t('app.independent_dictionaries') }}</p>
       <ul class="additional-dictionary-list">
         <li v-for="dictionary in offer?.dictionaries" :key="dictionary.id">
           {{ dictionary.display_name }}
         </li>
       </ul>
-      <p v-if="busy" role="status" class="muted">Сохранение выбора…</p>
+      <p v-if="busy" role="status" class="muted">{{ t('app.saving_choice') }}</p>
       <p v-if="error" role="alert" class="error-message">{{ error }}</p>
     </div>
     <template #footer>
       <Button
-        :label="error ? 'Закрыть' : 'Пропустить'"
+        :label="error ? t('app.close') : t('app.skip')"
         severity="secondary"
         outlined
         autofocus
         :disabled="busy"
         @click="close"
       />
-      <Button label="Конвертировать" :disabled="busy" @click="emit('decide', true)" />
+      <Button :label="t('app.convert')" :disabled="busy" @click="emit('decide', true)" />
     </template>
   </Dialog>
 </template>

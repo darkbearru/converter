@@ -12,6 +12,10 @@ fn zip_error(error: ZipError) -> ConverterError {
         "invalid_archive",
         format!("Не удалось прочитать ZIP: {error}"),
     )
+    .with_message(
+        "messages.invalid_archive",
+        crate::model::message_args([("error", error.to_string())]),
+    )
 }
 
 pub(super) fn is_zip(path: &Path) -> Result<bool> {
@@ -45,13 +49,18 @@ pub(super) fn extract(
             return Err(ConverterError::new(
                 "unsafe_archive_path",
                 "Символические ссылки в ZIP не поддерживаются",
+            )
+            .with_message(
+                "messages.unsafe_archive_path_3",
+                crate::model::message_args([]),
             ));
         }
         if entry.encrypted() {
             return Err(ConverterError::new(
                 "encrypted_archive",
                 "Зашифрованные ZIP не поддерживаются",
-            ));
+            )
+            .with_message("messages.encrypted_archive", crate::model::message_args([])));
         }
         declared = declared.checked_add(entry.size()).ok_or_else(limit)?;
         if declared > ctx.limits.max_unpacked_bytes
@@ -95,14 +104,16 @@ pub(super) fn extract(
             return Err(ConverterError::new(
                 "invalid_archive",
                 "Размер файла ZIP не совпал с каталогом",
-            ));
+            )
+            .with_message("messages.invalid_archive_2", crate::model::message_args([])));
         }
         drop(out);
         if is_zip(&path)? || name.to_lowercase().ends_with(".zip") {
             return Err(ConverterError::new(
                 "nested_archive",
                 "Вложенные ZIP не поддерживаются: извлеките архив отдельно",
-            ));
+            )
+            .with_message("messages.nested_archive", crate::model::message_args([])));
         }
         files.push(LogicalFile {
             name,
@@ -119,4 +130,5 @@ fn limit() -> ConverterError {
         "archive_limit",
         "Превышен лимит количества файлов, размера или коэффициента распаковки",
     )
+    .with_message("messages.archive_limit_5", crate::model::message_args([]))
 }

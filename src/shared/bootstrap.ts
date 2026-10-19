@@ -1,4 +1,4 @@
-import { createApp } from 'vue';
+import { createApp, watch } from 'vue';
 import { usePrimeVue } from 'primevue/config';
 import App from '../App.vue';
 import type { NativeBridge } from './contracts';
@@ -16,16 +16,24 @@ export async function mountApplication(bridge: NativeBridge, initial?: AppPrefer
     initial ?? (await bridge.getAppPreferences().catch(() => preferencesFor('system', null)));
   const localization = createLocalization(preferences, bridge);
   const app = createApp(App, { bridge });
-  app
-    .use(localization.i18n)
-    .use(PrimeVue, {
-      ...primeVueOptions,
-      locale: structuredClone(catalogs[preferences.locale].primevue),
-    });
+  app.use(localization.i18n).use(PrimeVue, {
+    ...primeVueOptions,
+    locale: structuredClone(catalogs[preferences.locale].primevue),
+  });
   app.provide(localizationKey, localization);
   const primevue = app.runWithContext(usePrimeVue);
   const stop = syncPrimeVue(localization, primevue.config);
-  app.onUnmount(stop);
+  const stopLanguage = watch(
+    () => localization.preferences.locale,
+    (locale) => {
+      document.documentElement.lang = locale;
+    },
+    { immediate: true },
+  );
+  app.onUnmount(() => {
+    stop();
+    stopLanguage();
+  });
   app.mount('#app');
   return app;
 }

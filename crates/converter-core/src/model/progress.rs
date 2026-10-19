@@ -55,7 +55,8 @@ impl RunControl {
     }
     pub fn check(&self) -> Result<()> {
         if self.0.load(Ordering::Acquire) {
-            Err(ConverterError::new("cancelled", "Операция отменена"))
+            Err(ConverterError::new("cancelled", "Операция отменена")
+                .with_message("messages.cancelled", crate::model::message_args([])))
         } else {
             Ok(())
         }

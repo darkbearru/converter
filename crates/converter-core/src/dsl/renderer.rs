@@ -68,11 +68,15 @@ pub(super) fn render_with_context(
             uses_abbreviations: !wanted.is_empty(),
         },
     };
-    renderer.write("<link rel=\"stylesheet\" href=\"converter.css\"><article class=\"dsl-article\"><header class=\"dsl-headword\">")?;
-    renderer.write(&escape_html(&display))?;
-    renderer.write("</header><div class=\"dsl-body\">")?;
-    renderer.nodes(&nodes)?;
-    renderer.write("</div></article>")?;
+    renderer.write("<link rel=\"stylesheet\" href=\"converter.css\"><article class=\"dsl-article\"><header class=\"dsl-headword\">").map_err(|error| *error)?;
+    renderer
+        .write(&escape_html(&display))
+        .map_err(|error| *error)?;
+    renderer
+        .write("</header><div class=\"dsl-body\">")
+        .map_err(|error| *error)?;
+    renderer.nodes(&nodes).map_err(|error| *error)?;
+    renderer.write("</div></article>").map_err(|error| *error)?;
     for diagnostic in &mut renderer.result.diagnostics {
         diagnostic.source_location = Some(SourceLocation {
             source: bundle.main.display_name.clone(),
@@ -81,6 +85,8 @@ pub(super) fn render_with_context(
     }
     Ok(renderer.result)
 }
+
+type RenderResult<T> = std::result::Result<T, Box<ConverterError>>;
 
 struct Renderer<'a> {
     bundle: &'a InputBundle,
@@ -91,18 +97,22 @@ struct Renderer<'a> {
 }
 
 impl Renderer<'_> {
-    fn write(&mut self, value: &str) -> Result<()> {
+    fn write(&mut self, value: &str) -> RenderResult<()> {
         if self.result.html.len().saturating_add(value.len()) > self.ctx.limits.max_html_bytes {
             return Err(ConverterError::new(
                 "article_too_large",
                 "HTML статьи превышает допустимый размер",
-            ));
+            )
+            .with_message("messages.article_too_large", crate::model::message_args([]))
+            .into());
         }
         self.result.html.push_str(value);
         Ok(())
     }
-    fn warning(&mut self, code: &str, message: String) {
+    fn warning(&mut self, code: &str, message: String, key: &str, args: serde_json::Value) {
         self.result.diagnostics.push(Diagnostic {
+            message_key: Some(key.into()),
+            message_args: serde_json::from_value(args).unwrap_or_default(),
             code: code.into(),
             message,
             source_location: None,
@@ -110,7 +120,7 @@ impl Renderer<'_> {
             occurrences: 1,
         });
     }
-    fn nodes(&mut self, nodes: &[Node]) -> Result<()> {
+    fn nodes(&mut self, nodes: &[Node]) -> RenderResult<()> {
         for node in nodes {
             self.ctx.control.check()?;
             match node {
@@ -160,6 +170,8 @@ impl Renderer<'_> {
                             self.warning(
                                 "unsafe_url",
                                 "Ссылка с неподдерживаемой схемой сохранена как текст".into(),
+                                "messages.unsafe_url",
+                                crate::model::message_args([]),
                             );
                             self.nodes(children)?;
                         }
@@ -177,6 +189,8 @@ impl Renderer<'_> {
                                 self.warning(
                                     "missing_abbreviation",
                                     format!("Не найдено сокращение: {}", text.trim()),
+                                    "messages.missing_abbreviation",
+                                    crate::model::message_args([("arg0", text.trim().to_string())]),
                                 );
                             }
                             self.write("<abbr class=\"dsl-abbreviation\">")?;
@@ -202,6 +216,8 @@ impl Renderer<'_> {
                             self.warning(
                                 "invalid_color",
                                 "Недопустимое значение цвета заменено стандартным".into(),
+                                "messages.invalid_color",
+                                crate::model::message_args([]),
                             );
                             self.write("<span class=\"dsl-color\">")?;
                         }
@@ -249,7 +265,12 @@ impl Renderer<'_> {
                                 return Err(ConverterError::new(
                                     "invalid_markup",
                                     "Неизвестный узел разметки",
-                                ));
+                                )
+                                .with_message(
+                                    "messages.invalid_markup_6",
+                                    crate::model::message_args([]),
+                                )
+                                .into());
                             }
                         };
                         self.write(open)?;
@@ -261,10 +282,15 @@ impl Renderer<'_> {
         }
         Ok(())
     }
-    fn resource(&mut self, raw: &str) -> Result<()> {
+    fn resource(&mut self, raw: &str) -> RenderResult<()> {
         let raw = raw.trim();
         let Some(resource) = resolve_resource(self.bundle, raw)? else {
-            self.warning("missing_resource", format!("Отсутствует ресурс: {raw}"));
+            self.warning(
+                "missing_resource",
+                format!("Отсутствует ресурс: {raw}"),
+                "messages.missing_resource",
+                crate::model::message_args([("raw", raw.to_string())]),
+            );
             return self.write(&format!(
                 "<span class=\"dsl-missing-resource\">[Отсутствует ресурс: {}]</span>",
                 escape_html(raw)
@@ -275,6 +301,11 @@ impl Renderer<'_> {
             self.warning(
                 "resource_name_fallback",
                 format!("Ресурс {raw} сопоставлен с {relative}"),
+                "messages.resource_name_fallback",
+                crate::model::message_args([
+                    ("raw", raw.to_string()),
+                    ("relative", relative.to_string()),
+                ]),
             );
         }
         if !self.result.resource_keys.contains(&resource.key) {
@@ -303,6 +334,8 @@ impl Renderer<'_> {
             self.warning(
                 "unsupported_resource_type",
                 format!("Тип ресурса не поддерживается для показа: {relative}"),
+                "messages.unsupported_resource_type",
+                crate::model::message_args([("relative", relative.to_string())]),
             );
             self.write(&format!(
                 "<span class=\"dsl-unsupported-resource\">[Ресурс: {}]</span>",

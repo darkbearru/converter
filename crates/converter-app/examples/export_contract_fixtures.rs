@@ -40,6 +40,7 @@ fn file(total: Option<u64>, state: TransferState) -> DownloadProgress {
         total_bytes: total,
         bytes_per_second: Some(2_097_152.0),
         restart_reason: None,
+        restart_message: None,
     }
 }
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {

@@ -9,7 +9,8 @@ pub fn validate(policy: &DownloadPolicy) -> Result<()> {
         return Err(DownloadError::new(
             "invalid_download_policy",
             "Некорректные ограничения загрузчика",
-        ));
+        )
+        .with_message("messages.invalid_download_policy", crate::message_args([])));
     }
     Ok(())
 }

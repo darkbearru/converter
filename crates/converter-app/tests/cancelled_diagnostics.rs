@@ -8,6 +8,8 @@ use std::{sync::atomic::Ordering, time::Duration};
 
 fn diagnostic(severity: DiagnosticSeverity) -> CoreEvent {
     CoreEvent::Diagnostic(Diagnostic {
+        message_key: None,
+        message_args: Default::default(),
         code: "missing_resource".into(),
         message: "Отсутствует ресурс: voice.wav".into(),
         source_location: None,

@@ -39,11 +39,16 @@ impl Row {
 
 fn corrupt() -> ConverterError {
     ConverterError::new("corrupt_spool", "Повреждён промежуточный файл сортировки")
+        .with_message("messages.corrupt_spool", crate::model::message_args([]))
 }
 fn budget_error() -> ConverterError {
     ConverterError::new(
         "sort_budget_too_small",
         "Бюджет сортировки слишком мал для ключей или выбранного числа потоков объединения",
+    )
+    .with_message(
+        "messages.sort_budget_too_small",
+        crate::model::message_args([]),
     )
 }
 
@@ -114,10 +119,10 @@ impl ExternalSort {
     pub fn push(&mut self, key: String, offset: u64, length: u64) -> Result<()> {
         self.ctx.control.check()?;
         if key.is_empty() || key.contains('\0') || key.len() > u16::MAX as usize {
-            return Err(ConverterError::new(
-                "invalid_key",
-                "Недопустимый поисковый ключ",
-            ));
+            return Err(
+                ConverterError::new("invalid_key", "Недопустимый поисковый ключ")
+                    .with_message("messages.invalid_key", crate::model::message_args([])),
+            );
         }
         let row = Row {
             order: mdx_sort_key(&key),
@@ -182,10 +187,10 @@ impl ExternalSort {
     pub fn finish(&mut self) -> Result<SortedRecords> {
         self.flush()?;
         if self.entries == 0 {
-            return Err(ConverterError::new(
-                "empty_dictionary",
-                "Нет поисковых ключей для записи",
-            ));
+            return Err(
+                ConverterError::new("empty_dictionary", "Нет поисковых ключей для записи")
+                    .with_message("messages.empty_dictionary", crate::model::message_args([])),
+            );
         }
         let fan_in = self.ctx.limits.merge_fan_in as u64;
         let mut count = self.runs;

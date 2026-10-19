@@ -67,10 +67,12 @@ pub(super) fn parse_raw(
         return Err(parser.error("У заголовка нет тела статьи", parser.head_line));
     }
     if parser.summary.source_articles == 0 {
-        return Err(ConverterError::new(
-            "empty_dictionary",
-            "Словарь не содержит статей",
-        ));
+        return Err(
+            ConverterError::new("empty_dictionary", "Словарь не содержит статей").with_message(
+                "messages.empty_dictionary_2",
+                crate::model::message_args([]),
+            ),
+        );
     }
     Ok(parser.summary)
 }
@@ -98,6 +100,12 @@ impl Parser<'_> {
             {
                 self.summary.warnings += 1;
                 self.sink.diagnostic(Diagnostic {
+                    message_key: Some("messages.unknown_directive".into()),
+                    message_args: serde_json::from_value(crate::model::message_args([(
+                        "text",
+                        text.to_string(),
+                    )]))
+                    .unwrap_or_default(),
                     code: "unknown_directive".into(),
                     message: format!("Неизвестная директива: {text}"),
                     severity: DiagnosticSeverity::Warning,
@@ -118,6 +126,10 @@ impl Parser<'_> {
                     "headword_variants_limit",
                     "Превышен лимит заголовков статьи",
                 )
+                .with_message(
+                    "messages.headword_variants_limit_2",
+                    crate::model::message_args([]),
+                )
                 .at(self.source, line.number));
             }
             if self.heads.is_empty() {
@@ -133,6 +145,10 @@ impl Parser<'_> {
                 return Err(ConverterError::new(
                     "article_too_large",
                     "Заголовки статьи превышают допустимый размер",
+                )
+                .with_message(
+                    "messages.article_too_large_4",
+                    crate::model::message_args([]),
                 )
                 .at(self.source, line.number));
             }
@@ -161,18 +177,20 @@ impl Parser<'_> {
         let content = &text[1..];
         if let Some(marker) = content.trim_start().strip_prefix('@') {
             let name = marker.trim();
-            let group = self
-                .group
-                .as_mut()
-                .ok_or_else(|| ConverterError::new("invalid_dsl", "Нет основной статьи"))?;
+            let group = self.group.as_mut().ok_or_else(|| {
+                ConverterError::new("invalid_dsl", "Нет основной статьи")
+                    .with_message("messages.invalid_dsl_2", crate::model::message_args([]))
+            })?;
             if name.is_empty() {
                 let child = group.child.take().ok_or_else(|| {
                     ConverterError::new("invalid_dsl", "Закрытие подстатьи без открытия")
+                        .with_message("messages.invalid_dsl_3", crate::model::message_args([]))
                         .at(self.source, line.number)
                 })?;
                 if child.body.trim().is_empty() {
                     return Err(
                         ConverterError::new("invalid_dsl", "Подстатья не имеет тела")
+                            .with_message("messages.invalid_dsl_4", crate::model::message_args([]))
                             .at(self.source, line.number),
                     );
                 }
@@ -182,6 +200,10 @@ impl Parser<'_> {
                     return Err(ConverterError::new(
                         "headword_variants_limit",
                         "Превышен лимит заголовков подстатьи",
+                    )
+                    .with_message(
+                        "messages.headword_variants_limit_3",
+                        crate::model::message_args([]),
                     )
                     .at(self.source, line.number));
                 }
@@ -210,9 +232,10 @@ impl Parser<'_> {
             Self::check_size(group, self.ctx, self.source, line.number)?;
         } else {
             Self::body(
-                self.group
-                    .as_mut()
-                    .ok_or_else(|| ConverterError::new("invalid_dsl", "Нет статьи"))?,
+                self.group.as_mut().ok_or_else(|| {
+                    ConverterError::new("invalid_dsl", "Нет статьи")
+                        .with_message("messages.invalid_dsl_5", crate::model::message_args([]))
+                })?,
                 content,
                 line.number,
                 self.ctx,
@@ -227,6 +250,10 @@ impl Parser<'_> {
             return Err(ConverterError::new(
                 "article_too_large",
                 "Тело статьи вместе с подстатьями превышает допустимый размер",
+            )
+            .with_message(
+                "messages.article_too_large_5",
+                crate::model::message_args([]),
             )
             .at(source, line));
         }

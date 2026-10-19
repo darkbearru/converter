@@ -163,6 +163,10 @@ impl parser::AstSink for RenderSink<'_> {
                     return Err(ConverterError::new(
                         "headword_variants_limit",
                         "Превышен лимит вариантов всех заголовков статьи",
+                    )
+                    .with_message(
+                        "messages.headword_variants_limit",
+                        crate::model::message_args([]),
                     ));
                 }
             }
@@ -179,6 +183,9 @@ impl parser::AstSink for RenderSink<'_> {
             && !self.missing_abbreviations_reported
         {
             self.sink.diagnostic(Diagnostic {
+                message_key: Some("messages.missing_abbreviations_file".into()),
+                message_args: serde_json::from_value(crate::model::message_args([]))
+                    .unwrap_or_default(),
                 code: "missing_abbreviations_file".into(),
                 message: "Файл сокращений не предоставлен: пометы сохранены без расшифровок".into(),
                 source_location: Some(SourceLocation {

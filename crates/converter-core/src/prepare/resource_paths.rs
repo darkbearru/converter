@@ -13,6 +13,10 @@ pub(super) fn logical_path(value: &str) -> Result<String> {
         return Err(ConverterError::new(
             "unsafe_archive_path",
             format!("Недопустимый относительный путь: {value}"),
+        )
+        .with_message(
+            "messages.unsafe_archive_path_2",
+            crate::model::message_args([("value", value.to_string())]),
         ));
     }
     Ok(value)
@@ -42,6 +46,13 @@ pub(crate) fn unique_resources(
                         "Разные ресурсы имеют совпадающие имена: {} / {}",
                         previous.key, resource.key
                     ),
+                )
+                .with_message(
+                    "messages.ambiguous_resource",
+                    crate::model::message_args([
+                        ("arg0", previous.key.to_string()),
+                        ("arg1", resource.key.to_string()),
+                    ]),
                 ));
             }
         } else {
@@ -83,6 +94,10 @@ pub fn resolve_resource(bundle: &InputBundle, logical_key: &str) -> Result<Optio
         return Err(ConverterError::new(
             "ambiguous_resource",
             format!("Неоднозначное имя ресурса: {logical_key}"),
+        )
+        .with_message(
+            "messages.ambiguous_resource_2",
+            crate::model::message_args([("logical_key", logical_key.to_string())]),
         ));
     }
     // Вызывающий renderer сравнивает возвращённый key с запросом и пишет предупреждение.

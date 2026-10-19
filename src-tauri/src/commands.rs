@@ -22,7 +22,12 @@ pub async fn check_for_updates(app: AppHandle) -> AppResult<crate::updates::Upda
 pub fn open_release_page(app: AppHandle) -> AppResult<()> {
     app.opener()
         .open_url(crate::updates::RELEASE_PAGE, None::<&str>)
-        .map_err(|_| AppError::new("open_failed", "Не удалось открыть страницу релиза"))
+        .map_err(|_| {
+            AppError::new("open_failed", "Не удалось открыть страницу релиза").with_message(
+                "messages.open_failed",
+                converter_core::model::message_args([]),
+            )
+        })
 }
 
 #[tauri::command]
@@ -32,14 +37,28 @@ pub fn read_clipboard_text(app: AppHandle) -> AppResult<String> {
             "clipboard_unavailable",
             "Не удалось прочитать текст из буфера обмена. Вставьте ссылку с клавиатуры.",
         )
+        .with_message(
+            "messages.clipboard_unavailable",
+            converter_core::model::message_args([]),
+        )
     })
 }
 
 #[tauri::command]
-pub fn open_support_page(app: AppHandle) -> AppResult<()> {
-    app.opener()
-        .open_url("https://pay.cloudtips.ru/p/7e782291", None::<&str>)
-        .map_err(|_| AppError::new("open_failed", "Не удалось открыть страницу поддержки"))
+pub fn open_support_page(app: AppHandle, state: State<'_, NativeState>) -> AppResult<()> {
+    let preferences = get_app_preferences(state)?;
+    let url = preferences.support_url.ok_or_else(|| {
+        AppError::new("support_unavailable", "Support link is not configured").with_message(
+            "messages.support_unavailable",
+            converter_core::model::message_args([]),
+        )
+    })?;
+    app.opener().open_url(url, None::<&str>).map_err(|_| {
+        AppError::new("open_failed", "Не удалось открыть страницу поддержки").with_message(
+            "messages.open_failed_2",
+            converter_core::model::message_args([]),
+        )
+    })
 }
 
 #[tauri::command]
@@ -48,6 +67,7 @@ pub async fn open_issue(
     state: State<'_, NativeState>,
     id: Option<String>,
 ) -> AppResult<()> {
+    let locale = get_app_preferences(state.clone())?.locale;
     let manager = state.manager.clone();
     let version = app.package_info().version.to_string();
     let url = tauri::async_runtime::spawn_blocking(move || {
@@ -58,7 +78,12 @@ pub async fn open_issue(
                     .list()?
                     .into_iter()
                     .find(|job| job.id == id)
-                    .ok_or_else(|| AppError::new("job_not_found", "Задание не найдено"))
+                    .ok_or_else(|| {
+                        AppError::new("job_not_found", "Задание не найдено").with_message(
+                            "messages.invalid_job_id",
+                            converter_core::model::message_args([]),
+                        )
+                    })
             })
             .transpose()?;
         // Ошибка чтения журнала не должна мешать сообщить о самой проблеме.
@@ -68,6 +93,7 @@ pub async fn open_issue(
             .map(|page| page.items)
             .unwrap_or_default();
         crate::issue_report::issue_url(
+            locale,
             &version,
             std::env::consts::OS,
             std::env::consts::ARCH,
@@ -81,11 +107,19 @@ pub async fn open_issue(
             "issue_report_failed",
             "Не удалось подготовить сообщение. Повторите попытку.",
         )
+        .with_message(
+            "messages.issue_report_failed",
+            converter_core::model::message_args([]),
+        )
     })??;
     app.opener().open_url(url, None::<&str>).map_err(|_| {
         AppError::new(
             "open_failed",
             "Не удалось открыть браузер. Повторите попытку.",
+        )
+        .with_message(
+            "messages.open_failed_3",
+            converter_core::model::message_args([]),
         )
     })
 }
@@ -96,7 +130,12 @@ fn snapshot(state: &NativeState, id: &str) -> AppResult<JobSnapshot> {
         .list()?
         .into_iter()
         .find(|j| j.id == id)
-        .ok_or_else(|| AppError::new("job_not_found", "Задание не найдено"))
+        .ok_or_else(|| {
+            AppError::new("job_not_found", "Задание не найдено").with_message(
+                "messages.invalid_job_id",
+                converter_core::model::message_args([]),
+            )
+        })
 }
 #[tauri::command]
 pub fn list_formats() -> Vec<FormatDescriptor> {
@@ -112,7 +151,7 @@ pub async fn pick_sources(
     state: State<'_, NativeState>,
     purpose: String,
 ) -> AppResult<Vec<ImportedSourceInfo>> {
-    let paths = picker::sources(app, purpose).await?;
+    let paths = picker::sources(app, purpose, get_app_preferences(state.clone())?.locale).await?;
     state
         .manager
         .import(PlatformSelection::LocalPaths(paths))
@@ -123,7 +162,7 @@ pub async fn pick_output(
     app: AppHandle,
     state: State<'_, NativeState>,
 ) -> AppResult<Option<OutputChoice>> {
-    picker::output(app)
+    picker::output(app, get_app_preferences(state.clone())?.locale)
         .await?
         .map(|path| state.storage.grant_output(&path))
         .transpose()
@@ -191,7 +230,7 @@ pub async fn export_result(
     state: State<'_, NativeState>,
     id: String,
 ) -> AppResult<JobSnapshot> {
-    if let Some(path) = picker::output(app).await? {
+    if let Some(path) = picker::output(app, get_app_preferences(state.clone())?.locale).await? {
         let OutputChoice::DesktopFolder(path) = state.storage.grant_output(&path)? else {
             unreachable!()
         };
@@ -209,7 +248,12 @@ pub fn open_result(app: AppHandle, state: State<'_, NativeState>, id: String) ->
         .checked_result_directory(&state.manager.result_directory(&id)?)?;
     app.opener()
         .open_path(path.to_string_lossy(), None::<&str>)
-        .map_err(|_| AppError::new("open_failed", "Не удалось открыть папку результата"))
+        .map_err(|_| {
+            AppError::new("open_failed", "Не удалось открыть папку результата").with_message(
+                "messages.open_failed_4",
+                converter_core::model::message_args([]),
+            )
+        })
 }
 #[tauri::command]
 pub fn get_result_path(state: State<'_, NativeState>, id: String) -> AppResult<String> {
@@ -227,7 +271,12 @@ pub fn get_app_preferences(
     Ok(state
         .preferences
         .lock()
-        .map_err(|_| AppError::new("preferences_busy", "Не удалось прочитать настройки языка"))?
+        .map_err(|_| {
+            AppError::new("preferences_busy", "Не удалось прочитать настройки языка").with_message(
+                "messages.preferences_busy",
+                converter_core::model::message_args([]),
+            )
+        })?
         .get())
 }
 #[tauri::command]
@@ -239,7 +288,12 @@ pub fn set_app_language(
     let saved = state
         .preferences
         .lock()
-        .map_err(|_| AppError::new("preferences_busy", "Не удалось прочитать настройки языка"))?
+        .map_err(|_| {
+            AppError::new("preferences_busy", "Не удалось прочитать настройки языка").with_message(
+                "messages.preferences_busy",
+                converter_core::model::message_args([]),
+            )
+        })?
         .set(language)?;
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     crate::app_menu::set_language(&app, saved.locale);

@@ -134,6 +134,10 @@ impl DownloadManager {
                                 "Сервер просит подождать больше пяти минут; продолжите позже"
                                     .into(),
                             );
+                            progress.value.restart_message = Some(crate::LocalizedMessage::new(
+                                progress.value.restart_reason.clone().unwrap_or_default(),
+                                "messages.restart_wait",
+                            ));
                             progress.emit(TransferState::Paused);
                             return Ok(TransferOutcome::Paused);
                         }
@@ -151,14 +155,19 @@ impl DownloadManager {
                     return Err(DownloadError::new(
                         &code,
                         &format!("Сервер отклонил загрузку (HTTP {})", opened.metadata.status),
+                    )
+                    .with_message(
+                        "messages.code",
+                        crate::message_args([("arg0", opened.metadata.status.to_string())]),
                     ));
                 }
-                ResponseAction::Restart { reason } => {
+                ResponseAction::Restart { reason, reason_key } => {
                     if restarts >= 2 {
                         return Err(DownloadError::new(
                             "unsafe_resume",
                             "Сервер не предоставил безопасный ответ",
-                        ));
+                        )
+                        .with_message("messages.unsafe_resume", crate::message_args([])));
                     }
                     // Старые байты сохраняются до принятия новых headers; запрос без Range.
                     let fresh = tokio::select! { biased; _ = control.stopped() => return Ok(stopped(control, progress).expect("control stopped")), response = http::open(request, None, &self.policy) => response? };
@@ -166,8 +175,11 @@ impl DownloadManager {
                         return Err(DownloadError::new(
                             "unsafe_resume",
                             "Сервер не предоставил полный файл",
-                        ));
+                        )
+                        .with_message("messages.unsafe_resume_2", crate::message_args([])));
                     }
+                    progress.value.restart_message =
+                        Some(crate::LocalizedMessage::new(reason.clone(), reason_key));
                     progress.value.restart_reason = Some(reason);
                     restarts += 1;
                     self.accept_fresh(id, &fresh.metadata, progress).await?;
@@ -193,6 +205,10 @@ impl DownloadManager {
                     if point.confirmed_bytes > 0 {
                         progress.value.restart_reason =
                             Some("Сервер вернул полный файл; загрузка начнётся заново".into());
+                        progress.value.restart_message = Some(crate::LocalizedMessage::new(
+                            progress.value.restart_reason.clone().unwrap_or_default(),
+                            "messages.restart_full",
+                        ));
                     }
                     self.accept_fresh(id, &opened.metadata, progress).await?;
                 }
@@ -333,7 +349,8 @@ impl DownloadManager {
                     return Err(DownloadError::new(
                         "download_size_limit",
                         "Размер источника превышает допустимый",
-                    ));
+                    )
+                    .with_message("messages.download_size_limit", crate::message_args([])));
                 }
                 file.write_all(piece).await?;
                 chunk_hash.update(piece);
@@ -409,10 +426,10 @@ impl DownloadManager {
         progress.emit(TransferState::Verifying);
         let path = self.cache.part_path(&request.source_id)?;
         if !tokio::fs::symlink_metadata(&path).await?.is_file() {
-            return Err(DownloadError::new(
-                "invalid_cache_file",
-                "В кэше ожидается обычный файл",
-            ));
+            return Err(
+                DownloadError::new("invalid_cache_file", "В кэше ожидается обычный файл")
+                    .with_message("messages.invalid_cache_file", crate::message_args([])),
+            );
         }
         let mut manifest = self.cache.required(&request.source_id)?;
         let mut file = File::open(&path).await?;
@@ -432,6 +449,10 @@ impl DownloadManager {
                     return Err(DownloadError::new(
                         "checkpoint_hash_mismatch",
                         "Сохранённая часть повреждена",
+                    )
+                    .with_message(
+                        "messages.checkpoint_hash_mismatch_2",
+                        crate::message_args([]),
                     ));
                 }
                 hash.update(&buffer[..n]);
@@ -444,6 +465,10 @@ impl DownloadManager {
                 return Err(DownloadError::new(
                     "checkpoint_hash_mismatch",
                     "Сохранённая часть повреждена",
+                )
+                .with_message(
+                    "messages.checkpoint_hash_mismatch_2",
+                    crate::message_args([]),
                 ));
             }
             progress.emit(TransferState::Verifying);
@@ -452,7 +477,8 @@ impl DownloadManager {
             return Err(DownloadError::new(
                 "download_length_mismatch",
                 "Размер локального файла изменился",
-            ));
+            )
+            .with_message("messages.download_length_mismatch", crate::message_args([])));
         }
         drop(file);
         if let Some(outcome) = stopped(control, progress) {
@@ -465,7 +491,8 @@ impl DownloadManager {
             return Err(DownloadError::new(
                 "download_length_mismatch",
                 "Размер локального файла изменился",
-            ));
+            )
+            .with_message("messages.download_length_mismatch", crate::message_args([])));
         }
         if request
             .expected_sha256
@@ -475,7 +502,8 @@ impl DownloadManager {
             return Err(DownloadError::new(
                 "download_digest_mismatch",
                 "SHA-256 не совпадает с указанным эталоном",
-            ));
+            )
+            .with_message("messages.download_digest_mismatch", crate::message_args([])));
         }
         if manifest
             .completed
@@ -485,7 +513,8 @@ impl DownloadManager {
             return Err(DownloadError::new(
                 "completed_hash_mismatch",
                 "Готовая локальная копия повреждена",
-            ));
+            )
+            .with_message("messages.completed_hash_mismatch", crate::message_args([])));
         }
         let completed = CompletedDownload {
             source_id: request.source_id.clone(),

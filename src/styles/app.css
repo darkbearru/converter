@@ -990,3 +990,16 @@ h3 {
     animation: none;
   }
 }
+
+.about-language {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 16px;
+}
+.about-language .p-select {
+  width: auto;
+  min-width: 160px;
+  flex: 1;
+}

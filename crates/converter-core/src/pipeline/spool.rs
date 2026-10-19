@@ -54,22 +54,24 @@ impl EntrySink for EntrySpool {
             return Err(ConverterError::new(
                 "invalid_entry",
                 "Читатель формата вернул статью без ключей",
-            ));
+            )
+            .with_message("messages.invalid_entry", crate::model::message_args([])));
         }
         if entry.html.len() > self.ctx.limits.max_html_bytes {
             return Err(ConverterError::new(
                 "article_too_large",
                 "HTML статьи превышает допустимый размер",
-            ));
+            )
+            .with_message("messages.article_too_large", crate::model::message_args([])));
         }
         for key in entry.headwords {
             self.links.key(&key)?;
             self.sorter
                 .push(key, self.offset, entry.html.len() as u64)?;
-            self.keys = self
-                .keys
-                .checked_add(1)
-                .ok_or_else(|| ConverterError::new("size_overflow", "Переполнение числа ключей"))?;
+            self.keys = self.keys.checked_add(1).ok_or_else(|| {
+                ConverterError::new("size_overflow", "Переполнение числа ключей")
+                    .with_message("messages.size_overflow", crate::model::message_args([]))
+            })?;
         }
         self.links.references(&entry.html, entry.source_line)?;
         self.bodies.write_all(entry.html.as_bytes())?;
@@ -78,6 +80,7 @@ impl EntrySink for EntrySpool {
             .checked_add(entry.html.len() as u64)
             .ok_or_else(|| {
                 ConverterError::new("size_overflow", "Переполнение промежуточного файла")
+                    .with_message("messages.size_overflow_2", crate::model::message_args([]))
             })?;
         self.articles += 1;
         Ok(())

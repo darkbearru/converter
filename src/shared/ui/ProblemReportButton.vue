@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
+
 import { ref } from 'vue';
 import Button from 'primevue/button';
 import Icon from './Icon.vue';
 import type { NativeBridge } from '../contracts';
-import { errorMessage } from '../format';
 
 const props = defineProps<{
   bridge: NativeBridge;
@@ -11,7 +13,7 @@ const props = defineProps<{
   disabled?: boolean;
   outlined?: boolean;
 }>();
-const emit = defineEmits<{ error: [message: string] }>();
+const emit = defineEmits<{ error: [message: unknown] }>();
 const opening = ref(false);
 async function report() {
   if (opening.value || props.disabled) return;
@@ -20,7 +22,7 @@ async function report() {
   try {
     await props.bridge.openIssue(props.jobId);
   } catch (error) {
-    emit('error', errorMessage(error));
+    emit('error', error);
   } finally {
     opening.value = false;
   }
@@ -33,8 +35,8 @@ async function report() {
     :text="!outlined"
     :outlined="outlined"
     severity="secondary"
-    aria-label="Сообщить о проблеме"
-    title="Сообщить о проблеме"
+    :aria-label="t('app.report_issue')"
+    :title="t('app.report_issue')"
     :disabled="disabled || opening"
     :aria-busy="opening"
     @click="report"

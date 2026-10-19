@@ -6,12 +6,24 @@ use serde::{Deserialize, Serialize};
 use std::{fmt, path::PathBuf};
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AppError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message_key: Option<Box<str>>,
+    #[serde(default, skip_serializing_if = "message_args_empty")]
+    pub message_args: Box<std::collections::BTreeMap<String, serde_json::Value>>,
     pub code: String,
     pub message: String,
 }
 impl AppError {
+    pub fn with_message(mut self, key: &str, args: serde_json::Value) -> Self {
+        self.message_key = Some(key.into());
+        self.message_args = serde_json::from_value(args).unwrap_or_default();
+        self
+    }
+
     pub fn new(code: &str, message: impl Into<String>) -> Self {
         Self {
+            message_key: None,
+            message_args: Default::default(),
             code: code.into(),
             message: message.into(),
         }
@@ -25,22 +37,38 @@ impl fmt::Display for AppError {
 impl std::error::Error for AppError {}
 impl From<std::io::Error> for AppError {
     fn from(e: std::io::Error) -> Self {
-        Self::new("storage_error", format!("Ошибка хранилища: {:?}", e.kind()))
+        Self::new("storage_error", format!("Ошибка хранилища: {:?}", e.kind())).with_message(
+            "messages.download_io",
+            converter_core::model::message_args([("arg0", format!("{:?}", e.kind()))]),
+        )
     }
 }
 impl From<converter_core::model::ConverterError> for AppError {
     fn from(e: converter_core::model::ConverterError) -> Self {
-        Self::new(&e.code, e.message)
+        Self {
+            code: e.code,
+            message: e.message,
+            message_key: e.message_key,
+            message_args: e.message_args,
+        }
     }
 }
 impl From<converter_download::DownloadError> for AppError {
     fn from(e: converter_download::DownloadError) -> Self {
-        Self::new(&e.code, e.message)
+        Self {
+            code: e.code,
+            message: e.message,
+            message_key: e.message_key,
+            message_args: e.message_args,
+        }
     }
 }
 impl From<serde_json::Error> for AppError {
     fn from(_: serde_json::Error) -> Self {
-        Self::new("invalid_store", "Не удалось прочитать состояние приложения")
+        Self::new("invalid_store", "Не удалось прочитать состояние приложения").with_message(
+            "messages.invalid_store",
+            converter_core::model::message_args([]),
+        )
     }
 }
 pub type AppResult<T> = Result<T, AppError>;
@@ -243,4 +271,8 @@ pub struct DiagnosticPage {
     pub items: Vec<Diagnostic>,
     pub next_offset: Option<u64>,
     pub total: u64,
+}
+
+fn message_args_empty(args: &std::collections::BTreeMap<String, serde_json::Value>) -> bool {
+    args.is_empty()
 }

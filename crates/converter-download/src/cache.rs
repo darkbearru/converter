@@ -21,10 +21,10 @@ fn regular(path: &Path) -> Result<()> {
     if let Ok(meta) = fs::symlink_metadata(path)
         && !meta.is_file()
     {
-        return Err(DownloadError::new(
-            "invalid_cache_file",
-            "В кэше ожидается обычный файл",
-        ));
+        return Err(
+            DownloadError::new("invalid_cache_file", "В кэше ожидается обычный файл")
+                .with_message("messages.invalid_cache_file", crate::message_args([])),
+        );
     }
     Ok(())
 }
@@ -48,7 +48,8 @@ impl DownloadCache {
             return Err(DownloadError::new(
                 "invalid_source_id",
                 "Некорректный идентификатор источника",
-            ));
+            )
+            .with_message("messages.invalid_source_id", crate::message_args([])));
         }
         Ok(self.root.join(format!("{id}.{suffix}")))
     }
@@ -60,7 +61,8 @@ impl DownloadCache {
             return Err(DownloadError::new(
                 "invalid_manifest_slot",
                 "Некорректное поколение манифеста",
-            ));
+            )
+            .with_message("messages.invalid_manifest_slot", crate::message_args([])));
         }
         self.path(id, &format!("manifest-{slot}.json"))
     }
@@ -75,6 +77,7 @@ impl DownloadCache {
             .open(path)?;
         file.try_lock().map_err(|_| {
             DownloadError::new("source_busy", "Источник уже занят другой передачей")
+                .with_message("messages.source_busy", crate::message_args([]))
         })?;
         Ok(SourceGuard { _file: file })
     }
@@ -85,10 +88,10 @@ impl DownloadCache {
             let path = self.manifest_path(id, slot)?;
             regular(&path)?;
             if fs::metadata(&path).is_ok_and(|meta| meta.len() > 16 * 1024 * 1024) {
-                return Err(DownloadError::new(
-                    "manifest_limit",
-                    "Слишком большой манифест",
-                ));
+                return Err(
+                    DownloadError::new("manifest_limit", "Слишком большой манифест")
+                        .with_message("messages.manifest_limit", crate::message_args([])),
+                );
             }
             let bytes = match fs::read(&path) {
                 Ok(b) => b,
@@ -96,10 +99,10 @@ impl DownloadCache {
                 Err(e) => return Err(e.into()),
             };
             if bytes.len() > 16 * 1024 * 1024 {
-                return Err(DownloadError::new(
-                    "manifest_limit",
-                    "Слишком большой манифест",
-                ));
+                return Err(
+                    DownloadError::new("manifest_limit", "Слишком большой манифест")
+                        .with_message("messages.manifest_limit", crate::message_args([])),
+                );
             }
             let manifest = match serde_json::from_slice::<DownloadManifest>(&bytes) {
                 Ok(m) => m,
@@ -112,13 +115,18 @@ impl DownloadCache {
                 return Err(DownloadError::new(
                     "manifest_version_mismatch",
                     "Неподдерживаемая версия манифеста",
+                )
+                .with_message(
+                    "messages.manifest_version_mismatch",
+                    crate::message_args([]),
                 ));
             }
             if manifest.request.source_id != id {
                 return Err(DownloadError::new(
                     "manifest_source_mismatch",
                     "Манифест относится к другому источнику",
-                ));
+                )
+                .with_message("messages.manifest_source_mismatch", crate::message_args([])));
             }
             if latest
                 .as_ref()
@@ -131,7 +139,8 @@ impl DownloadCache {
             return Err(DownloadError::new(
                 "invalid_manifest",
                 "Не удалось прочитать контрольную точку",
-            ));
+            )
+            .with_message("messages.invalid_manifest", crate::message_args([])));
         }
         Ok(latest)
     }
@@ -145,20 +154,23 @@ impl DownloadCache {
             return Err(DownloadError::new(
                 "invalid_download_url",
                 "Нужна прямая ссылка HTTP или HTTPS без встроенного пароля",
-            ));
+            )
+            .with_message("messages.invalid_download_url", crate::message_args([])));
         }
         if req.expected_sha256.as_ref().is_some_and(|v| !valid_hash(v)) {
             return Err(DownloadError::new(
                 "invalid_sha256",
                 "SHA-256 должен содержать 64 шестнадцатеричных знака",
-            ));
+            )
+            .with_message("messages.invalid_sha256", crate::message_args([])));
         }
         if let Some(old) = self.load(&req.source_id)? {
             if old.request.url != req.url || old.request.expected_sha256 != req.expected_sha256 {
                 return Err(DownloadError::new(
                     "source_mismatch",
                     "Новая ссылка требует нового идентификатора источника",
-                ));
+                )
+                .with_message("messages.source_mismatch", crate::message_args([])));
             }
             return Ok(());
         }
@@ -189,8 +201,10 @@ impl DownloadCache {
         Ok(self.required(id)?.request)
     }
     pub(crate) fn required(&self, id: &str) -> Result<DownloadManifest> {
-        self.load(id)?
-            .ok_or_else(|| DownloadError::new("source_not_found", "Источник не найден в кэше"))
+        self.load(id)?.ok_or_else(|| {
+            DownloadError::new("source_not_found", "Источник не найден в кэше")
+                .with_message("messages.source_not_found", crate::message_args([]))
+        })
     }
     pub(crate) fn save(&self, manifest: &DownloadManifest) -> Result<()> {
         let path =
@@ -203,6 +217,7 @@ impl DownloadCache {
                     "manifest_write_failed",
                     "Не удалось сохранить контрольную точку",
                 )
+                .with_message("messages.manifest_write_failed", crate::message_args([]))
             })
     }
     pub fn commit_checkpoint(&self, id: &str, checkpoint: Checkpoint) -> Result<()> {
@@ -232,7 +247,8 @@ impl DownloadCache {
             return Err(DownloadError::new(
                 "invalid_checkpoint",
                 "Контрольная точка опережает сохранённые данные",
-            ));
+            )
+            .with_message("messages.invalid_checkpoint", crate::message_args([])));
         }
         hook(CommitPoint::BeforeSync)?;
         part.sync_data()?;
@@ -257,20 +273,23 @@ impl DownloadCache {
                 return Err(DownloadError::new(
                     "checkpoint_hash_mismatch",
                     "Сохранённая часть повреждена; требуется новая загрузка",
-                ));
+                )
+                .with_message("messages.checkpoint_hash_mismatch", crate::message_args([])));
             }
             total = total.checked_add(read).ok_or_else(|| {
                 DownloadError::new(
                     "invalid_checkpoint",
                     "Переполнение размера контрольной точки",
                 )
+                .with_message("messages.invalid_checkpoint_2", crate::message_args([]))
             })?;
         }
         if total != manifest.checkpoint.confirmed_bytes {
             return Err(DownloadError::new(
                 "invalid_checkpoint",
                 "Некорректный размер контрольной точки",
-            ));
+            )
+            .with_message("messages.invalid_checkpoint_3", crate::message_args([])));
         }
         part.set_len(total)?;
         part.sync_data()?;
@@ -297,7 +316,8 @@ impl DownloadCache {
             return Err(DownloadError::new(
                 "completed_hash_mismatch",
                 "Готовая локальная копия повреждена",
-            ));
+            )
+            .with_message("messages.completed_hash_mismatch", crate::message_args([])));
         }
         Ok(Some(CompletedDownload { path, ..done }))
     }

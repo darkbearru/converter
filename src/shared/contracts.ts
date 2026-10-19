@@ -1,5 +1,10 @@
 import type { AppPreferences, LanguagePreference } from './i18n/preferences';
-export interface AppError {
+export interface LocalizedMessage {
+  message: string;
+  message_key?: string | null;
+  message_args?: Record<string, string | number>;
+}
+export interface AppError extends LocalizedMessage {
   code: string;
   message: string;
 }
@@ -76,6 +81,7 @@ export interface DownloadFileProgress {
   total_bytes: number | null;
   bytes_per_second: number | null;
   restart_reason: string | null;
+  restart_message?: LocalizedMessage | null;
 }
 export interface DownloadJobProgress {
   kind: 'local' | 'remote';
@@ -163,7 +169,7 @@ export interface FormatDescriptor {
   extensions: string[];
   supports_resources: boolean;
 }
-export interface Diagnostic {
+export interface Diagnostic extends LocalizedMessage {
   code: string;
   message: string;
   source_location: { source: string; line: number } | null;

@@ -23,11 +23,19 @@ fn invalid() -> ConverterError {
         "invalid_headword",
         "Непарная скобка или незавершённое экранирование в заголовке",
     )
+    .with_message(
+        "messages.invalid_headword_2",
+        crate::model::message_args([]),
+    )
 }
 fn variants_limit() -> ConverterError {
     ConverterError::new(
         "headword_variants_limit",
         "Превышен лимит вариантов заголовка",
+    )
+    .with_message(
+        "messages.headword_variants_limit_4",
+        crate::model::message_args([]),
     )
 }
 
@@ -40,6 +48,10 @@ fn parse_parts(
         return Err(ConverterError::new(
             "invalid_headword",
             "Слишком глубокая вложенность заголовка",
+        )
+        .with_message(
+            "messages.invalid_headword_3",
+            crate::model::message_args([]),
         ));
     }
     let mut parts = Vec::new();
@@ -130,6 +142,10 @@ pub fn expand_headwords(raw: &str, limit: usize) -> Result<Vec<String>> {
         return Err(ConverterError::new(
             "invalid_headword",
             "Заголовок не содержит поискового ключа",
+        )
+        .with_message(
+            "messages.invalid_headword_4",
+            crate::model::message_args([]),
         ));
     }
     Ok(values)

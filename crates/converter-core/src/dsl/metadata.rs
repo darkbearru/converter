@@ -17,6 +17,10 @@ pub(super) fn directive(text: &str, meta: &mut DictionaryMetadata) -> Result<boo
         return Err(ConverterError::new(
             "invalid_dsl",
             format!("Директива {name} должна содержать значение в кавычках"),
+        )
+        .with_message(
+            "messages.invalid_dsl",
+            crate::model::message_args([("name", name.to_string())]),
         ));
     }
     *target = value[1..value.len() - 1]

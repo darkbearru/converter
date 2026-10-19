@@ -50,8 +50,11 @@ export function createHarness(scenario: string | null) {
     if (['downloading', 'paused', 'unknown'].includes(scenario)) job.prepare_only = true;
     jobs.set(currentId, job);
   }
-  if (scenario === 'preview') {
-    for (const [index, name] of ['Англо-русский.dsl', 'Толковый.dsl'].entries()) {
+  if (scenario === 'preview' || scenario === 'localized-preview') {
+    for (const [index, name] of (scenario === 'localized-preview'
+      ? ['English dictionary.dsl', 'Definitions.dsl']
+      : ['Англо-русский.dsl', 'Толковый.dsl']
+    ).entries()) {
       const job = copy(samples.succeeded);
       job.id = `preview-${index}`;
       job.display_name = name;
@@ -326,6 +329,9 @@ export function createHarness(scenario: string | null) {
       return {
         items: Array.from({ length: Math.max(0, end - offset) }, (_, index) => ({
           code: 'test_warning',
+          ...(scenario === 'localized-preview'
+            ? { message_key: 'messages.missing_reference', message_args: { target: 'sample' } }
+            : {}),
           severity: 'warning',
           occurrences: scenario === 'grouped-warnings' && offset + index === 0 ? 1234 : 1,
           message:
@@ -338,7 +344,10 @@ export function createHarness(scenario: string | null) {
                 : scenario === 'warning'
                   ? 'Не найдена статья для ссылки: 儿'
                   : `Предупреждение ${offset + index + 1}${offset + index === 0 ? ': <img src=x onerror=alert(1)>' : ''}`,
-          source_location: { source: 'Словарь.dsl', line: offset + index + 10 },
+          source_location: {
+            source: scenario === 'localized-preview' ? 'dictionary.dsl' : 'Словарь.dsl',
+            line: offset + index + 10,
+          },
         })),
         next_offset: end < total ? end : null,
         total,

@@ -35,7 +35,8 @@ pub fn prepare_source_with_registry(
         return Err(ConverterError::new(
             "invalid_limits",
             "Буфер копирования не может быть пустым",
-        ));
+        )
+        .with_message("messages.invalid_limits", crate::model::message_args([])));
     }
     std::fs::create_dir_all(&ctx.scratch_dir)?;
     let working = tempfile::Builder::new()
@@ -53,7 +54,8 @@ pub fn prepare_source_with_registry(
                 return Err(ConverterError::new(
                     "invalid_source",
                     "Основной источник должен быть файлом DSL или ZIP",
-                ));
+                )
+                .with_message("messages.invalid_source", crate::model::message_args([])));
             }
             gather_folder(source, &mut files, ctx)?;
         } else if is_zip(&source.path)? {
@@ -73,10 +75,10 @@ pub fn prepare_source_with_registry(
         }
     }
     if files.len() > ctx.limits.max_archive_entries {
-        return Err(ConverterError::new(
-            "archive_limit",
-            "Слишком много файлов источников",
-        ));
+        return Err(
+            ConverterError::new("archive_limit", "Слишком много файлов источников")
+                .with_message("messages.archive_limit", crate::model::message_args([])),
+        );
     }
     let mut size = 0u64;
     for file in &files {
@@ -85,12 +87,14 @@ pub fn prepare_source_with_registry(
             .checked_add(std::fs::metadata(&file.path)?.len())
             .ok_or_else(|| {
                 ConverterError::new("archive_limit", "Переполнение размера источников")
+                    .with_message("messages.archive_limit_2", crate::model::message_args([]))
             })?;
         if size > ctx.limits.max_unpacked_bytes {
             return Err(ConverterError::new(
                 "archive_limit",
                 "Источники превышают допустимый размер",
-            ));
+            )
+            .with_message("messages.archive_limit_3", crate::model::message_args([])));
         }
     }
     let descriptors = registry.descriptors();
@@ -128,15 +132,21 @@ pub fn prepare_source_with_registry(
         return Err(ConverterError::new(
             "dictionary_not_found",
             "В источнике не найден поддерживаемый словарь",
+        )
+        .with_message(
+            "messages.dictionary_not_found",
+            crate::model::message_args([]),
         ));
     }
     let mut bundles = Vec::new();
     for index in &mains {
         let source = &files[*index];
-        let reader =
-            registry.get(formats[*index].as_deref().ok_or_else(|| {
-                ConverterError::new("unsupported_format", "Не определён формат")
-            })?)?;
+        let reader = registry.get(formats[*index].as_deref().ok_or_else(|| {
+            ConverterError::new("unsupported_format", "Не определён формат").with_message(
+                "messages.unsupported_format_3",
+                crate::model::message_args([]),
+            )
+        })?)?;
         let directory = source
             .name
             .rsplit_once('/')
@@ -159,6 +169,10 @@ pub fn prepare_source_with_registry(
             return Err(ConverterError::new(
                 "ambiguous_abbreviations",
                 "Найдено несколько словарей сокращений с одним именем",
+            )
+            .with_message(
+                "messages.ambiguous_abbreviations",
+                crate::model::message_args([]),
             ));
         }
         let resources = files
@@ -201,6 +215,10 @@ fn unsafe_link() -> ConverterError {
         "unsafe_archive_path",
         "Символические ссылки в источниках ресурсов не поддерживаются",
     )
+    .with_message(
+        "messages.unsafe_archive_path",
+        crate::model::message_args([]),
+    )
 }
 
 fn gather_folder(
@@ -228,7 +246,8 @@ fn gather_folder(
                 return Err(ConverterError::new(
                     "invalid_source",
                     "Ресурс не является обычным файлом",
-                ));
+                )
+                .with_message("messages.invalid_source_2", crate::model::message_args([])));
             }
             let relative = path.strip_prefix(&root).map_err(|_| unsafe_link())?;
             let name = relative_name(relative)?;
@@ -239,10 +258,10 @@ fn gather_folder(
                 primary: false,
             });
             if files.len() > ctx.limits.max_archive_entries {
-                return Err(ConverterError::new(
-                    "archive_limit",
-                    "Слишком много файлов ресурсов",
-                ));
+                return Err(
+                    ConverterError::new("archive_limit", "Слишком много файлов ресурсов")
+                        .with_message("messages.archive_limit_4", crate::model::message_args([])),
+                );
             }
         }
     }
@@ -252,6 +271,10 @@ fn gather_folder(
 fn relative_name(path: &Path) -> Result<String> {
     let name = path.to_str().ok_or_else(|| {
         ConverterError::new("invalid_resource_name", "Имя ресурса не является Unicode")
+            .with_message(
+                "messages.invalid_resource_name",
+                crate::model::message_args([]),
+            )
     })?;
     logical_path(name)
 }

@@ -53,5 +53,5 @@ pub fn augment(
         out.write_all(&serialized[1..serialized.len()-1])?; out.write_all(b",")?;
         let mut buffer = [0u8; 65536]; loop { ctx.control.check().map_err(io::Error::other)?; let n = input.read(&mut buffer)?; if n == 0 { break; } out.write_all(&buffer[..n])?; }
         Ok(())
-    }).map_err(|_| crate::AppError::new("report_write_failed", "Не удалось сохранить происхождение источников в отчёте"))
+    }).map_err(|_| crate::AppError::new("report_write_failed", "Не удалось сохранить происхождение источников в отчёте").with_message("messages.report_write_failed", converter_core::model::message_args([])))
 }

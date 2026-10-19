@@ -9,7 +9,8 @@ fn attribute(value: &str) -> Result<String> {
         return Err(ConverterError::new(
             "invalid_metadata",
             "Метаданные содержат недопустимый символ XML",
-        ));
+        )
+        .with_message("messages.invalid_metadata", crate::model::message_args([])));
     }
     Ok(value
         .replace('&', "&amp;")
@@ -34,8 +35,10 @@ pub(super) fn write_header(
         "<Library_Data GeneratedByEngineVersion=\"2.0\" RequiredEngineVersion=\"2.0\" Encrypted=\"0\" KeyCaseSensitive=\"No\" StripKey=\"No\"/>\r\n".to_owned()
     };
     let bytes: Vec<u8> = xml.encode_utf16().flat_map(u16::to_le_bytes).collect();
-    let length = u32::try_from(bytes.len())
-        .map_err(|_| ConverterError::new("size_overflow", "Слишком большой заголовок словаря"))?;
+    let length = u32::try_from(bytes.len()).map_err(|_| {
+        ConverterError::new("size_overflow", "Слишком большой заголовок словаря")
+            .with_message("messages.size_overflow_3", crate::model::message_args([]))
+    })?;
     out.write_all(&length.to_be_bytes())?;
     out.write_all(&bytes)?;
     out.write_all(&adler2::adler32_slice(&bytes).to_le_bytes())?;

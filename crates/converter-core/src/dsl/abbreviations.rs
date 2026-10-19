@@ -41,6 +41,10 @@ impl AbbreviationCache {
             return Err(ConverterError::new(
                 "article_too_large",
                 "Сокращения статьи превышают допустимый размер HTML",
+            )
+            .with_message(
+                "messages.article_too_large_2",
+                crate::model::message_args([]),
             ));
         }
         let limit = ctx.limits.sort_buffer_bytes.min(16 * 1024 * 1024);
@@ -133,6 +137,10 @@ impl AstSink for AbbreviationSink<'_> {
                         return Err(ConverterError::new(
                             "article_too_large",
                             "Сокращения статьи превышают допустимый размер HTML",
+                        )
+                        .with_message(
+                            "messages.article_too_large_2",
+                            crate::model::message_args([]),
                         ));
                     }
                     self.values.insert(key, value);

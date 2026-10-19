@@ -54,7 +54,12 @@ impl DesktopStorage {
             serde_json::to_writer(&mut *file, &next)?;
             file.sync_all()
         })
-        .map_err(|_| AppError::new("storage_error", "Не удалось сохранить выбранную папку"))?;
+        .map_err(|_| {
+            AppError::new("storage_error", "Не удалось сохранить выбранную папку").with_message(
+                "messages.storage_error",
+                converter_core::model::message_args([]),
+            )
+        })?;
         *grants = next;
         Ok(OutputChoice::DesktopFolder(path))
     }
@@ -123,15 +128,26 @@ fn unavailable() -> AppError {
         "output_unavailable",
         "Папка результата недоступна. Выберите её заново.",
     )
+    .with_message(
+        "messages.output_unavailable",
+        converter_core::model::message_args([]),
+    )
 }
 fn invalid_result() -> AppError {
     AppError::new(
         "invalid_result",
         "Файлы результата изменились или недоступны",
     )
+    .with_message(
+        "messages.invalid_result",
+        converter_core::model::message_args([]),
+    )
 }
 fn join_error(_: tokio::task::JoinError) -> AppError {
-    AppError::new("storage_error", "Операция с файлами прервана")
+    AppError::new("storage_error", "Операция с файлами прервана").with_message(
+        "messages.storage_error_2",
+        converter_core::model::message_args([]),
+    )
 }
 fn copy_and_publish(
     files: &[PathBuf; 3],
@@ -212,10 +228,12 @@ impl PlatformStorage for DesktopStorage {
         ctx: &RunContext,
     ) -> AppResult<Vec<PreparedFile>> {
         let PlatformSelection::LocalPaths(paths) = selection else {
-            return Err(AppError::new(
-                "unsupported_selection",
-                "Выберите локальные файлы",
-            ));
+            return Err(
+                AppError::new("unsupported_selection", "Выберите локальные файлы").with_message(
+                    "messages.unsupported_selection",
+                    converter_core::model::message_args([]),
+                ),
+            );
         };
         let ctx = ctx.clone();
         tokio::task::spawn_blocking(move || {
@@ -229,12 +247,20 @@ impl PlatformStorage for DesktopStorage {
                         return Err(AppError::new(
                             "invalid_source",
                             "Нужен обычный файл или папка",
+                        )
+                        .with_message(
+                            "messages.invalid_source_3",
+                            converter_core::model::message_args([]),
                         ));
                     }
                     let display_name = path
                         .file_name()
                         .ok_or_else(|| {
                             AppError::new("invalid_source", "Выберите файл или папку ресурсов")
+                                .with_message(
+                                    "messages.invalid_source_4",
+                                    converter_core::model::message_args([]),
+                                )
                         })?
                         .to_string_lossy()
                         .into_owned();
@@ -256,7 +282,12 @@ impl PlatformStorage for DesktopStorage {
                 .bytes()
                 .all(|b| b.is_ascii_alphanumeric() || b == b'-')
         {
-            return Err(AppError::new("invalid_id", "Некорректное задание"));
+            return Err(
+                AppError::new("invalid_id", "Некорректное задание").with_message(
+                    "messages.invalid_id",
+                    converter_core::model::message_args([]),
+                ),
+            );
         }
         Ok(self
             .destination(output)?
@@ -311,10 +342,12 @@ impl PlatformStorage for DesktopStorage {
         ctx: &RunContext,
     ) -> AppResult<ExportSnapshot> {
         let ExportChoice::Folder(path) = choice else {
-            return Err(AppError::new(
-                "unsupported_destination",
-                "Выберите папку для копии",
-            ));
+            return Err(
+                AppError::new("unsupported_destination", "Выберите папку для копии").with_message(
+                    "messages.unsupported_destination",
+                    converter_core::model::message_args([]),
+                ),
+            );
         };
         let destination = self.destination(&OutputChoice::DesktopFolder(path))?;
         let files = self.check_result(&result.directory)?;

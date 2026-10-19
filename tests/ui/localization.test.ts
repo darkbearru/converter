@@ -1,3 +1,5 @@
+import { formatBytes, formatQuantity } from '../../src/shared/format';
+import { formatMessage } from '../../src/shared/i18n/messages';
 import { describe, expect, it, vi } from 'vitest';
 import { createLocalization, resolveLocale } from '../../src/shared/i18n';
 import { createHarness } from './harness/bridge';
@@ -30,4 +32,39 @@ describe('выбор языка', () => {
     expect(localization.i18n.global.t('app.close')).toBe('Close');
     expect(localization.preferences.support_url).toBeNull();
   });
+});
+
+it('переводит параметры буквально и читает старые сообщения', () => {
+  createLocalization(
+    { language: 'en', locale: 'en', support_url: null },
+    createHarness('local').bridge,
+  );
+  expect(
+    formatMessage({
+      message: 'fallback',
+      message_key: 'messages.missing_resource',
+      message_args: { raw: '<b>{name}</b>' },
+    }),
+  ).toBe('Missing resource: <b>{name}</b>');
+  expect(formatMessage({ message: 'старый журнал' })).toBe('старый журнал');
+  expect(formatMessage({ message: 'unknown fallback', message_key: 'messages.future_key' })).toBe(
+    'unknown fallback',
+  );
+});
+
+it('форматирует количества и размеры по выбранному языку', () => {
+  const { bridge } = createHarness('local');
+  createLocalization({ language: 'ru', locale: 'ru', support_url: null }, bridge);
+  expect([1, 2, 5, 11, 21].map((n) => formatQuantity(n, 'articles'))).toEqual([
+    '1 статья',
+    '2 статьи',
+    '5 статей',
+    '11 статей',
+    '21 статья',
+  ]);
+  expect(formatBytes(1024)).toBe('1 Кб');
+  createLocalization({ language: 'en', locale: 'en', support_url: null }, bridge);
+  expect(formatQuantity(1, 'articles')).toBe('1 entry');
+  expect(formatQuantity(2, 'articles')).toBe('2 entries');
+  expect(formatBytes(1024)).toBe('1 KB');
 });

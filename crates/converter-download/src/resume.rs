@@ -16,9 +16,16 @@ pub struct ResponseMetadata {
 #[derive(Debug, PartialEq, Eq)]
 pub enum ResponseAction {
     StartFresh,
-    Append { offset: u64 },
-    Restart { reason: String },
-    Reject { code: String },
+    Append {
+        offset: u64,
+    },
+    Restart {
+        reason: String,
+        reason_key: &'static str,
+    },
+    Reject {
+        code: String,
+    },
 }
 pub fn strong_etag(value: &str) -> bool {
     value.starts_with('"')
@@ -53,6 +60,7 @@ pub fn plan_response(
     let point = point.filter(|p| p.confirmed_bytes > 0);
     if response.status == 416 && point.is_some() {
         return Ok(ResponseAction::Restart {
+            reason_key: "messages.restart_range",
             reason: "Сервер отклонил диапазон; загрузка начнётся заново".into(),
         });
     }
@@ -75,6 +83,7 @@ pub fn plan_response(
         || point.validator != response.etag
     {
         return Ok(ResponseAction::Restart {
+            reason_key: "messages.restart_etag",
             reason: "Изменился ресурс или его надёжный ETag; загрузка начнётся заново".into(),
         });
     }

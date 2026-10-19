@@ -45,6 +45,10 @@ pub fn resolve_encoding(
                         "unsupported_encoding",
                         format!("Кодировка не поддерживается: {label}"),
                     )
+                    .with_message(
+                        "messages.unsupported_encoding",
+                        crate::model::message_args([("label", label.to_string())]),
+                    )
                 })?;
             (encoding, false)
         }
@@ -63,7 +67,8 @@ pub fn resolve_encoding(
                 return Err(ConverterError::new(
                     "encoding_required",
                     "Источник похож на UTF-16 без BOM. Выберите кодировку вручную",
-                ));
+                )
+                .with_message("messages.encoding_required", crate::model::message_args([])));
             } else {
                 let validation = decode_chunks(
                     open_source(main)?,
@@ -119,6 +124,13 @@ fn decode_chunks(
                         encoding.name(),
                         completed + offset as u64
                     ),
+                )
+                .with_message(
+                    "messages.invalid_encoding",
+                    crate::model::message_args([
+                        ("arg0", encoding.name().to_string()),
+                        ("arg1", format!("{}", completed + offset as u64)),
+                    ]),
                 ));
             }
             if !consume(&output)? {
@@ -130,6 +142,7 @@ fn decode_chunks(
         }
         completed = completed.checked_add(size as u64).ok_or_else(|| {
             ConverterError::new("size_overflow", "Переполнение размера источника")
+                .with_message("messages.size_overflow_7", crate::model::message_args([]))
         })?;
         if let Some(stage) = stage {
             let event = StageProgress {
@@ -169,6 +182,10 @@ pub fn decode_lines(
                 return Err(ConverterError::new(
                     "article_too_large",
                     "Строка DSL превышает допустимый размер",
+                )
+                .with_message(
+                    "messages.article_too_large_3",
+                    crate::model::message_args([]),
                 ));
             }
             pending.push_str(content);

@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { ref, useId } from 'vue';
+import { errorState } from '../../shared/i18n/errors';
+
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
+
+import { computed, useId } from 'vue';
 import Dialog from 'primevue/dialog';
 import { dialogCloseButtonProps } from '../../shared/ui/dialog';
 import Select from 'primevue/select';
@@ -8,7 +13,6 @@ import InputText from 'primevue/inputtext';
 import Textarea from 'primevue/textarea';
 import Icon from '../../shared/ui/Icon.vue';
 import type { NativeBridge } from '../../shared/contracts';
-import { errorMessage } from '../../shared/format';
 import type { ComposerSettings } from './model';
 const props = defineProps<{
   visible: boolean;
@@ -18,21 +22,21 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ 'update:visible': [value: boolean]; resourcesChange: [] }>();
 const id = useId();
-const error = ref('');
-const encodings = [
-  { label: 'Определить автоматически', value: 'auto' },
+const error = errorState();
+const encodings = computed(() => [
+  { label: t('app.auto_encoding'), value: 'auto' },
   { label: 'UTF-8', value: 'utf-8' },
   { label: 'UTF-16 LE', value: 'utf-16le' },
   { label: 'UTF-16 BE', value: 'utf-16be' },
   { label: 'Windows-1251', value: 'windows-1251' },
-];
+]);
 async function output() {
   error.value = '';
   try {
     const value = await props.bridge.pickOutput();
     if (value) props.settings.output = value;
   } catch (e) {
-    error.value = errorMessage(e);
+    error.value = e;
   }
 }
 async function resources(purpose: 'resources' | 'resource_directory') {
@@ -44,7 +48,7 @@ async function resources(purpose: 'resources' | 'resource_directory') {
       emit('resourcesChange');
     }
   } catch (e) {
-    error.value = errorMessage(e);
+    error.value = e;
   }
 }
 </script>
@@ -53,14 +57,14 @@ async function resources(purpose: 'resources' | 'resource_directory') {
     :close-button-props="dialogCloseButtonProps"
     :visible="visible"
     modal
-    header="Настройки конвертации"
+    :header="t('app.conversion_settings')"
     class="settings-dialog app-dialog"
     @update:visible="emit('update:visible', $event)"
   >
     <template #closeicon><Icon name="close" /></template>
     <div class="dialog-fields" tabindex="-1" autofocus>
       <div class="field-stack">
-        <label :id="`${id}-encoding-label`" :for="`${id}-encoding`">Кодировка DSL</label
+        <label :id="`${id}-encoding-label`" :for="`${id}-encoding`"> {{ t('app.encoding') }} </label
         ><Select
           :input-id="`${id}-encoding`"
           :aria-labelledby="`${id}-encoding-label`"
@@ -72,33 +76,33 @@ async function resources(purpose: 'resources' | 'resource_directory') {
         ></Select>
       </div>
       <div class="field-stack">
-        <label>Куда сохранить</label>
+        <label> {{ t('app.save_to') }} </label>
         <p class="destination-path">
           {{
             settings.output === 'app_library'
-              ? 'Библиотека приложения'
+              ? t('app.app_library')
               : settings.output.desktop_folder
           }}
         </p>
         <div class="button-row">
-          <Button label="Выбрать папку" outlined @click="output" /><Button
+          <Button :label="t('app.choose_folder')" outlined @click="output" /><Button
             v-if="settings.output !== 'app_library'"
-            label="В библиотеку"
+            :label="t('app.to_library')"
             text
             @click="settings.output = 'app_library'"
           />
         </div>
       </div>
       <fieldset class="resource-settings" :disabled="resourcesLocked">
-        <legend>Изображения и озвучка</legend>
+        <legend>{{ t('app.images_audio') }}</legend>
         <div class="button-row">
           <Button
-            label="Добавить файлы ресурсов"
+            :label="t('app.add_resources')"
             outlined
             :disabled="resourcesLocked"
             @click="resources('resources')"
           /><Button
-            label="Добавить папку ресурсов"
+            :label="t('app.add_resource_folder')"
             outlined
             :disabled="resourcesLocked"
             @click="resources('resource_directory')"
@@ -108,7 +112,7 @@ async function resources(purpose: 'resources' | 'resource_directory') {
           <li v-for="(file, index) in settings.resources" :key="file.import_id">
             <span>{{ file.display_name }}</span
             ><Button
-              :aria-label="`Убрать ${file.display_name}`"
+              :aria-label="t('app.remove_named', { name: file.display_name })"
               text
               rounded
               :disabled="resourcesLocked"
@@ -120,14 +124,12 @@ async function resources(purpose: 'resources' | 'resource_directory') {
             /></Button>
           </li>
         </ul>
-        <p v-if="resourcesLocked" class="hint">
-          Ресурсы этого файла уже выбраны перед скачиванием.
-        </p>
+        <p v-if="resourcesLocked" class="hint">{{ t('app.resources_locked') }}</p>
         <ul v-if="settings.retainedResources.length" class="attachment-list">
           <li v-for="(file, index) in settings.retainedResources" :key="file.source_id">
             <span>{{ file.display_name }}</span>
             <Button
-              :aria-label="`Убрать ${file.display_name}`"
+              :aria-label="t('app.remove_named', { name: file.display_name })"
               text
               rounded
               :disabled="resourcesLocked"
@@ -141,26 +143,32 @@ async function resources(purpose: 'resources' | 'resource_directory') {
         </ul>
       </fieldset>
       <div class="field-stack">
-        <label :for="`${id}-resources`">Ссылки на ресурсы</label
+        <label :for="`${id}-resources`"> {{ t('app.resource_urls') }} </label
         ><Textarea
           :id="`${id}-resources`"
           v-model="settings.resourceUrls"
           @update:model-value="emit('resourcesChange')"
           :disabled="resourcesLocked"
           rows="2"
-          placeholder="Каждая прямая ссылка — с новой строки"
+          :placeholder="t('app.urls_placeholder')"
         />
       </div>
       <div class="field-stack">
-        <label :for="`${id}-title`">Название словаря</label
-        ><InputText :id="`${id}-title`" v-model="settings.title" placeholder="Из исходного файла" />
+        <label :for="`${id}-title`"> {{ t('app.dictionary_title') }} </label
+        ><InputText
+          :id="`${id}-title`"
+          v-model="settings.title"
+          :placeholder="t('app.from_source')"
+        />
       </div>
       <div class="field-stack">
-        <label :for="`${id}-description`">Описание</label
+        <label :for="`${id}-description`"> {{ t('app.description') }} </label
         ><Textarea :id="`${id}-description`" v-model="settings.description" rows="2" />
       </div>
       <p v-if="error" role="alert" class="error-message">{{ error }}</p>
     </div>
-    <template #footer><Button label="Готово" @click="emit('update:visible', false)" /></template>
+    <template #footer
+      ><Button :label="t('app.done')" @click="emit('update:visible', false)"
+    /></template>
   </Dialog>
 </template>

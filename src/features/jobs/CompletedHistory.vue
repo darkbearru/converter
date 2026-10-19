@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { errorMessage } from '../../shared/format';
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
+
 import { computed, ref } from 'vue';
 import Accordion from 'primevue/accordion';
 import AccordionPanel from 'primevue/accordionpanel';
@@ -13,7 +17,7 @@ import ProblemReportButton from '../../shared/ui/ProblemReportButton.vue';
 import ResultPanel from '../results/ResultPanel.vue';
 import DiagnosticsList from '../results/DiagnosticsList.vue';
 import type { JobSnapshot, NativeBridge } from '../../shared/contracts';
-import { stateLabels } from '../../shared/format';
+import { stateLabel } from '../../shared/format';
 const props = defineProps<{
   jobs: JobSnapshot[];
   bridge: NativeBridge;
@@ -28,7 +32,7 @@ defineEmits<{
 }>();
 const expanded = ref<string[]>([]);
 const diagnosticsId = ref<string | null>(null);
-const reportErrors = ref<Record<string, string>>({});
+const reportErrors = ref<Record<string, unknown>>({});
 const diagnosticsJob = computed(() => props.jobs.find((job) => job.id === diagnosticsId.value));
 function warning(job: JobSnapshot) {
   return (
@@ -40,7 +44,7 @@ function warning(job: JobSnapshot) {
 }
 </script>
 <template>
-  <section class="completed-history" aria-label="История конвертаций">
+  <section class="completed-history" :aria-label="t('app.history')">
     <Accordion v-model:value="expanded" multiple>
       <AccordionPanel v-for="job in jobs" :key="job.id" :value="job.id">
         <AccordionHeader
@@ -48,7 +52,7 @@ function warning(job: JobSnapshot) {
           ><Icon
             v-if="warning(job)"
             name="caution"
-            label="Были предупреждения или ошибки"
+            :label="t('app.had_warnings')"
             class="history-warning" /><template #toggleicon
             ><Icon
               name="chevron"
@@ -60,10 +64,10 @@ function warning(job: JobSnapshot) {
             v-if="!['succeeded', 'succeeded_with_warnings'].includes(job.state)"
             class="history-status"
           >
-            {{ stateLabels[job.state] }}
+            {{ stateLabel(job.state) }}
           </p>
           <ResultPanel v-if="job.result" :result="job.result" :export-state="job.export" />
-          <Message v-if="job.error" severity="error">{{ job.error.message }}</Message>
+          <Message v-if="job.error" severity="error">{{ errorMessage(job.error) }}</Message>
           <DiagnosticsList
             v-if="job.diagnostic_count && expanded.includes(job.id)"
             :key="`${job.id}:${job.run_id}`"
@@ -76,10 +80,10 @@ function warning(job: JobSnapshot) {
             preview
             @show-all="diagnosticsId = job.id"
           />
-          <div class="history-actions" role="group" aria-label="Действия с конвертацией">
+          <div class="history-actions" role="group" :aria-label="t('app.history_actions')">
             <Button
               v-if="job.result?.can_open"
-              label="Открыть папку"
+              :label="t('app.open_folder')"
               severity="secondary"
               outlined
               :disabled="pending[job.id]"
@@ -87,7 +91,7 @@ function warning(job: JobSnapshot) {
             />
             <Button
               v-if="job.result?.can_export"
-              :label="job.export.status === 'running' ? 'Сохранение…' : 'Сохранить копию'"
+              :label="job.export.status === 'running' ? t('app.saving') : t('app.save_copy')"
               severity="secondary"
               outlined
               :disabled="pending[job.id] || job.export.status === 'running'"
@@ -95,7 +99,7 @@ function warning(job: JobSnapshot) {
             />
             <Button
               v-if="job.state === 'awaiting_input'"
-              label="Уточнить параметры"
+              :label="t('app.review_settings')"
               severity="secondary"
               outlined
               :disabled="pending[job.id]"
@@ -106,14 +110,14 @@ function warning(job: JobSnapshot) {
             />
             <Button
               v-else
-              label="Повторить"
+              :label="t('app.retry')"
               severity="secondary"
               outlined
               :disabled="pending[job.id] || job.export.status === 'running'"
               @click="$emit('retry', job.id)"
             />
             <Button
-              label="Удалить"
+              :label="t('app.delete')"
               severity="danger"
               outlined
               :disabled="pending[job.id] || job.export.status === 'running'"
@@ -131,7 +135,7 @@ function warning(job: JobSnapshot) {
             />
           </div>
           <Message v-if="reportErrors[job.id]" severity="error" role="alert">{{
-            reportErrors[job.id]
+            errorMessage(reportErrors[job.id])
           }}</Message>
         </AccordionContent>
       </AccordionPanel>
@@ -141,7 +145,7 @@ function warning(job: JobSnapshot) {
       :id="diagnosticsJob ? `diagnostics-${diagnosticsJob.id}` : undefined"
       :visible="Boolean(diagnosticsJob)"
       modal
-      header="Предупреждения"
+      :header="t('app.warnings')"
       class="app-dialog diagnostics-dialog"
       @update:visible="!$event && (diagnosticsId = null)"
     >
@@ -169,7 +173,12 @@ function warning(job: JobSnapshot) {
         />
       </template>
       <template #footer>
-        <Button label="Закрыть" severity="secondary" outlined @click="diagnosticsId = null" />
+        <Button
+          :label="t('app.close')"
+          severity="secondary"
+          outlined
+          @click="diagnosticsId = null"
+        />
       </template>
     </Dialog>
   </section>

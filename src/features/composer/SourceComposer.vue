@@ -1,4 +1,11 @@
 <script setup lang="ts">
+import { errorState } from '../../shared/i18n/errors';
+
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
+
+import { LocalizedError } from '../../shared/i18n/errors';
+
 import { computed, onBeforeUnmount, onMounted, reactive, ref, useId, watch } from 'vue';
 import FileUpload from 'primevue/fileupload';
 import ProgressBar from 'primevue/progressbar';
@@ -15,7 +22,7 @@ import type {
   NativeBridge,
   SourceInput,
 } from '../../shared/contracts';
-import { errorMessage, formatBytes, transferLabels } from '../../shared/format';
+import { errorMessage, formatBytes, transferLabel } from '../../shared/format';
 const props = defineProps<{ bridge: NativeBridge; jobs: JobSnapshot[] }>();
 const emit = defineEmits<{ snapshot: [job: JobSnapshot]; submitted: [id: string] }>();
 const id = useId();
@@ -23,12 +30,12 @@ const settings = reactive(defaultSettings());
 const resourcesChanged = ref(false);
 const files = ref<ImportedSourceInfo[]>([]);
 const busy = ref(false);
-const error = ref('');
+const error = errorState();
 const linkDialog = ref(false);
 const settingsDialog = ref(false);
 const url = ref('');
 const pasting = ref(false);
-const clipboardError = ref('');
+const clipboardError = errorState();
 let clipboardRequest = 0;
 watch(linkDialog, () => {
   clipboardRequest++;
@@ -77,7 +84,7 @@ function acceptFiles(selected: ImportedSourceInfo[]) {
   if (busy.value || remote.value) return;
   const ordinary = selected.filter((file) => !file.is_directory);
   if (!ordinary.length) {
-    error.value = 'Выберите файл словаря. Папки ресурсов добавляются в настройках.';
+    error.value = new LocalizedError('app.select_dictionary_error');
     return;
   }
   files.value = ordinary;
@@ -87,13 +94,13 @@ onMounted(async () => {
   if (!props.bridge.onSourceDrop) return;
   try {
     const stop = await props.bridge.onSourceDrop((event) => {
-      if (event.kind === 'error') error.value = event.error.message;
+      if (event.kind === 'error') error.value = event.error;
       else acceptFiles(event.files);
     });
     if (disposed) stop();
     else unsubscribe = stop;
   } catch (e) {
-    if (!disposed) error.value = errorMessage(e);
+    if (!disposed) error.value = e;
   }
 });
 onBeforeUnmount(() => {
@@ -107,7 +114,7 @@ async function pick() {
     const selected = await props.bridge.pickSources('dictionaries');
     if (selected.length) acceptFiles(selected);
   } catch (e) {
-    error.value = errorMessage(e);
+    error.value = e;
   }
 }
 function resourceSources() {
@@ -161,7 +168,7 @@ async function download() {
     linkDialog.value = false;
     url.value = '';
   } catch (e) {
-    error.value = errorMessage(e);
+    error.value = e;
   } finally {
     busy.value = false;
   }
@@ -176,14 +183,14 @@ async function pasteUrl() {
     const text = (await props.bridge.readClipboardText()).trim();
     if (request !== clipboardRequest || url.value !== previousUrl) return;
     if (!text) {
-      clipboardError.value = 'В буфере обмена нет текста. Скопируйте ссылку и повторите.';
+      clipboardError.value = new LocalizedError('app.clipboard_empty');
       return;
     }
     url.value = text;
     error.value = '';
   } catch {
     if (request === clipboardRequest)
-      clipboardError.value = 'Не удалось прочитать буфер обмена. Вставьте ссылку с клавиатуры.';
+      clipboardError.value = new LocalizedError('app.clipboard_failed');
   } finally {
     if (request === clipboardRequest) pasting.value = false;
   }
@@ -232,7 +239,7 @@ async function convert() {
       }
     }
   } catch (e) {
-    error.value = errorMessage(e);
+    error.value = e;
   } finally {
     busy.value = false;
   }
@@ -249,7 +256,7 @@ async function clear() {
     emit('snapshot', await props.bridge.cancelJob(remote.value.id));
     remoteId.value = null;
   } catch (e) {
-    error.value = errorMessage(e);
+    error.value = e;
   } finally {
     busy.value = false;
   }
@@ -263,14 +270,14 @@ async function transferAction() {
       : await props.bridge.pauseDownload(remote.value.id);
     emit('snapshot', job);
   } catch (e) {
-    error.value = errorMessage(e);
+    error.value = e;
   } finally {
     busy.value = false;
   }
 }
 </script>
 <template>
-  <section class="source-composer" aria-label="Новый словарь" :aria-busy="busy">
+  <section class="source-composer" :aria-label="t('app.new_dictionary')" :aria-busy="busy">
     <FileUpload
       name="dictionary"
       mode="advanced"
@@ -286,7 +293,7 @@ async function transferAction() {
           <Button
             v-if="ready"
             class="icon-button clear-source"
-            aria-label="Убрать выбранный источник"
+            :aria-label="t('app.clear_source')"
             text
             rounded
             :disabled="busy"
@@ -295,8 +302,8 @@ async function transferAction() {
           /></Button>
           <Button
             class="icon-button"
-            aria-label="Добавить ссылку"
-            title="Скачать по ссылке"
+            :aria-label="t('app.add_url')"
+            :title="t('app.download_url')"
             text
             rounded
             :disabled="busy || Boolean(remote)"
@@ -309,8 +316,8 @@ async function transferAction() {
           /></Button>
           <Button
             class="icon-button"
-            aria-label="Настройки конвертации"
-            title="Настройки"
+            :aria-label="t('app.conversion_settings')"
+            :title="t('app.settings')"
             text
             rounded
             :disabled="busy"
@@ -325,19 +332,19 @@ async function transferAction() {
       <template #content>
         <div v-if="transferring && remote && progress" class="source-transfer">
           <ProgressBar
-            aria-label="Скачивание"
+            :aria-label="t('app.downloading')"
             :mode="downloadPercent === undefined ? 'indeterminate' : 'determinate'"
             :value="downloadPercent"
           />
           <div class="transfer-caption" role="status">
-            <span v-if="progress.total_bytes === null">Общий размер неизвестен</span>
+            <span v-if="progress.total_bytes === null"> {{ t('app.size_unknown') }} </span>
             <span>{{
-              progress.files[0] ? transferLabels[progress.files[0].state] : 'Подготовка скачивания'
+              progress.files[0] ? transferLabel(progress.files[0].state) : t('app.prepare_download')
             }}</span
             ><span
               >{{ formatBytes(progress.received_bytes)
               }}<template v-if="progress.total_bytes !== null">
-                из {{ formatBytes(progress.total_bytes) }}</template
+                {{ t('app.of') }} {{ formatBytes(progress.total_bytes) }}</template
               ></span
             >
           </div>
@@ -354,8 +361,8 @@ async function transferAction() {
               class="transfer-pause icon-button"
               :aria-label="
                 ['download_paused', 'download_failed'].includes(remote.state)
-                  ? 'Продолжить скачивание'
-                  : 'Приостановить скачивание'
+                  ? t('app.resume_download')
+                  : t('app.pause_download')
               "
               text
               rounded
@@ -367,7 +374,7 @@ async function transferAction() {
                 " /></Button
             ><Button
               class="round-action transfer-action"
-              aria-label="Отменить скачивание"
+              :aria-label="t('app.cancel_download')"
               rounded
               :disabled="busy"
               @click="clear"
@@ -390,8 +397,8 @@ async function transferAction() {
           </div>
           <Button
             class="round-action convert-action"
-            aria-label="Конвертировать"
-            title="Конвертировать"
+            :aria-label="t('app.convert')"
+            :title="t('app.convert')"
             rounded
             :loading="busy"
             :disabled="busy"
@@ -403,28 +410,28 @@ async function transferAction() {
           v-else
           type="button"
           class="source-dropzone"
-          aria-label="Выбрать словари"
+          :aria-label="t('app.choose_dictionaries')"
           :disabled="busy"
           @click="pick"
         >
-          <Icon name="upload" /><span>Перетащите файлы сюда или нажмите для просмотра</span>
+          <Icon name="upload" /><span> {{ t('app.drop_files') }} </span>
         </button>
       </template>
     </FileUpload>
     <p v-if="error" role="alert" class="composer-error error-message">{{ error }}</p>
     <p v-if="remote?.error" role="alert" class="composer-error error-message">
-      {{ remote.error.message }}
+      {{ errorMessage(remote.error) }}
     </p>
     <Dialog
       :close-button-props="dialogCloseButtonProps"
       v-model:visible="linkDialog"
       modal
-      header="Скачать словарь"
+      :header="t('app.download_dictionary')"
       class="link-dialog app-dialog"
       ><template #closeicon><Icon name="close" /></template>
       <form id="source-link-form" class="dialog-fields" @submit.prevent="download">
         <div class="field-stack">
-          <label :for="`${id}-url`">Ссылка на словарь</label>
+          <label :for="`${id}-url`"> {{ t('app.dictionary_url') }} </label>
           <div class="url-input-control">
             <InputText
               :id="`${id}-url`"
@@ -439,8 +446,8 @@ async function transferAction() {
               type="button"
               class="icon-button paste-url"
               text
-              aria-label="Вставить из буфера обмена"
-              title="Вставить из буфера обмена"
+              :aria-label="t('app.paste')"
+              :title="t('app.paste')"
               :disabled="busy || pasting"
               :aria-busy="pasting"
               @click="pasteUrl"
@@ -454,10 +461,10 @@ async function transferAction() {
         <p v-if="error" role="alert" class="error-message">{{ error }}</p>
       </form>
       <template #footer
-        ><Button label="Отмена" text @click="linkDialog = false" /><Button
+        ><Button :label="t('app.cancel')" text @click="linkDialog = false" /><Button
           type="submit"
           form="source-link-form"
-          label="Скачать"
+          :label="t('app.download')"
           :disabled="pasting"
           :loading="busy" /></template
     ></Dialog>

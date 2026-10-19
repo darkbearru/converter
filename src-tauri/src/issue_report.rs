@@ -1,3 +1,7 @@
+use crate::{
+    localization::{native_format, native_text},
+    preferences::Locale,
+};
 use converter_app::{AppError, AppResult, JobSnapshot};
 use converter_core::model::{Diagnostic, DiagnosticSeverity};
 use url::Url;
@@ -6,6 +10,7 @@ use url::Url;
 const MAX_URL_BYTES: usize = 7000;
 
 pub fn issue_url(
+    locale: Locale,
     version: &str,
     os: &str,
     arch: &str,
@@ -17,34 +22,50 @@ pub fn issue_url(
         "windows" => "Windows",
         other => other,
     };
-    let mut title = "Проблема в Converter".to_owned();
-    let mut body = format!(
-        "### Описание проблемы\n\n\n### Шаги воспроизведения\n\n1. \n\n### Ожидаемый результат\n\n\n### Сведения приложения\n\n- Converter: {version}\n- ОС: {os} ({arch})\n"
+    let mut title = native_text(locale, "issues.title");
+    let mut body = native_format(
+        locale,
+        "issues.body",
+        &[
+            ("version", version.into()),
+            ("os", os.into()),
+            ("arch", arch.into()),
+        ],
     );
     if let Some(job) = job {
         // До подготовки display_name удалённой задачи может содержать hostname.
         let name = if job.download.kind == converter_app::DownloadKind::Remote {
-            "Словарь по ссылке".into()
+            native_text(locale, "issues.remote")
         } else {
-            filename(&job.display_name)
+            filename(&job.display_name, locale)
         };
-        title = format!("Проблема конвертации: {name}");
-        body.push_str(&format!(
-            "- Файл: `{name}`\n- Состояние: {}\n- Код ошибки: {}\n- Групп предупреждений: {}\n",
-            format!("{:?}", job.state).to_lowercase(),
-            job.error
-                .as_ref()
-                .or(job.export.error.as_ref())
-                .map(|error| code(&error.code))
-                .unwrap_or_else(|| "нет".into()),
-            job.diagnostic_count,
+        title = native_format(locale, "issues.conversion_title", &[("name", name.clone())]);
+        body.push_str(&native_format(
+            locale,
+            "issues.job",
+            &[
+                ("name", name),
+                ("state", format!("{:?}", job.state).to_lowercase()),
+                (
+                    "code",
+                    job.error
+                        .as_ref()
+                        .or(job.export.error.as_ref())
+                        .map(|error| code(&error.code))
+                        .unwrap_or_else(|| native_text(locale, "issues.none")),
+                ),
+                ("warnings", job.diagnostic_count.to_string()),
+            ],
         ));
         if let Some(result) = &job.result {
-            body.push_str(&format!(
-                "- Статей: {}; ключей: {}; ресурсов: {}\n",
-                result.summary.source_articles,
-                result.summary.output_keys,
-                result.summary.resources,
+            body.push_str(&native_format(
+                locale,
+                "issues.summary",
+                &[
+                    ("articles", result.summary.source_articles.to_string()),
+                    ("keys", result.summary.output_keys.to_string()),
+                    ("resources", result.summary.resources.to_string()),
+                ],
             ));
         }
         let mut lines = String::new();
@@ -60,7 +81,7 @@ pub fn issue_url(
             );
             let candidate = format!(
                 "{body}{}{}",
-                diagnostic_note(job, shown + 1),
+                diagnostic_note(job, shown + 1, locale),
                 lines.clone() + &line
             );
             if encode_url(&title, &candidate)?.len() > MAX_URL_BYTES {
@@ -69,18 +90,25 @@ pub fn issue_url(
             shown += 1;
             lines.push_str(&line);
         }
-        body.push_str(&diagnostic_note(job, shown));
+        body.push_str(&diagnostic_note(job, shown, locale));
         body.push_str(&lines);
     }
     encode_url(&title, &body)
 }
 
-fn diagnostic_note(job: &JobSnapshot, shown: usize) -> String {
+fn diagnostic_note(job: &JobSnapshot, shown: usize, locale: Locale) -> String {
     let mut note = String::new();
     if job.diagnostic_count > 0 {
-        note.push_str(&format!("\n### Краткая диагностика\n\nПоказано {shown} из {} групп (коды и число употреблений).\n", job.diagnostic_count));
+        note.push_str(&native_format(
+            locale,
+            "issues.diagnostics",
+            &[
+                ("shown", shown.to_string()),
+                ("total", job.diagnostic_count.to_string()),
+            ],
+        ));
         if shown == 0 {
-            note.push_str("Подробности доступны в окне предупреждений приложения.\n");
+            note.push_str(&native_text(locale, "issues.details"));
         }
     }
     if job.result.as_ref().is_some_and(|result| {
@@ -89,12 +117,12 @@ fn diagnostic_note(job: &JobSnapshot, shown: usize) -> String {
             .iter()
             .any(|file| file.name == "conversion-report.json")
     }) {
-        note.push_str("\nПолный журнал: приложите conversion-report.json из папки результата вручную. Перед публикацией проверьте его содержимое.\n");
+        note.push_str(&native_text(locale, "issues.report"));
     }
     note
 }
 
-fn filename(value: &str) -> String {
+fn filename(value: &str, locale: Locale) -> String {
     // Имя сохраняем, но не передаём путь, параметры URL или содержимое статей.
     let name = value
         .split(['?', '#'])
@@ -109,7 +137,7 @@ fn filename(value: &str) -> String {
         .take(60)
         .collect();
     if name.is_empty() {
-        "Словарь".into()
+        native_text(locale, "issues.dictionary")
     } else {
         name
     }
@@ -131,6 +159,10 @@ fn encode_url(title: &str, body: &str) -> AppResult<String> {
             AppError::new(
                 "issue_url_failed",
                 "Не удалось подготовить сообщение о проблеме",
+            )
+            .with_message(
+                "messages.issue_url_failed",
+                converter_core::model::message_args([]),
             )
         })?;
     url.query_pairs_mut()
@@ -163,7 +195,8 @@ mod tests {
     }
     #[test]
     fn общий_отчёт_открывает_форму_с_версией_и_ос() {
-        let link = issue_url("0.2.0", "macos", "aarch64", None, &[]).expect("Общий отчёт");
+        let link =
+            issue_url(Locale::Ru, "0.2.0", "macos", "aarch64", None, &[]).expect("Общий отчёт");
         let parsed = Url::parse(&link).expect("Корректная ссылка на форму");
         assert_eq!(parsed.host_str(), Some("github.com"));
         assert_eq!(parsed.path(), "/darkbearru/converter/issues/new");
@@ -192,14 +225,23 @@ mod tests {
         ));
         job.diagnostic_count = 50;
         let diagnostic = Diagnostic {
+            message_key: None,
+            message_args: Default::default(),
             code: "missing_reference".into(),
             message: "Секретное содержимое словаря".into(),
             source_location: None,
             severity: DiagnosticSeverity::Warning,
             occurrences: 42,
         };
-        let link = issue_url("0.2.0", "windows", "x86_64", Some(&job), &[diagnostic])
-            .expect("Отчёт об ошибке задания");
+        let link = issue_url(
+            Locale::Ru,
+            "0.2.0",
+            "windows",
+            "x86_64",
+            Some(&job),
+            &[diagnostic],
+        )
+        .expect("Отчёт об ошибке задания");
         let text = body(&link);
         for expected in [
             "Windows",
@@ -238,6 +280,8 @@ mod tests {
         job.diagnostic_count = 200_000;
         let diagnostics: Vec<_> = (0..200)
             .map(|index| Diagnostic {
+                message_key: None,
+                message_args: Default::default(),
                 code: format!("missing_reference_{index}"),
                 message: "о".repeat(10_000),
                 source_location: None,
@@ -245,8 +289,15 @@ mod tests {
                 occurrences: 1,
             })
             .collect();
-        let link = issue_url("0.2.0", "macos", "aarch64", Some(&job), &diagnostics)
-            .expect("Сводка большого журнала");
+        let link = issue_url(
+            Locale::Ru,
+            "0.2.0",
+            "macos",
+            "aarch64",
+            Some(&job),
+            &diagnostics,
+        )
+        .expect("Сводка большого журнала");
         assert!(link.len() <= 7000, "Ссылка слишком длинная: {}", link.len());
         let text = body(&link);
         assert!(text.contains("200000"));
@@ -265,10 +316,32 @@ mod tests {
         job.result = None;
         for source_bytes in [None, Some(1234)] {
             job.source_bytes = source_bytes;
-            let link = issue_url("0.2.0", "macos", "aarch64", Some(&job), &[])
+            let link = issue_url(Locale::Ru, "0.2.0", "macos", "aarch64", Some(&job), &[])
                 .expect("Отчёт об отменённой загрузке");
             assert!(!link.contains("private.company.local"));
             assert!(body(&link).contains("Словарь по ссылке"));
         }
+    }
+}
+
+#[cfg(test)]
+mod locale_tests {
+    use super::*;
+    #[test]
+    fn английский_отчёт_содержит_описание_и_версию() {
+        let link = issue_url(Locale::En, "0.2.7", "windows", "x86_64", None, &[]).expect("issue");
+        let url = Url::parse(&link).expect("URL");
+        let body = url
+            .query_pairs()
+            .find(|(key, _)| key == "body")
+            .expect("body")
+            .1
+            .into_owned();
+        assert!(
+            body.contains("Problem description")
+                && body.contains("Windows")
+                && body.contains("0.2.7")
+        );
+        assert!(!body.contains("Описание"));
     }
 }

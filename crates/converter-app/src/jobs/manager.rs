@@ -94,6 +94,7 @@ fn refresh_downloads(job: &mut StoredJob) {
                             total_bytes: None,
                             bytes_per_second: None,
                             restart_reason: None,
+                            restart_message: None,
                         }),
                 )
             })
@@ -129,7 +130,10 @@ impl Drop for ExportGuard {
     }
 }
 fn lock_error() -> AppError {
-    AppError::new("state_lock", "Не удалось получить состояние очереди")
+    AppError::new("state_lock", "Не удалось получить состояние очереди").with_message(
+        "messages.state_lock",
+        converter_core::model::message_args([]),
+    )
 }
 fn cancel_download_progress(snapshot: &mut JobSnapshot) {
     for file in &mut snapshot.download.files {
@@ -243,14 +247,20 @@ impl JobManager {
             return Err(AppError::new(
                 "job_not_finished",
                 "Можно удалить только завершённое задание",
+            )
+            .with_message(
+                "messages.job_not_finished",
+                converter_core::model::message_args([]),
             ));
         }
         self.wait_idle(id).await?;
         let mut runtime = self.inner.runtime.lock().map_err(|_| lock_error())?;
-        let job = runtime
-            .jobs
-            .get(id)
-            .ok_or_else(|| AppError::new("job_not_found", "Задание не найдено"))?;
+        let job = runtime.jobs.get(id).ok_or_else(|| {
+            AppError::new("job_not_found", "Задание не найдено").with_message(
+                "messages.invalid_job_id",
+                converter_core::model::message_args([]),
+            )
+        })?;
         if runtime.controls.contains_key(id)
             || runtime.exports.contains(id)
             || package::has_incomplete_dispatch(job)
@@ -258,10 +268,10 @@ impl JobManager {
             || !finished(job.snapshot.state)
             || job.snapshot.export.status == ExportStatus::Running
         {
-            return Err(AppError::new(
-                "job_busy",
-                "Дождитесь завершения операции с заданием",
-            ));
+            return Err(
+                AppError::new("job_busy", "Дождитесь завершения операции с заданием")
+                    .with_message("messages.job_busy", converter_core::model::message_args([])),
+            );
         }
         let mut journals = self.inner.journals.lock().map_err(|_| lock_error())?;
         // Удаляется только запись истории. Исходники, кэш и готовые файлы остаются на диске.
@@ -281,7 +291,12 @@ impl JobManager {
             .jobs
             .get(id)
             .cloned()
-            .ok_or_else(|| AppError::new("job_not_found", "Задание не найдено"))
+            .ok_or_else(|| {
+                AppError::new("job_not_found", "Задание не найдено").with_message(
+                    "messages.invalid_job_id",
+                    converter_core::model::message_args([]),
+                )
+            })
     }
     pub async fn import(&self, selection: PlatformSelection) -> AppResult<Vec<ImportedSourceInfo>> {
         let ctx = RunContext::new(self.inner.store.root.join("scratch/import"));
@@ -313,13 +328,22 @@ impl JobManager {
                 .get(import_id)
                 .cloned()
                 .map(RegisteredSource::Local)
-                .ok_or_else(|| AppError::new("source_not_found", "Выберите исходный файл заново")),
+                .ok_or_else(|| {
+                    AppError::new("source_not_found", "Выберите исходный файл заново").with_message(
+                        "messages.source_not_found_2",
+                        converter_core::model::message_args([]),
+                    )
+                }),
             SourceInput::Remote {
                 url,
                 expected_sha256,
             } => {
                 let url = url.parse::<url::Url>().map_err(|_| {
                     AppError::new("invalid_download_url", "Некорректная ссылка HTTP/HTTPS")
+                        .with_message(
+                            "messages.invalid_download_url_3",
+                            converter_core::model::message_args([]),
+                        )
                 })?;
                 if !matches!(url.scheme(), "http" | "https")
                     || url.host_str().is_none()
@@ -329,6 +353,10 @@ impl JobManager {
                     return Err(AppError::new(
                         "invalid_download_url",
                         "Нужна прямая ссылка HTTP/HTTPS без встроенного пароля",
+                    )
+                    .with_message(
+                        "messages.invalid_download_url_4",
+                        converter_core::model::message_args([]),
                     ));
                 }
                 if expected_sha256
@@ -338,6 +366,10 @@ impl JobManager {
                     return Err(AppError::new(
                         "invalid_sha256",
                         "SHA-256 должен содержать 64 шестнадцатеричных знака",
+                    )
+                    .with_message(
+                        "messages.invalid_sha256",
+                        converter_core::model::message_args([]),
                     ));
                 }
                 Ok(RegisteredSource::Remote(DownloadRequest {
@@ -376,6 +408,7 @@ impl JobManager {
                     total_bytes: None,
                     bytes_per_second: None,
                     restart_reason: None,
+                    restart_message: None,
                 }),
                 _ => None,
             })
@@ -457,11 +490,12 @@ impl JobManager {
         force: bool,
         update: impl FnOnce(&mut StoredJob),
     ) -> AppResult<Option<JobSnapshot>> {
-        let mut job = runtime
-            .jobs
-            .get(id)
-            .cloned()
-            .ok_or_else(|| AppError::new("job_not_found", "Задание не найдено"))?;
+        let mut job = runtime.jobs.get(id).cloned().ok_or_else(|| {
+            AppError::new("job_not_found", "Задание не найдено").with_message(
+                "messages.invalid_job_id",
+                converter_core::model::message_args([]),
+            )
+        })?;
         if expected.is_some_and(|(generation, run)| {
             generation != job.snapshot.generation || run != job.snapshot.run_id
         }) {
@@ -500,7 +534,12 @@ impl JobManager {
     }
     async fn start_job(&self, id: &str, only_new: bool) -> AppResult<JobSnapshot> {
         if self.inner.stopping.load(Ordering::SeqCst) {
-            return Err(AppError::new("app_stopping", "Приложение завершает работу"));
+            return Err(
+                AppError::new("app_stopping", "Приложение завершает работу").with_message(
+                    "messages.app_stopping",
+                    converter_core::model::message_args([]),
+                ),
+            );
         }
         if matches!(
             self.job(id)?.snapshot.state,
@@ -524,24 +563,38 @@ impl JobManager {
                         .jobs
                         .get(id)
                         .map(|job| job.snapshot.clone())
-                        .ok_or_else(|| AppError::new("job_not_found", "Задание не найдено"));
+                        .ok_or_else(|| {
+                            AppError::new("job_not_found", "Задание не найдено").with_message(
+                                "messages.invalid_job_id",
+                                converter_core::model::message_args([]),
+                            )
+                        });
                 }
-                return Err(AppError::new("job_busy", "Задание уже выполняется"));
+                return Err(
+                    AppError::new("job_busy", "Задание уже выполняется").with_message(
+                        "messages.job_busy_2",
+                        converter_core::model::message_args([]),
+                    ),
+                );
             }
-            let mut job = runtime
-                .jobs
-                .get(id)
-                .cloned()
-                .ok_or_else(|| AppError::new("job_not_found", "Задание не найдено"))?;
+            let mut job = runtime.jobs.get(id).cloned().ok_or_else(|| {
+                AppError::new("job_not_found", "Задание не найдено").with_message(
+                    "messages.invalid_job_id",
+                    converter_core::model::message_args([]),
+                )
+            })?;
             if only_new && (job.snapshot.generation != 0 || job.snapshot.state != JobState::Queued)
             {
                 return Ok(job.snapshot);
             }
             if job.snapshot.state == JobState::AwaitingInput {
-                return Err(AppError::new(
-                    "input_required",
-                    "Сначала уточните параметры задания",
-                ));
+                return Err(
+                    AppError::new("input_required", "Сначала уточните параметры задания")
+                        .with_message(
+                            "messages.input_required",
+                            converter_core::model::message_args([]),
+                        ),
+                );
             }
             if job.snapshot.state == JobState::Ready {
                 job.draft.prepare_only = false;
@@ -641,17 +694,25 @@ impl JobManager {
             .controls
             .get(id)
             .cloned()
-            .ok_or_else(|| AppError::new("download_not_active", "Скачивание уже остановлено"))?;
+            .ok_or_else(|| {
+                AppError::new("download_not_active", "Скачивание уже остановлено").with_message(
+                    "messages.download_not_active",
+                    converter_core::model::message_args([]),
+                )
+            })?;
         let job = self.job(id)?;
         if !matches!(
             job.snapshot.state,
             JobState::Queued | JobState::Downloading | JobState::DownloadRetryWait
         ) || job.snapshot.download.kind != DownloadKind::Remote
         {
-            return Err(AppError::new(
-                "download_not_active",
-                "Скачивание сейчас не выполняется",
-            ));
+            return Err(
+                AppError::new("download_not_active", "Скачивание сейчас не выполняется")
+                    .with_message(
+                        "messages.download_not_active_2",
+                        converter_core::model::message_args([]),
+                    ),
+            );
         }
         controls.download.pause();
         Ok(self
@@ -720,6 +781,10 @@ impl JobManager {
             return Err(AppError::new(
                 "job_not_awaiting",
                 "Параметры можно менять, пока задание ожидает ввода",
+            )
+            .with_message(
+                "messages.job_not_awaiting",
+                converter_core::model::message_args([]),
             ));
         }
         self.wait_idle(id).await?;
@@ -736,6 +801,10 @@ impl JobManager {
                     .find(|source| source_id(source) == id)
                     .ok_or_else(|| {
                         AppError::new("resource_not_found", "Ресурс не принадлежит этому заданию")
+                            .with_message(
+                                "messages.resource_not_found",
+                                converter_core::model::message_args([]),
+                            )
                     })?;
                 if !selected.iter().any(|item| source_id(item) == id) {
                     selected.push(source.clone());
@@ -810,6 +879,10 @@ impl JobManager {
                 AppError::new(
                     "dictionary_selection_required",
                     "В пакете нет списка словарей",
+                )
+                .with_message(
+                    "messages.dictionary_selection_required",
+                    converter_core::model::message_args([]),
                 )
             })?;
             update.dictionary_id = Some(first.id.clone());
@@ -946,10 +1019,12 @@ impl JobManager {
         // Проверка запуска, запись журнала и обновление состояния атомарны
         // относительно отмены и повторного запуска. Порядок блокировок: runtime → journals.
         let mut runtime = self.inner.runtime.lock().map_err(|_| lock_error())?;
-        let job = runtime
-            .jobs
-            .get(id)
-            .ok_or_else(|| AppError::new("job_not_found", "Задание не найдено"))?;
+        let job = runtime.jobs.get(id).ok_or_else(|| {
+            AppError::new("job_not_found", "Задание не найдено").with_message(
+                "messages.invalid_job_id",
+                converter_core::model::message_args([]),
+            )
+        })?;
         if job.snapshot.generation != generation
             || job.snapshot.run_id != run
             || state::success(job.snapshot.state)
@@ -1061,14 +1136,28 @@ impl JobManager {
             let result = runtime
                 .jobs
                 .get(id)
-                .ok_or_else(|| AppError::new("job_not_found", "Задание не найдено"))?
+                .ok_or_else(|| {
+                    AppError::new("job_not_found", "Задание не найдено").with_message(
+                        "messages.invalid_job_id",
+                        converter_core::model::message_args([]),
+                    )
+                })?
                 .published
                 .clone()
                 .ok_or_else(|| {
                     AppError::new("result_not_found", "Готовый результат ещё не создан")
+                        .with_message(
+                            "messages.result_not_found",
+                            converter_core::model::message_args([]),
+                        )
                 })?;
             if !runtime.exports.insert(id.to_owned()) {
-                return Err(AppError::new("job_busy", "Копия уже сохраняется"));
+                return Err(
+                    AppError::new("job_busy", "Копия уже сохраняется").with_message(
+                        "messages.job_busy_3",
+                        converter_core::model::message_args([]),
+                    ),
+                );
             }
             result
         };
@@ -1095,14 +1184,16 @@ impl JobManager {
         Ok(exported)
     }
     pub fn result_directory(&self, id: &str) -> AppResult<PathBuf> {
-        self.job(id)?
-            .published
-            .map(|p| p.directory)
-            .ok_or_else(|| AppError::new("result_not_found", "Готовый результат ещё не создан"))
+        self.job(id)?.published.map(|p| p.directory).ok_or_else(|| {
+            AppError::new("result_not_found", "Готовый результат ещё не создан").with_message(
+                "messages.result_not_found",
+                converter_core::model::message_args([]),
+            )
+        })
     }
     pub fn remove_cached_source(&self, source_id: &str) -> AppResult<()> {
         let runtime = self.inner.runtime.lock().map_err(|_| lock_error())?;
-        if runtime.jobs.values().any(|job| job.sources.iter().any(|s| matches!(s, RegisteredSource::Remote(request) if request.source_id == source_id))) { return Err(AppError::new("source_in_use", "Источник используется заданием очереди")); }
+        if runtime.jobs.values().any(|job| job.sources.iter().any(|s| matches!(s, RegisteredSource::Remote(request) if request.source_id == source_id))) { return Err(AppError::new("source_in_use", "Источник используется заданием очереди").with_message("messages.source_in_use", converter_core::model::message_args([]))); }
         self.inner.cache.remove(source_id)?;
         Ok(())
     }
@@ -1267,9 +1358,12 @@ impl JobManager {
         })?;
         let (context, callback_error) = self.run_context(id, generation, run, &controls)?;
         let mut prepared = files.into_iter();
-        let main = prepared
-            .next()
-            .ok_or_else(|| AppError::new("source_not_found", "Не выбран основной источник"))?;
+        let main = prepared.next().ok_or_else(|| {
+            AppError::new("source_not_found", "Не выбран основной источник").with_message(
+                "messages.source_not_found_3",
+                converter_core::model::message_args([]),
+            )
+        })?;
         let attachments: Vec<_> = prepared.collect();
         // HTML определяется до запуска DSL даже для URL без расширения.
         let mut prefix = [0u8; 1024];
@@ -1281,6 +1375,10 @@ impl JobManager {
             return Err(AppError::new(
                 "download_is_html",
                 "Вместо словаря получена HTML-страница. Нужна прямая ссылка на файл",
+            )
+            .with_message(
+                "messages.download_is_html",
+                converter_core::model::message_args([]),
             ));
         }
         let bundle_context = context.clone();
@@ -1288,7 +1386,12 @@ impl JobManager {
             prepare_source(&main, &attachments, &bundle_context)
         })
         .await
-        .map_err(|_| AppError::new("worker_failed", "Не удалось подготовить источник"))??;
+        .map_err(|_| {
+            AppError::new("worker_failed", "Не удалось подготовить источник").with_message(
+                "messages.worker_failed",
+                converter_core::model::message_args([]),
+            )
+        })??;
         let mut selected = job.selected_main.clone();
         let mut expected_fingerprint = job.selected_main_fingerprint.clone();
         self.mutate(id, Some((generation, run)), true, |job| {
@@ -1318,6 +1421,10 @@ impl JobManager {
             .await
             .map_err(|_| {
                 AppError::new("worker_failed", "Не удалось определить основной словарь")
+                    .with_message(
+                        "messages.worker_failed_2",
+                        converter_core::model::message_args([]),
+                    )
             })??;
             if let Some(selection) = selection {
                 selected = Some(selection.main_id.clone());
@@ -1371,12 +1478,18 @@ impl JobManager {
                         "dictionary_selection_required",
                         "Выберите словарь из пакета",
                     )
+                    .with_message(
+                        "messages.dictionary_selection_required_2",
+                        converter_core::model::message_args([]),
+                    )
                 })?
         } else {
-            bundles
-                .into_iter()
-                .next()
-                .ok_or_else(|| AppError::new("source_not_found", "В пакете нет словаря"))?
+            bundles.into_iter().next().ok_or_else(|| {
+                AppError::new("source_not_found", "В пакете нет словаря").with_message(
+                    "messages.source_not_found_4",
+                    converter_core::model::message_args([]),
+                )
+            })?
         };
         let inspected_bundle = bundle.clone();
         let inspected_options = job.draft.options.clone();
@@ -1386,11 +1499,21 @@ impl JobManager {
                 if let Some(expected) = expected_fingerprint {
                     let actual =
                         package::fingerprint(&inspected_bundle.main.path, &inspected_context)
-                            .map_err(|error| ConverterError::new(&error.code, error.message))?;
+                            .map_err(|error| ConverterError {
+                                code: error.code,
+                                message: error.message,
+                                message_key: error.message_key,
+                                message_args: error.message_args,
+                                source_location: None,
+                            })?;
                     if actual != expected {
                         return Err(ConverterError::new(
                             "source_changed",
                             "Словарь в архиве изменился после анализа. Выберите архив заново",
+                        )
+                        .with_message(
+                            "messages.source_changed",
+                            converter_core::model::message_args([]),
                         ));
                     }
                 }
@@ -1408,7 +1531,12 @@ impl JobManager {
             },
         )
         .await
-        .map_err(|_| AppError::new("worker_failed", "Не удалось прочитать параметры словаря"))??;
+        .map_err(|_| {
+            AppError::new("worker_failed", "Не удалось прочитать параметры словаря").with_message(
+                "messages.worker_failed_3",
+                converter_core::model::message_args([]),
+            )
+        })??;
         self.mutate(id, Some((generation, run)), true, |job| {
             job.snapshot.state = JobState::Converting;
             job.snapshot.conversion.status = ConversionStatus::Running;
@@ -1453,7 +1581,12 @@ impl JobManager {
         let artifacts =
             tokio::task::spawn_blocking(move || convert_to_staging(&request, &core_context))
                 .await
-                .map_err(|_| AppError::new("worker_failed", "Не удалось завершить конвертацию"))?;
+                .map_err(|_| {
+                    AppError::new("worker_failed", "Не удалось завершить конвертацию").with_message(
+                        "messages.worker_failed_4",
+                        converter_core::model::message_args([]),
+                    )
+                })?;
         if let Some(error) = callback_error.lock().map_err(|_| lock_error())?.take() {
             return Err(error);
         }

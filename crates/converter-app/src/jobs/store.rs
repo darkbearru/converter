@@ -85,6 +85,10 @@ impl Store {
                     return Err(AppError::new(
                         "invalid_staging",
                         "Некорректная временная директория задания",
+                    )
+                    .with_message(
+                        "messages.invalid_staging_4",
+                        converter_core::model::message_args([]),
                     ));
                 }
             }
@@ -108,15 +112,26 @@ impl Store {
             .create(true)
             .truncate(false)
             .open(root.join("app.lock"))?;
-        file.try_lock()
-            .map_err(|_| AppError::new("app_busy", "Это хранилище уже открыто другим процессом"))?;
+        file.try_lock().map_err(|_| {
+            AppError::new("app_busy", "Это хранилище уже открыто другим процессом")
+                .with_message("messages.app_busy", converter_core::model::message_args([]))
+        })?;
         Ok(Self { root, _lock: file })
     }
     pub fn id_path(&self, id: &str, suffix: &str) -> AppResult<PathBuf> {
-        uuid::Uuid::parse_str(id)
-            .map_err(|_| AppError::new("invalid_job_id", "Задание не найдено"))?;
+        uuid::Uuid::parse_str(id).map_err(|_| {
+            AppError::new("invalid_job_id", "Задание не найдено").with_message(
+                "messages.invalid_job_id",
+                converter_core::model::message_args([]),
+            )
+        })?;
         if id.len() != 36 {
-            return Err(AppError::new("invalid_job_id", "Задание не найдено"));
+            return Err(
+                AppError::new("invalid_job_id", "Задание не найдено").with_message(
+                    "messages.invalid_job_id",
+                    converter_core::model::message_args([]),
+                ),
+            );
         }
         Ok(self.root.join("jobs").join(format!("{id}.{suffix}")))
     }
@@ -131,13 +146,21 @@ impl Store {
                 continue;
             }
             if !entry.file_type()?.is_file() {
-                return Err(AppError::new("invalid_store", "Некорректный файл очереди"));
+                return Err(AppError::new("invalid_store", "Некорректный файл очереди")
+                    .with_message(
+                        "messages.invalid_store_2",
+                        converter_core::model::message_args([]),
+                    ));
             }
             let job: StoredJob = serde_json::from_reader(File::open(entry.path())?)?;
             if job.version != 1 || entry.path() != self.id_path(&job.snapshot.id, "json")? {
                 return Err(AppError::new(
                     "store_version_mismatch",
                     "Неподдерживаемая версия очереди",
+                )
+                .with_message(
+                    "messages.store_version_mismatch",
+                    converter_core::model::message_args([]),
                 ));
             }
             jobs.insert(job.snapshot.id.clone(), job);
@@ -159,5 +182,10 @@ impl Store {
 fn write_json(path: &Path, value: &impl Serialize) -> AppResult<()> {
     atomicwrites::AtomicFile::new(path, atomicwrites::OverwriteBehavior::AllowOverwrite)
         .write(|file| serde_json::to_writer(file, value).map_err(io::Error::other))
-        .map_err(|_| AppError::new("store_write_failed", "Не удалось сохранить очередь"))
+        .map_err(|_| {
+            AppError::new("store_write_failed", "Не удалось сохранить очередь").with_message(
+                "messages.store_write_failed",
+                converter_core::model::message_args([]),
+            )
+        })
 }

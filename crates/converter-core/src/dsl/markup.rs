@@ -161,20 +161,25 @@ impl MarkupParser<'_> {
             return Err(ConverterError::new(
                 "article_too_large",
                 "HTML статьи превышает допустимый размер",
-            ));
+            )
+            .with_message("messages.article_too_large", crate::model::message_args([])));
         }
         frames
             .last_mut()
-            .ok_or_else(|| ConverterError::new("invalid_markup", "Неожиданный конец разметки"))?
+            .ok_or_else(|| {
+                ConverterError::new("invalid_markup", "Неожиданный конец разметки")
+                    .with_message("messages.invalid_markup", crate::model::message_args([]))
+            })?
             .children
             .push(node);
         Ok(())
     }
 
     fn close(&mut self, frames: &mut Vec<Frame>) -> Result<()> {
-        let frame = frames
-            .pop()
-            .ok_or_else(|| ConverterError::new("invalid_markup", "Неожиданный конец разметки"))?;
+        let frame = frames.pop().ok_or_else(|| {
+            ConverterError::new("invalid_markup", "Неожиданный конец разметки")
+                .with_message("messages.invalid_markup", crate::model::message_args([]))
+        })?;
         if frame.children.is_empty() && formatting(&frame.name) {
             return Ok(());
         }
@@ -201,6 +206,7 @@ impl MarkupParser<'_> {
             let rest = &source[self.position..];
             let ch = rest.chars().next().ok_or_else(|| {
                 ConverterError::new("invalid_markup", "Неожиданный конец разметки")
+                    .with_message("messages.invalid_markup", crate::model::message_args([]))
             })?;
             if ch == '\\' {
                 self.position += 1;
@@ -224,10 +230,13 @@ impl MarkupParser<'_> {
                     )?;
                     self.position += end + 4;
                 } else {
-                    return Err(ConverterError::new(
-                        "invalid_markup",
-                        "Не закрыта ссылка <<…>>",
-                    ));
+                    return Err(
+                        ConverterError::new("invalid_markup", "Не закрыта ссылка <<…>>")
+                            .with_message(
+                                "messages.invalid_markup_2",
+                                crate::model::message_args([]),
+                            ),
+                    );
                 }
             } else if ch == '[' {
                 let Some(end) = token_end(rest) else {
@@ -247,6 +256,12 @@ impl MarkupParser<'_> {
                     text.push_str(&rest[..end + 1]);
                     if !closing {
                         self.diagnostics.push(Diagnostic {
+                            message_key: Some("messages.unknown_tag".into()),
+                            message_args: serde_json::from_value(crate::model::message_args([(
+                                "raw",
+                                raw.to_string(),
+                            )]))
+                            .unwrap_or_default(),
                             code: "unknown_tag".into(),
                             message: format!("Неизвестный тег сохранён как текст: [{raw}]"),
                             source_location: None,
@@ -267,6 +282,10 @@ impl MarkupParser<'_> {
                         return Err(ConverterError::new(
                             "invalid_markup",
                             format!("Неожиданное закрытие тега: [{raw}]"),
+                        )
+                        .with_message(
+                            "messages.invalid_markup_3",
+                            crate::model::message_args([("raw", raw.to_string())]),
                         ));
                     };
                     let crossed = matching + 1 != frames.len();
@@ -286,6 +305,10 @@ impl MarkupParser<'_> {
                         return Err(ConverterError::new(
                             "invalid_markup",
                             format!("Неожиданное закрытие тега: [{raw}]"),
+                        )
+                        .with_message(
+                            "messages.invalid_markup_3",
+                            crate::model::message_args([("raw", raw.to_string())]),
                         ));
                     }
                     let reopen: Vec<_> =
@@ -297,6 +320,12 @@ impl MarkupParser<'_> {
                     frames.extend(reopen);
                     if source_crossed {
                         self.diagnostics.push(Diagnostic {
+                            message_key: Some("messages.repaired_markup".into()),
+                            message_args: serde_json::from_value(crate::model::message_args([(
+                                "raw",
+                                raw.to_string(),
+                            )]))
+                            .unwrap_or_default(),
                             code: "repaired_markup".into(),
                             message: format!(
                                 "Восстановлено пересечение тегов оформления перед [{raw}]"
@@ -312,7 +341,8 @@ impl MarkupParser<'_> {
                     return Err(ConverterError::new(
                         "invalid_markup",
                         "Слишком глубокая вложенность тегов DSL",
-                    ));
+                    )
+                    .with_message("messages.invalid_markup_4", crate::model::message_args([])));
                 }
                 // Сокращение и абзац остаются цельными узлами, даже если внутри них
                 // закрывается внешнее оформление. Переносим только активные стили.
@@ -346,10 +376,13 @@ impl MarkupParser<'_> {
         }
         if frames.len() > 1 {
             let stop = normalized(&frames[frames.len() - 1].name);
-            return Err(ConverterError::new(
-                "invalid_markup",
-                format!("Не закрыт тег [{stop}]"),
-            ));
+            return Err(
+                ConverterError::new("invalid_markup", format!("Не закрыт тег [{stop}]"))
+                    .with_message(
+                        "messages.invalid_markup_5",
+                        crate::model::message_args([("stop", stop.to_string())]),
+                    ),
+            );
         }
         if !text.is_empty() {
             self.push(&mut frames, Node::Text(text))?;

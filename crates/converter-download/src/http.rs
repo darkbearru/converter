@@ -21,7 +21,8 @@ pub async fn open(
         return Err(DownloadError::new(
             "invalid_download_url",
             "Нужна ссылка HTTP или HTTPS без встроенного пароля",
-        ));
+        )
+        .with_message("messages.invalid_download_url_2", crate::message_args([])));
     }
     let max_redirects = policy.max_redirects as usize;
     let client = reqwest::Client::builder()
@@ -106,7 +107,8 @@ pub async fn open(
         return Err(DownloadError::new(
             "download_size_limit",
             "Размер источника превышает допустимый",
-        ));
+        )
+        .with_message("messages.download_size_limit", crate::message_args([])));
     }
     Ok(OpenResponse { metadata, response })
 }
@@ -115,4 +117,5 @@ pub(crate) fn network_error() -> DownloadError {
         "download_network",
         "Сетевая ошибка или таймаут; сохранённую часть можно продолжить",
     )
+    .with_message("messages.download_network", crate::message_args([]))
 }

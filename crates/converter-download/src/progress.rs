@@ -22,6 +22,7 @@ impl Progress {
                 total_bytes: None,
                 bytes_per_second: None,
                 restart_reason: None,
+                restart_message: None,
             },
             sink,
             samples: VecDeque::new(),

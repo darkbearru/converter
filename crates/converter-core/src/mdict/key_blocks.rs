@@ -41,10 +41,10 @@ impl KeyBlocks {
 
     pub fn push(&mut self, key: &str, offset: u64) -> Result<()> {
         if key.is_empty() || key.contains('\0') {
-            return Err(ConverterError::new(
-                "invalid_key",
-                "Ключ словаря пуст или содержит NUL",
-            ));
+            return Err(
+                ConverterError::new("invalid_key", "Ключ словаря пуст или содержит NUL")
+                    .with_message("messages.invalid_key_2", crate::model::message_args([])),
+            );
         }
         let order = if self.utf16 {
             mdd_sort_key(key)
@@ -55,6 +55,10 @@ impl KeyBlocks {
             return Err(ConverterError::new(
                 "unsorted_keys",
                 format!("Нарушен порядок ключей: {key}"),
+            )
+            .with_message(
+                "messages.unsorted_keys",
+                crate::model::message_args([("key", key.to_string())]),
             ));
         }
         let encoded: Vec<u8> = if self.utf16 {
@@ -67,7 +71,8 @@ impl KeyBlocks {
             return Err(ConverterError::new(
                 "invalid_key",
                 "Ключ превышает длину 65535 единиц формата",
-            ));
+            )
+            .with_message("messages.invalid_key_3", crate::model::message_args([])));
         }
         let terminator = if self.utf16 { 2 } else { 1 };
         if !self.buffer.is_empty()

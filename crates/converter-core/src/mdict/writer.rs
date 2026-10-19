@@ -19,7 +19,8 @@ fn validate_limits(ctx: &RunContext) -> Result<()> {
         return Err(ConverterError::new(
             "invalid_limits",
             "Размеры рабочих буферов должны быть положительными",
-        ));
+        )
+        .with_message("messages.invalid_limits_2", crate::model::message_args([])));
     }
     std::fs::create_dir_all(&ctx.scratch_dir)?;
     Ok(())
@@ -43,7 +44,8 @@ pub fn write_mdx<W: Write + Seek>(
             return Err(ConverterError::new(
                 "article_too_large",
                 "HTML статьи превышает допустимый размер",
-            ));
+            )
+            .with_message("messages.article_too_large", crate::model::message_args([])));
         }
         keys.push(&record.key, bodies.raw_bytes)?;
         bodies.article(record.html.as_bytes())?;
@@ -179,6 +181,7 @@ fn finish<W: Write + Seek>(
     copy(&mut keys.data, &mut out, ctx)?;
     let index_size = bodies.blocks.checked_mul(16).ok_or_else(|| {
         ConverterError::new("size_overflow", "Переполнение размера индекса записей")
+            .with_message("messages.size_overflow_5", crate::model::message_args([]))
     })?;
     for number in [bodies.blocks, keys.entries, index_size, bodies.bytes] {
         out.write_all(&number.to_be_bytes())?;
@@ -189,10 +192,10 @@ fn finish<W: Write + Seek>(
     copy(&mut bodies.data, &mut out, ctx)?;
     ctx.control.check()?;
     out.flush()?;
-    let total_bytes = out
-        .stream_position()?
-        .checked_sub(start)
-        .ok_or_else(|| ConverterError::new("size_overflow", "Некорректное смещение результата"))?;
+    let total_bytes = out.stream_position()?.checked_sub(start).ok_or_else(|| {
+        ConverterError::new("size_overflow", "Некорректное смещение результата")
+            .with_message("messages.size_overflow_6", crate::model::message_args([]))
+    })?;
     let _ = add(keys.bytes, bodies.bytes)?;
     Ok(WriteSummary {
         entries: keys.entries,
