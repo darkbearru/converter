@@ -145,18 +145,18 @@ async function wait(condition, label, timeout = 30000) {
 const execute = (script, args = []) =>
   request(`/session/${session}/execute/sync`, { script, args });
 async function clickText(text) {
-  const element = await wait(
-    () =>
-      execute(
-        'return Array.from(document.querySelectorAll("button")).find(b => (b.getAttribute("aria-label") === arguments[0] || b.textContent.trim() === arguments[0]) && !b.disabled && b.getClientRects().length) || null',
-        [text],
-      ),
-    text,
-  );
-  await request(
-    `/session/${session}/element/${element['element-6066-11e4-a52e-4f735466cecf']}/click`,
-    {},
-  );
+  await wait(async () => {
+    const element = await execute(
+      'return Array.from(document.querySelectorAll("button")).find(b => (b.getAttribute("aria-label") === arguments[0] || b.textContent.trim() === arguments[0]) && !b.disabled && b.getClientRects().length) || null',
+      [text],
+    );
+    if (!element) return false;
+    await request(
+      `/session/${session}/element/${element['element-6066-11e4-a52e-4f735466cecf']}/click`,
+      {},
+    );
+    return true;
+  }, text);
 }
 async function select(selector) {
   const element = await wait(
@@ -292,22 +292,24 @@ try {
   assert.equal(report.sources[0].sha256, expectedSha);
   assert.equal(report.summary.source_articles, 60001);
   await newSource(sourceUrl.replace('/dictionary', '/cancel'));
-  // Для отмены достаточно полученных данных: неполный блок ещё не обязан стать checkpoint.
-  const cancelling = await wait(
-    async () =>
-      (await readJobs()).find(
-        (job) =>
-          job.snapshot.id !== firstJob.snapshot.id &&
-          job.snapshot.download.received_bytes >= checkpoint,
-      ),
-    'cancel checkpoint',
-  );
+  // Читаем живой прогресс через настоящий IPC: последний блок ещё может не попасть в checkpoint.
+  const cancelling = await wait(async () => {
+    const jobs = await request(`/session/${session}/execute/async`, {
+      script:
+        'const done = arguments[arguments.length - 1]; window.__TAURI_INTERNALS__.invoke("get_jobs").then(done, error => done({error: String(error)}));',
+      args: [],
+    });
+    assert.ok(Array.isArray(jobs), JSON.stringify(jobs));
+    return jobs.find(
+      (job) => job.id !== firstJob.snapshot.id && job.download.received_bytes >= checkpoint,
+    );
+  }, 'cancel received bytes');
   await clickText(label('cancel_download'));
   await wait(
     async () =>
       (await readJobs()).some(
         (job) =>
-          job.snapshot.id === cancelling.snapshot.id &&
+          job.snapshot.id === cancelling.id &&
           job.snapshot.state === 'cancelled' &&
           job.snapshot.download.files.every((file) => file.state === 'cancelled'),
       ),
@@ -332,6 +334,17 @@ try {
     ),
   );
   console.log('Windows native smoke PASS: HTTP failure/pause/reopen/range/convert/cache/cancel');
+} catch (error) {
+  await screenshot('failure.png').catch(() => {});
+  await writeFile(
+    join(output, 'failure.json'),
+    JSON.stringify(
+      { error: String(error), requests, jobs: await readJobs().catch(() => []) },
+      null,
+      2,
+    ),
+  );
+  throw error;
 } finally {
   if (session) await request(`/session/${session}`, undefined, 'DELETE').catch(() => {});
   driver.kill();
