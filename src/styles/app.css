@@ -546,19 +546,25 @@ h3 {
   margin: 0 0 4px;
   font-size: 20px;
 }
-.about-identity p,
-.about-updates p {
+.about-identity p {
   margin: 0;
 }
 .about-description {
   margin: 16px 0;
 }
 .about-copyright {
-  margin: 0 0 8px;
+  margin: 0;
+}
+.about-attribution {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 .about-thanks {
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
   gap: 6px;
   color: var(--text);
   text-underline-offset: 3px;
@@ -569,7 +575,6 @@ h3 {
   color: var(--accent);
 }
 .about-updates {
-  margin-top: 20px;
   color: var(--muted);
 }
 .about-dialog .p-dialog-footer {

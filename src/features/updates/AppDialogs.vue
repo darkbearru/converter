@@ -26,6 +26,12 @@ const notificationVisible = computed({
     notification.value = visible;
   },
 });
+const updateDescription = computed(() => {
+  if (status.value === 'checking') return 'проверка обновлений…';
+  if (status.value === 'error') return 'не удалось проверить обновления';
+  if (available.value) return `доступна версия ${available.value}`;
+  return 'установлена последняя версия';
+});
 
 function check(startup = false): Promise<void> {
   if (pending) return pending;
@@ -97,27 +103,27 @@ onBeforeUnmount(() => {
         <img :src="bookIcon" alt="" width="58" height="52" />
         <div>
           <h2>Converter</h2>
-          <p>Версия {{ version || '…' }}</p>
+          <p>
+            Версия {{ version || '…' }}
+            <span class="about-updates" aria-live="polite">({{ updateDescription }})</span>
+          </p>
         </div>
       </div>
       <p class="about-description">Локальный конвертер словарей DSL в MDX и MDD.</p>
-      <p class="about-copyright">© Alexey Abramenko</p>
-      <a
-        class="about-thanks"
-        href="https://pay.cloudtips.ru/p/7e782291"
-        @click.prevent="openPage('support')"
-        ><Icon name="cash" /><span>Сказать спасибо</span></a
-      >
-      <div class="about-updates" aria-live="polite">
-        <p v-if="status === 'checking'">Проверка обновлений…</p>
-        <p v-else-if="status === 'error'">Не удалось проверить обновления</p>
-        <p v-else-if="available">Доступна версия {{ available }}</p>
-        <p v-else>Установлена последняя версия</p>
+      <div class="about-attribution">
+        <p class="about-copyright">© Alexey Abramenko</p>
+        <a
+          class="about-thanks"
+          href="https://pay.cloudtips.ru/p/7e782291"
+          @click.prevent="openPage('support')"
+          ><Icon name="cash" /><span>Сказать спасибо</span></a
+        >
       </div>
       <Message v-if="actionError" severity="error">{{ actionError }}</Message>
     </div>
     <template #footer>
       <Button
+        v-if="!available"
         label="Проверить обновления"
         severity="secondary"
         outlined

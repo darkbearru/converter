@@ -12,8 +12,10 @@ it('предлагает новый релиз один раз при запус
   harness.openAbout();
   const about = await screen.findByRole('dialog', { name: 'О программе' });
   expect(within(about).getByText('© Alexey Abramenko')).toBeVisible();
-  expect(within(about).getByText('Доступна версия 0.3.0')).toBeVisible();
-  await fireEvent.click(within(about).getByRole('button', { name: 'Проверить обновления' }));
+  expect(within(about).getByText('Версия 0.2.3', { exact: false })).toHaveTextContent(
+    'Версия 0.2.3 (доступна версия 0.3.0)',
+  );
+  expect(within(about).queryByRole('button', { name: 'Проверить обновления' })).toBeNull();
   await waitFor(() =>
     expect(screen.queryByRole('dialog', { name: 'Доступно обновление' })).toBeNull(),
   );
@@ -28,8 +30,18 @@ it('ошибка проверки не прерывает запуск, ручн
   expect(screen.queryByRole('dialog')).toBeNull();
   harness.openAbout();
   const about = await screen.findByRole('dialog', { name: 'О программе' });
-  expect(await within(about).findByText('Не удалось проверить обновления')).toBeVisible();
+  await waitFor(() =>
+    expect(within(about).getByText('Версия 0.2.3', { exact: false })).toHaveTextContent(
+      'Версия 0.2.3 (не удалось проверить обновления)',
+    ),
+  );
   harness.restoreUpdates();
   await fireEvent.click(within(about).getByRole('button', { name: 'Проверить обновления' }));
-  expect(await within(about).findByText('Установлена последняя версия')).toBeVisible();
+  await waitFor(() =>
+    expect(within(about).getByText('Версия 0.2.3', { exact: false })).toHaveTextContent(
+      'Версия 0.2.3 (установлена последняя версия)',
+    ),
+  );
+  expect(within(about).getByRole('button', { name: 'Проверить обновления' })).toBeEnabled();
+  expect(within(about).queryByRole('button', { name: 'Скачать' })).toBeNull();
 });

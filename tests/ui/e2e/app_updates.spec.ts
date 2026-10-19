@@ -30,12 +30,14 @@ test('обновление предлагается при запуске, ок�
   );
   expect(Math.abs(centers[0]! - centers[1]!)).toBeLessThan(1);
   await expect(thanks.locator('.app-icon')).toHaveCSS('color', 'rgb(249, 97, 51)');
-  await about.getByRole('button', { name: 'Проверить обновления' }).click();
-  await expect(about).toContainText('Доступна версия 0.3.0');
+  await expect(about.getByRole('button', { name: 'Проверить обновления' })).toHaveCount(0);
+  await expect(about.locator('.about-identity')).toContainText(
+    'Версия 0.2.3 (доступна версия 0.3.0)',
+  );
   await expect(notice).not.toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('about-updates.png') });
   await page.setViewportSize({ width: 540, height: 400 });
-  for (const name of ['Проверить обновления', 'Скачать', 'Закрыть']) {
+  for (const name of ['Скачать', 'Закрыть']) {
     await expect(about.getByRole('button', { name, exact: true }).last()).toBeInViewport();
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -53,6 +55,9 @@ test('недоступность GitHub не мешает запуску и от
   await step(page, 'about');
   const about = page.getByRole('dialog', { name: 'О программе' });
   await expect(about).toContainText('Версия 0.2.3');
-  await expect(about).toContainText('Не удалось проверить обновления');
+  await expect(about.locator('.about-identity')).toContainText(
+    'Версия 0.2.3 (не удалось проверить обновления)',
+  );
   await expect(about.getByRole('button', { name: 'Скачать' })).toHaveCount(0);
+  await expect(about.getByRole('button', { name: 'Проверить обновления' })).toBeEnabled();
 });
