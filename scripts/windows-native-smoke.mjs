@@ -292,12 +292,13 @@ try {
   assert.equal(report.sources[0].sha256, expectedSha);
   assert.equal(report.summary.source_articles, 60001);
   await newSource(sourceUrl.replace('/dictionary', '/cancel'));
+  // Для отмены достаточно полученных данных: неполный блок ещё не обязан стать checkpoint.
   const cancelling = await wait(
     async () =>
       (await readJobs()).find(
         (job) =>
           job.snapshot.id !== firstJob.snapshot.id &&
-          job.snapshot.download.confirmed_bytes >= checkpoint,
+          job.snapshot.download.received_bytes >= checkpoint,
       ),
     'cancel checkpoint',
   );
