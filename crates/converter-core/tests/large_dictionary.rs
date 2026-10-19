@@ -81,6 +81,7 @@ fn крупный_словарь_с_ограниченным_буфером() ->
     });
     let request = ConversionRequest {
         bundle: InputBundle {
+            includes: vec![],
             main: PreparedFile {
                 id: "large".into(),
                 display_name: "large.dsl".into(),

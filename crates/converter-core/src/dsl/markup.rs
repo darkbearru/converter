@@ -279,6 +279,10 @@ impl MarkupParser<'_> {
                         .iter()
                         .rposition(|frame| normalized(&frame.name) == normalized(&name));
                     let Some(matching) = matching else {
+                        // [/m] сбрасывает отступ; повторный сброс допустим после смены [mN].
+                        if normalized(&name) == "m" {
+                            continue;
+                        }
                         return Err(ConverterError::new(
                             "invalid_markup",
                             format!("Неожиданное закрытие тега: [{raw}]"),
@@ -337,6 +341,22 @@ impl MarkupParser<'_> {
                     }
                     continue;
                 }
+                // [mN] задаёт текущий абзац: следующий [mN] завершает предыдущий.
+                if normalized(&name) == "m"
+                    && let Some(previous) = frames
+                        .iter()
+                        .rposition(|frame| normalized(&frame.name) == "m")
+                    && frames[previous + 1..]
+                        .iter()
+                        .all(|frame| formatting(&frame.name))
+                {
+                    let styles: Vec<_> =
+                        frames[previous + 1..].iter().map(Frame::reopened).collect();
+                    while frames.len() > previous {
+                        self.close(&mut frames)?;
+                    }
+                    frames.extend(styles);
+                }
                 if frames.len() > 128 {
                     return Err(ConverterError::new(
                         "invalid_markup",
@@ -372,6 +392,19 @@ impl MarkupParser<'_> {
             } else {
                 text.push(ch);
                 self.position += ch.len_utf8();
+            }
+        }
+        // Закрытие [/m] необязательно в конце статьи; остальные теги проверяем строго.
+        if frames.len() > 1
+            && frames[1..]
+                .iter()
+                .all(|frame| normalized(&frame.name) == "m")
+        {
+            if !text.is_empty() {
+                self.push(&mut frames, Node::Text(std::mem::take(&mut text)))?;
+            }
+            while frames.len() > 1 {
+                self.close(&mut frames)?;
             }
         }
         if frames.len() > 1 {

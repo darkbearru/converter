@@ -45,3 +45,14 @@ it('ошибка проверки не прерывает запуск, ручн
   expect(within(about).getByRole('button', { name: 'Проверить обновления' })).toBeEnabled();
   expect(within(about).queryByRole('button', { name: 'Скачать' })).toBeNull();
 });
+
+it('подпись языка и системный вариант используют текущий язык интерфейса', async () => {
+  const harness = createHarness('local');
+  render(App, { props: { bridge: harness.bridge } });
+  harness.openAbout();
+  const about = await screen.findByRole('dialog', { name: 'О программе' });
+  const select = within(about).getByRole('combobox', { name: 'Язык' });
+  expect(select).toHaveTextContent('Русский');
+  await fireEvent.click(select);
+  expect(await screen.findByRole('option', { name: 'Системный' })).toBeVisible();
+});

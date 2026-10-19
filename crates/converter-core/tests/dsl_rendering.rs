@@ -21,6 +21,7 @@ fn prepared(path: &Path) -> PreparedFile {
 }
 fn article(body: &str) -> ArticleAst {
     ArticleAst {
+        source_name: String::new(),
         id: 0,
         source_line: 1,
         parent_id: None,
@@ -41,6 +42,7 @@ fn сохраняет_семантику_и_экранирует_текст() ->
     std::fs::write(&image, b"PNG")?;
     std::fs::write(&audio, b"MP3")?;
     let bundle = InputBundle {
+        includes: vec![],
         main: prepared(&main),
         abbreviations: Some(prepared(&abrv)),
         resources: vec![
@@ -128,6 +130,7 @@ fn сохраняет_семантику_и_экранирует_текст() ->
 fn незакрытый_тег_и_слишком_большой_html_дают_ошибку() -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let bundle = InputBundle {
+        includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: None,
         resources: vec![],
@@ -152,6 +155,7 @@ fn незакрытый_тег_и_слишком_большой_html_дают_о
 fn экранирование_и_подстановка_работают_в_целях_ссылок() -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let bundle = InputBundle {
+        includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: None,
         resources: vec![],
@@ -173,6 +177,7 @@ fn восстанавливает_пересечение_форматирова�
 -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let bundle = InputBundle {
+        includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: None,
         resources: vec![],
@@ -216,6 +221,7 @@ fn закрытие_сокращения_сохраняет_его_цель_пр
     let abrv = temp.path().join("main_abrv.dsl");
     std::fs::write(&abrv, "обр.\n образное выражение\n")?;
     let bundle = InputBundle {
+        includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: Some(prepared(&abrv)),
         resources: vec![],
@@ -243,6 +249,7 @@ fn пересекающиеся_сокращения_остаются_целым
         "прям.\n прямое значение\nперен.\n переносное значение\n",
     )?;
     let bundle = InputBundle {
+        includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: Some(prepared(&abrv)),
         resources: vec![],
@@ -282,6 +289,7 @@ fn пересекающиеся_сокращения_остаются_целым
 fn оформление_продолжается_через_границы_абзацев() -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let bundle = InputBundle {
+        includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: None,
         resources: vec![],
@@ -322,6 +330,7 @@ fn ударение_сохраняет_букву_и_цель_ссылки_бе�
 -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let bundle = InputBundle {
+        includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: None,
         resources: vec![],
@@ -351,6 +360,7 @@ fn ударение_сохраняет_букву_и_цель_ссылки_бе�
 fn факультативная_зона_сохраняет_весь_пример_видимым() -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let bundle = InputBundle {
+        includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: None,
         resources: vec![],
@@ -374,6 +384,7 @@ fn восстановление_оформления_не_подменяет_о�
 {
     let temp = tempfile::tempdir()?;
     let bundle = InputBundle {
+        includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: None,
         resources: vec![],
@@ -404,6 +415,7 @@ fn восстановление_соблюдает_границы_вложенн
     let temp = tempfile::tempdir()?;
     let path = temp.path().join("main.dsl");
     let bundle = InputBundle {
+        includes: vec![],
         main: prepared(&path),
         abbreviations: None,
         resources: vec![],
@@ -441,6 +453,7 @@ fn восстановление_оформления_не_исправляет_�
 -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let bundle = InputBundle {
+        includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: None,
         resources: vec![],
@@ -465,6 +478,7 @@ fn неизвестный_тип_ресурса_не_становится_исп
     let path = temp.path().join("page.html");
     std::fs::write(&path, "<script>alert(1)</script>")?;
     let bundle = InputBundle {
+        includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: None,
         resources: vec![ResourceRecord {
@@ -496,6 +510,7 @@ fn читатель_подключает_рендерер_и_сохраняет_
         "colo(u)r\n~ test\n [b]~[/b]\n @child\n  [i]дочерняя[/i]\n @\ncolor\n второе значение\n",
     )?;
     let bundle = InputBundle {
+        includes: vec![],
         main: prepared(&path),
         abbreviations: None,
         resources: vec![],
@@ -517,5 +532,56 @@ fn читатель_подключает_рендерер_и_сохраняет_
     assert!(sink.entries[1].html.contains("<em>дочерняя</em>"));
     assert_eq!(sink.entries[2].headwords, ["color"]);
     assert!(sink.diagnostics.is_empty());
+    Ok(())
+}
+
+#[test]
+fn отступ_m_заканчивается_следующим_абзацем_или_концом_статьи()
+-> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let file = temp.path().join("main.dsl");
+    std::fs::write(&file, "word\n [m2]opening[m1]first[/m][m1]last\n")?;
+    let bundle = InputBundle {
+        includes: vec![],
+        main: PreparedFile {
+            id: "main".into(),
+            display_name: "main.dsl".into(),
+            path: file,
+        },
+        abbreviations: None,
+        resources: vec![],
+    };
+    let mut sink = CollectSink::default();
+    DslReader.read(
+        &bundle,
+        &ReadOptions::default(),
+        &mut sink,
+        &RunContext::new(temp.path().join("work")),
+    )?;
+    let html = &sink.entries[0].html;
+    assert!(html.contains("opening") && html.contains("first") && html.contains("last"));
+    assert_eq!(html.matches("<div class=\"dsl-indent ").count(), 3);
+    Ok(())
+}
+
+#[test]
+fn повторное_закрытие_абзаца_не_теряет_текст() -> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let path = temp.path().join("main.dsl");
+    std::fs::write(&path, "word\n [m2]before[m1]first[/m]after[/m]\n")?;
+    let bundle = InputBundle {
+        includes: vec![],
+        main: prepared(&path),
+        abbreviations: None,
+        resources: vec![],
+    };
+    let mut sink = CollectSink::default();
+    DslReader.read(
+        &bundle,
+        &ReadOptions::default(),
+        &mut sink,
+        &RunContext::new(temp.path().join("work")),
+    )?;
+    assert!(sink.entries[0].html.contains("after"));
     Ok(())
 }

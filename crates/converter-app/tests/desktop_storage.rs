@@ -93,6 +93,7 @@ fn artifacts(
     std::fs::write(&source, "#NAME \"Тест\"\nalpha\n\t[b]Статья[/b]\n")?;
     let request = ConversionRequest {
         bundle: InputBundle {
+            includes: vec![],
             main: PreparedFile {
                 id: "main".into(),
                 display_name: "источник.dsl".into(),

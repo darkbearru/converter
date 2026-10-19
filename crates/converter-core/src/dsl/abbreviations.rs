@@ -92,6 +92,7 @@ pub(super) fn lookup(
     });
     let ctx = &quiet;
     let input = InputBundle {
+        includes: vec![],
         main: source.clone(),
         abbreviations: None,
         resources: Vec::new(),
@@ -171,6 +172,7 @@ mod tests {
             path: path.clone(),
         };
         let bundle = InputBundle {
+            includes: vec![],
             main: source.clone(),
             abbreviations: Some(source),
             resources: vec![],

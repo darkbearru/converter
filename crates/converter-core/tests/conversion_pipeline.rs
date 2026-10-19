@@ -74,6 +74,7 @@ fn fixture(
     }
     Ok(ConversionRequest {
         bundle: InputBundle {
+            includes: vec![],
             main: PreparedFile {
                 id: "main".into(),
                 display_name: "source.dsl".into(),

@@ -156,6 +156,18 @@ export function createHarness(scenario: string | null) {
     ];
     jobs.set(currentId, job);
   }
+  if (scenario === 'archive-password') {
+    const job = copy(samples.local);
+    job.state = 'awaiting_input';
+    job.display_name = 'locked.zip';
+    job.error = {
+      code: 'archive_password_required',
+      message: 'Для ZIP требуется пароль',
+      message_key: 'messages.archive_password_required',
+      message_args: { archive_id: 'archive-main', name: 'locked.zip' },
+    };
+    jobs.set(currentId, job);
+  }
   if (scenario === 'resource-failed') {
     const job = copy(samples.downloading);
     job.state = 'download_failed';
@@ -166,6 +178,24 @@ export function createHarness(scenario: string | null) {
   }
   let language: LanguagePreference = 'system';
   const bridge: NativeBridge = {
+    async provideArchivePassword(id, archiveId, password) {
+      const job = copy(jobs.get(id)!);
+      if (archiveId !== 'archive-main') throw new Error('Unexpected archive');
+      job.generation++;
+      if (password === 'secret') {
+        job.state = 'converting';
+        job.error = null;
+      } else {
+        job.state = 'awaiting_input';
+        job.error = {
+          code: 'archive_password_invalid',
+          message: 'Пароль ZIP не подошёл',
+          message_key: 'messages.archive_password_invalid',
+          message_args: { name: 'locked.zip', archive_id: 'archive-main' },
+        };
+      }
+      return emit(job);
+    },
     async getAppPreferences() {
       return preferencesFor(language, 'ru-RU');
     },

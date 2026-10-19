@@ -66,6 +66,7 @@ impl RunControl {
 #[derive(Clone)]
 pub struct RunContext {
     pub scratch_dir: PathBuf,
+    pub archive_passwords: Arc<std::collections::BTreeMap<String, String>>,
     pub limits: Limits,
     pub control: RunControl,
     pub progress: Arc<dyn Fn(CoreEvent) + Send + Sync>,
@@ -75,6 +76,7 @@ impl RunContext {
     pub fn new(scratch_dir: PathBuf) -> Self {
         Self {
             scratch_dir,
+            archive_passwords: Default::default(),
             limits: Limits::default(),
             control: RunControl::default(),
             progress: Arc::new(|_| {}),

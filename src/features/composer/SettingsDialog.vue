@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { displayPath } from '../../shared/format';
 import { errorState } from '../../shared/i18n/errors';
 
 import { useI18n } from 'vue-i18n';
@@ -81,7 +82,7 @@ async function resources(purpose: 'resources' | 'resource_directory') {
           {{
             settings.output === 'app_library'
               ? t('app.app_library')
-              : settings.output.desktop_folder
+              : displayPath(settings.output.desktop_folder)
           }}
         </p>
         <div class="button-row">

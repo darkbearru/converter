@@ -299,3 +299,16 @@ pub fn set_app_language(
     crate::app_menu::set_language(&app, saved.locale);
     Ok(saved)
 }
+
+#[tauri::command]
+pub async fn provide_archive_password(
+    state: State<'_, NativeState>,
+    id: String,
+    archive_id: String,
+    password: String,
+) -> AppResult<converter_app::JobSnapshot> {
+    state
+        .manager
+        .provide_archive_password(&id, &archive_id, password)
+        .await
+}

@@ -13,6 +13,7 @@ fn request(root: &Path) -> std::result::Result<ConversionRequest, Box<dyn std::e
     )?;
     Ok(ConversionRequest {
         bundle: InputBundle {
+            includes: vec![],
             main: PreparedFile {
                 id: "main".into(),
                 display_name: "словарь.dsl".into(),

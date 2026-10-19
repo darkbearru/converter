@@ -31,6 +31,8 @@ export const nativeBridge: NativeBridge = {
   pickOutput: () => call('pick_output'),
   createJob: (draft) => call('create_job', { draft }),
   startJob: (id) => call('start_job', { id }),
+  provideArchivePassword: (id, archiveId, password) =>
+    call('provide_archive_password', { id, archiveId, password }),
   pauseDownload: (id) => call('pause_download', { id }),
   resumeDownload: (id) => call('resume_download', { id }),
   cancelJob: (id) => call('cancel_job', { id }),

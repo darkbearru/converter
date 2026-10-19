@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { displayPath } from '../../shared/format';
 import { errorState } from '../../shared/i18n/errors';
 
 import { useI18n } from 'vue-i18n';
@@ -75,7 +76,7 @@ async function pickResources() {
       ><button type="button" @click="pickResources">{{ t('app.replace_resources') }}</button>
     </div>
     <p v-if="output" class="hint destination-path">
-      {{ output === 'app_library' ? t('app.app_library') : output.desktop_folder }}
+      {{ output === 'app_library' ? t('app.app_library') : displayPath(output.desktop_folder) }}
     </p>
     <p v-if="names.length" class="hint">{{ names.join(', ') }}</p>
     <p v-if="error" role="alert" class="error-message">{{ error }}</p>

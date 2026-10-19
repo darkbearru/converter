@@ -10,6 +10,8 @@ pub struct PreparedFile {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct InputBundle {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub includes: Vec<PreparedFile>,
     pub main: PreparedFile,
     pub abbreviations: Option<PreparedFile>,
     pub resources: Vec<ResourceRecord>,
@@ -32,6 +34,8 @@ pub struct DictionaryMetadata {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DictionaryEntry {
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub source_name: String,
     pub id: u64,
     pub source_line: u64,
     pub parent_id: Option<u64>,

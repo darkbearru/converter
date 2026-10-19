@@ -8,7 +8,7 @@ use crate::{storage::*, *};
 use converter_core::{
     model::*,
     pipeline::convert_to_staging,
-    prepare::{prepare_source, select_primary_dictionary},
+    prepare::{prepare_source_with_options, select_primary_dictionary},
 };
 use converter_download::{
     DownloadCache, DownloadManager, DownloadPolicy, DownloadProgress, DownloadRequest,
@@ -30,6 +30,7 @@ use tokio::sync::{Notify, Semaphore, broadcast};
 mod package;
 
 struct Runtime {
+    archive_passwords: BTreeMap<String, BTreeMap<String, String>>,
     jobs: BTreeMap<String, StoredJob>,
     imports: BTreeMap<String, PreparedFile>,
     controls: BTreeMap<String, Controls>,
@@ -200,6 +201,7 @@ impl JobManager {
                 store,
                 storage,
                 runtime: Mutex::new(Runtime {
+                    archive_passwords: BTreeMap::new(),
                     jobs,
                     imports,
                     controls: BTreeMap::new(),
@@ -277,6 +279,7 @@ impl JobManager {
         // Удаляется только запись истории. Исходники, кэш и готовые файлы остаются на диске.
         fs::remove_file(self.inner.store.id_path(id, "json")?)?;
         runtime.jobs.remove(id);
+        runtime.archive_passwords.remove(id);
         runtime.gates.remove(id);
         journals.remove(id);
         // Ошибка очистки журнала не должна возвращать уже удалённую запись в интерфейс.
@@ -656,7 +659,9 @@ impl JobManager {
                     } else if job.ready.is_some()
                         || matches!(
                             error.code.as_str(),
-                            "encoding_required"
+                            "archive_password_required"
+                                | "archive_password_invalid"
+                                | "encoding_required"
                                 | "ambiguous_resource"
                                 | "ambiguous_abbreviations"
                                 | "output_unavailable"
@@ -667,7 +672,10 @@ impl JobManager {
                         job.snapshot.state = JobState::Failed;
                         job.snapshot.conversion.status = ConversionStatus::Failed;
                     }
-                    job.snapshot.had_errors |= error.code != "cancelled";
+                    job.snapshot.had_errors |= !matches!(
+                        error.code.as_str(),
+                        "cancelled" | "archive_password_required"
+                    );
                     job.snapshot.error = Some(error);
                 });
             }
@@ -679,11 +687,64 @@ impl JobManager {
             }
             if let Ok(mut runtime) = manager.inner.runtime.lock() {
                 runtime.controls.remove(&id);
+                let waiting_password = runtime.jobs.get(&id).is_some_and(|job| {
+                    job.snapshot.state == JobState::AwaitingInput
+                        && job.snapshot.error.as_ref().is_some_and(|e| {
+                            matches!(
+                                e.code.as_str(),
+                                "archive_password_required" | "archive_password_invalid"
+                            )
+                        })
+                });
+                if !waiting_password {
+                    runtime.archive_passwords.remove(&id);
+                }
             }
             let _ = fs::remove_dir_all(manager.inner.store.root.join("scratch").join(&id));
             manager.inner.idle.notify_waiters();
         });
         Ok(snapshot)
+    }
+    pub async fn provide_archive_password(
+        &self,
+        id: &str,
+        archive_id: &str,
+        password: String,
+    ) -> AppResult<JobSnapshot> {
+        self.wait_idle(id).await?;
+        {
+            let mut runtime = self.inner.runtime.lock().map_err(|_| lock_error())?;
+            let valid = runtime.jobs.get(id).is_some_and(|job| {
+                job.snapshot.state == JobState::AwaitingInput
+                    && job.snapshot.error.as_ref().is_some_and(|error| {
+                        matches!(
+                            error.code.as_str(),
+                            "archive_password_required" | "archive_password_invalid"
+                        ) && error
+                            .message_args
+                            .get("archive_id")
+                            .and_then(|v| v.as_str())
+                            == Some(archive_id)
+                    })
+            });
+            if !valid {
+                return Err(AppError::new(
+                    "archive_password_not_requested",
+                    "Задание не ожидает пароль этого архива",
+                )
+                .with_message("messages.archive_password_not_requested", message_args([])));
+            }
+            runtime
+                .archive_passwords
+                .entry(id.into())
+                .or_default()
+                .insert(archive_id.into(), password);
+            self.mutate_locked(&mut runtime, id, None, true, |job| {
+                job.snapshot.state = JobState::Queued;
+                job.snapshot.error = None;
+            })?;
+        }
+        self.start(id).await
     }
     pub async fn pause_download(&self, id: &str) -> AppResult<JobSnapshot> {
         let controls = self
@@ -1356,7 +1417,17 @@ impl JobManager {
         self.mutate(id, Some((generation, run)), true, |job| {
             job.snapshot.state = JobState::Importing
         })?;
-        let (context, callback_error) = self.run_context(id, generation, run, &controls)?;
+        let (mut context, callback_error) = self.run_context(id, generation, run, &controls)?;
+        context.archive_passwords = Arc::new(
+            self.inner
+                .runtime
+                .lock()
+                .map_err(|_| lock_error())?
+                .archive_passwords
+                .get(id)
+                .cloned()
+                .unwrap_or_default(),
+        );
         let mut prepared = files.into_iter();
         let main = prepared.next().ok_or_else(|| {
             AppError::new("source_not_found", "Не выбран основной источник").with_message(
@@ -1382,8 +1453,9 @@ impl JobManager {
             ));
         }
         let bundle_context = context.clone();
+        let preparation_options = job.draft.options.clone();
         let bundles = tokio::task::spawn_blocking(move || {
-            prepare_source(&main, &attachments, &bundle_context)
+            prepare_source_with_options(&main, &attachments, &bundle_context, &preparation_options)
         })
         .await
         .map_err(|_| {

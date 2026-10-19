@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { displayPath } from '../../shared/format';
 import { errorState } from '../../shared/i18n/errors';
 
 import { useI18n } from 'vue-i18n';
@@ -244,7 +245,9 @@ async function submit() {
         <div>
           <strong> {{ t('app.save_to') }} </strong>
           <p class="hint destination-path">
-            {{ output === 'app_library' ? t('app.app_library') : output.desktop_folder }}
+            {{
+              output === 'app_library' ? t('app.app_library') : displayPath(output.desktop_folder)
+            }}
           </p>
         </div>
         <button type="button" @click="pickOutput">{{ t('app.choose_folder') }}</button>

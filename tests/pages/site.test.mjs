@@ -115,6 +115,7 @@ test('оба языка имеют одинаковые установщики, 
         html.includes('Converter_0.2.6_x64-setup.exe'),
     );
     assert.equal(html.includes('pay.cloudtips.ru'), lang === 'ru');
+    assert.equal(html.includes('https://hipolink.net/darkbear_ru/tips'), lang === 'en');
     assert.ok(!html.includes('{{'));
     for (const asset of [...html.matchAll(/(?:src|href)="([^"]+)"/g)]
       .map((m) => m[1])

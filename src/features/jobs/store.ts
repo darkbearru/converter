@@ -57,6 +57,8 @@ export function createJobStore(bridge: NativeBridge) {
     ready,
     mergeSnapshot,
     startJob: (id: string) => action(id, () => bridge.startJob(id)),
+    provideArchivePassword: (id: string, archiveId: string, password: string) =>
+      action(id, () => bridge.provideArchivePassword(id, archiveId, password)),
     pauseDownload: (id: string) => action(id, () => bridge.pauseDownload(id)),
     resumeDownload: (id: string) => action(id, () => bridge.resumeDownload(id)),
     cancelJob: (id: string) => action(id, () => bridge.cancelJob(id)),

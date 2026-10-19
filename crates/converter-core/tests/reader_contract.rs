@@ -41,6 +41,7 @@ impl DictionaryReader for OtherReader {
         _: &RunContext,
     ) -> Result<ReadSummary> {
         sink.push(DictionaryEntry {
+            source_name: String::new(),
             id: 1,
             source_line: 2,
             parent_id: None,

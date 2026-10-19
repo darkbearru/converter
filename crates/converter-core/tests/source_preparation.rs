@@ -149,7 +149,7 @@ fn соблюдает_лимиты_и_отмену() -> Result<(), Box<dyn std::
 }
 
 #[test]
-fn отклоняет_ссылки_вложенные_и_зашифрованные_zip() -> Result<(), Box<dyn std::error::Error>> {
+fn отклоняет_ссылки_вложенные_zip_и_запрашивает_пароль() -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let link = temp.path().join("link.zip");
     let mut zip = ZipWriter::new(File::create(&link)?);
@@ -204,7 +204,7 @@ fn отклоняет_ссылки_вложенные_и_зашифрованн�
         )
         .expect_err("Зашифрованный ZIP")
         .code,
-        "encrypted_archive"
+        "archive_password_required"
     );
     Ok(())
 }
@@ -272,5 +272,40 @@ fn отклоняет_символические_ссылки_в_папке() ->
         .code,
         "unsafe_archive_path"
     );
+    Ok(())
+}
+
+#[test]
+fn пароль_открывает_zipcrypto_и_aes_а_неверный_допускает_повтор()
+-> Result<(), Box<dyn std::error::Error>> {
+    use zip::{AesMode, unstable::write::FileOptionsExt};
+    for mode in [None, Some(AesMode::Aes128), Some(AesMode::Aes256)] {
+        let temp = tempfile::tempdir()?;
+        let path = temp.path().join("locked.zip");
+        let mut writer = ZipWriter::new(File::create(&path)?);
+        let options = match mode {
+            None => SimpleFileOptions::default().with_deprecated_encryption(b"secret")?,
+            Some(mode) => SimpleFileOptions::default().with_aes_encryption(mode, "secret"),
+        };
+        writer.start_file("main.dsl", options)?;
+        writer.write_all(b"word\n body\n")?;
+        writer.finish()?;
+        let main = prepared(&path);
+        let mut ctx = RunContext::new(temp.path().join("work"));
+        let error = prepare_source(&main, &[], &ctx).expect_err("password needed");
+        assert_eq!(error.code, "archive_password_required");
+        assert_eq!(error.message_args["archive_id"], "source");
+        ctx.archive_passwords = std::sync::Arc::new([(main.id.clone(), "wrong".into())].into());
+        assert_eq!(
+            prepare_source(&main, &[], &ctx)
+                .expect_err("wrong password")
+                .code,
+            "archive_password_invalid"
+        );
+        ctx.archive_passwords = std::sync::Arc::new([(main.id.clone(), "secret".into())].into());
+        let bundles = prepare_source(&main, &[], &ctx)?;
+        assert_eq!(bundles.len(), 1);
+        assert_eq!(std::fs::read(&bundles[0].main.path)?, b"word\n body\n");
+    }
     Ok(())
 }

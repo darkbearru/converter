@@ -3,17 +3,20 @@ import { screenUrl, step } from './helpers';
 
 test('основной язык и ручной выбор переключают приложение без потери задачи', async ({ page }) => {
   await page.goto(screenUrl('stack') + '&lang=en');
-  await expect(page.getByRole('button', { name: 'Support the developer' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Support the developer' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Report an issue' })).toBeVisible();
   const before = await page.locator('.active-task').count();
   await step(page, 'about');
   const dialog = page.getByRole('dialog', { name: 'About Converter' });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByText('Say thanks')).toHaveCount(0);
-  await dialog.getByRole('combobox', { name: 'Язык / Language' }).click();
+  await expect(dialog.getByRole('link', { name: 'Say thanks' })).toHaveAttribute(
+    'href',
+    'https://hipolink.net/darkbear_ru/tips',
+  );
+  await dialog.getByRole('combobox', { name: 'Language' }).click();
   await page.getByRole('option', { name: 'Русский', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'О программе' })).toBeVisible();
-  await expect(page.getByRole('combobox', { name: 'Язык / Language' })).toBeFocused();
+  await expect(page.getByRole('combobox', { name: 'Язык' })).toBeFocused();
   await expect(page.getByText('Сказать спасибо')).toBeVisible();
   await page
     .getByRole('dialog', { name: 'О программе' })
@@ -26,6 +29,14 @@ test('основной язык и ручной выбор переключаю�
 test('неподдерживаемый основной язык использует английский', async ({ page }) => {
   await page.goto(screenUrl('ready') + '&system=de-DE');
   await expect(page.getByRole('button', { name: 'Convert', exact: true })).toBeVisible();
+  await step(page, 'about');
+  const language = page
+    .getByRole('dialog', { name: 'About Converter' })
+    .getByRole('combobox', { name: 'Language' });
+  await expect(language).toHaveText('System');
+  await language.click();
+  await expect(page.getByRole('option', { name: 'Русский', exact: true })).toBeVisible();
+  await expect(page.getByRole('option', { name: 'English', exact: true })).toBeVisible();
 });
 
 test('смена языка сохраняет введённую ссылку и переводит новые предупреждения', async ({
@@ -44,7 +55,7 @@ test('смена языка сохраняет введённую ссылку �
     .fill(url);
   await step(page, 'about');
   const about = page.getByRole('dialog', { name: 'About Converter' });
-  await about.getByRole('combobox', { name: 'Язык / Language' }).click();
+  await about.getByRole('combobox', { name: 'Language' }).click();
   await page.getByRole('option', { name: 'Русский', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'О программе' })

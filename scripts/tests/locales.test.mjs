@@ -25,10 +25,10 @@ test('русский и английский каталоги покрывают
     }
   }
 });
-test('английская поддержка выключена до настройки сервиса', async () => {
+test('ссылки поддержки раздельны для двух языков', async () => {
   const config = JSON.parse(await readFile('config/locales.json', 'utf8'));
   assert.equal(config.default_locale, 'en');
-  assert.equal(config.locales.en.support_url, null);
+  assert.equal(config.locales.en.support_url, 'https://hipolink.net/darkbear_ru/tips');
   assert.equal(config.locales.ru.support_url, 'https://pay.cloudtips.ru/p/7e782291');
 });
 

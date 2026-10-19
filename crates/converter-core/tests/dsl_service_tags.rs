@@ -6,6 +6,7 @@ use std::path::Path;
 
 fn bundle(directory: &Path) -> InputBundle {
     InputBundle {
+        includes: vec![],
         main: PreparedFile {
             id: "main".into(),
             display_name: "main.dsl".into(),
@@ -18,6 +19,7 @@ fn bundle(directory: &Path) -> InputBundle {
 
 fn article(body: &str) -> ArticleAst {
     ArticleAst {
+        source_name: String::new(),
         id: 0,
         source_line: 1,
         parent_id: None,

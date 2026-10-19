@@ -73,7 +73,8 @@ impl EntrySink for EntrySpool {
                     .with_message("messages.size_overflow", crate::model::message_args([]))
             })?;
         }
-        self.links.references(&entry.html, entry.source_line)?;
+        self.links
+            .references(&entry.html, entry.source_line, &entry.source_name)?;
         self.bodies.write_all(entry.html.as_bytes())?;
         self.offset = self
             .offset

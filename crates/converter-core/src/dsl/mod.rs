@@ -1,6 +1,7 @@
 mod abbreviations;
 pub mod decoder;
 pub mod headwords;
+pub(crate) mod includes;
 mod lexer;
 mod markup;
 mod metadata;
@@ -189,7 +190,7 @@ impl parser::AstSink for RenderSink<'_> {
                 code: "missing_abbreviations_file".into(),
                 message: "Файл сокращений не предоставлен: пометы сохранены без расшифровок".into(),
                 source_location: Some(SourceLocation {
-                    source: self.bundle.main.display_name.clone(),
+                    source: ast.source_name.clone(),
                     line: ast.source_line,
                 }),
                 severity: DiagnosticSeverity::Info,
@@ -207,6 +208,7 @@ impl parser::AstSink for RenderSink<'_> {
             self.sink.diagnostic(diagnostic)?;
         }
         self.sink.push(DictionaryEntry {
+            source_name: ast.source_name.clone(),
             id: ast.id,
             source_line: ast.source_line,
             parent_id: ast.parent_id,

@@ -32,7 +32,7 @@ describe('выбор языка', () => {
     await localization.setLanguage('en');
     expect(localization.preferences.locale).toBe('en');
     expect(localization.i18n.global.t('app.close')).toBe('Close');
-    expect(localization.preferences.support_url).toBeNull();
+    expect(localization.preferences.support_url).toBe('https://hipolink.net/darkbear_ru/tips');
   });
 });
 
@@ -94,4 +94,12 @@ it('сохраняет defaults PrimeVue и переводит объявлен�
   expect(target.locale.selectionMessage).toBe('{0} item selected');
   expect(target.locale.emptySelectionMessage).toBe('No item selected');
   stop();
+});
+
+it('показывает Windows-путь без служебного префикса, сохраняя UNC и остальные пути', async () => {
+  const { displayPath } = await import('../../src/shared/format');
+  expect(displayPath('\\\\?\\D:\\Downloads\\Dict')).toBe('D:\\Downloads\\Dict');
+  expect(displayPath('\\\\?\\UNC\\server\\share\\folder')).toBe('\\\\server\\share\\folder');
+  expect(displayPath('/Users/test/字典')).toBe('/Users/test/字典');
+  expect(displayPath('\\\\?\\Volume{abc}\\folder')).toBe('\\\\?\\Volume{abc}\\folder');
 });

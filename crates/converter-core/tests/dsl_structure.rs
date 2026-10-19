@@ -20,6 +20,7 @@ const DSL: &str = "#NAME \"Тестовый словарь\"\r\n#INDEX_LANGUAGE 
 
 fn bundle(path: &Path) -> InputBundle {
     InputBundle {
+        includes: vec![],
         main: PreparedFile {
             id: "main".into(),
             display_name: path

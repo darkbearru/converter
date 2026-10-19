@@ -201,7 +201,12 @@
       "failed": "Ошибка",
       "cancelled": "Отменена",
       "interrupted": "Прервана"
-    }
+    },
+    "language": "Язык",
+    "system_language": "Системный",
+    "archive_password_title": "Пароль архива",
+    "password": "Пароль",
+    "continue": "Продолжить"
   },
   "native": {
     "about": "О программе",
@@ -443,7 +448,16 @@
     "mdict_index_summary": "Индекс ключей не совпадает со сводкой",
     "mdict_record_geometry": "Неверная геометрия записей",
     "mdict_record_limit": "Блок записей превышает лимит",
-    "mdict_record_length": "Не совпала длина словаря или диапазон записей"
+    "mdict_record_length": "Не совпала длина словаря или диапазон записей",
+    "invalid_include": "#INCLUDE должен содержать имя файла в кавычках",
+    "include_not_found": "Не найдена часть DSL: {target}",
+    "unsafe_include_path": "Недопустимый путь #INCLUDE: {target}",
+    "include_cycle": "Циклическое включение DSL: {target}",
+    "include_limit": "Превышен лимит включённых частей DSL",
+    "include_ambiguous": "Найдено несколько частей DSL: {target}",
+    "archive_password_required": "Для архива «{name}» требуется пароль",
+    "archive_password_invalid": "Пароль архива «{name}» не подошёл или архив повреждён",
+    "archive_password_not_requested": "Задание не ожидает пароль этого архива"
   },
   "issues": {
     "title": "Проблема в Converter",
@@ -459,7 +473,13 @@
     "report": "\nПолный журнал: приложите conversion-report.json из папки результата вручную. Перед публикацией проверьте его содержимое.\n"
   },
   "primevue": {
-    "fileSizeTypes": ["байт", "Кб", "Мб", "Гб", "Тб"],
+    "fileSizeTypes": [
+      "байт",
+      "Кб",
+      "Мб",
+      "Гб",
+      "Тб"
+    ],
     "choose": "Выбрать",
     "upload": "Загрузить",
     "cancel": "Отмена",

@@ -2,7 +2,7 @@ use crate::{Encoding, Profile};
 use converter_core::{
     model::*,
     pipeline::{convert_to_staging, publish_local},
-    prepare::prepare_source,
+    prepare::prepare_source_with_options,
 };
 use std::{
     path::{Path, PathBuf},
@@ -93,13 +93,6 @@ pub(crate) fn run(
             }
         }
     });
-    let bundles = prepare_source(&source, &attachments, &ctx)?;
-    if bundles.len() > 1 {
-        return Err(ConverterError::new(
-            "dictionary_selection_required",
-            "В ZIP несколько основных словарей. Выберите отдельный словарь в приложении или подготовьте ZIP с одним словарём для CLI",
-        ));
-    }
     let encoding = match encoding {
         Encoding::Auto => EncodingChoice::Auto,
         Encoding::Utf8 => EncodingChoice::Manual("utf-8".into()),
@@ -107,6 +100,20 @@ pub(crate) fn run(
         Encoding::Utf16be => EncodingChoice::Manual("utf-16be".into()),
         Encoding::Windows1251 => EncodingChoice::Manual("windows-1251".into()),
     };
+    let bundles = prepare_source_with_options(
+        &source,
+        &attachments,
+        &ctx,
+        &ReadOptions {
+            encoding: encoding.clone(),
+        },
+    )?;
+    if bundles.len() > 1 {
+        return Err(ConverterError::new(
+            "dictionary_selection_required",
+            "В ZIP несколько основных словарей. Выберите отдельный словарь в приложении или подготовьте ZIP с одним словарём для CLI",
+        ));
+    }
     let mut results = Vec::new();
     for (index, bundle) in bundles.into_iter().enumerate() {
         ctx.control.check()?;

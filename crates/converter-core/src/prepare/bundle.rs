@@ -14,6 +14,7 @@ pub(super) struct LogicalFile {
     pub path: PathBuf,
     pub id: String,
     pub primary: bool,
+    pub local_root: Option<PathBuf>,
 }
 
 pub fn prepare_source(
@@ -29,6 +30,37 @@ pub fn prepare_source_with_registry(
     attachments: &[PreparedFile],
     ctx: &RunContext,
     registry: &FormatRegistry,
+) -> Result<Vec<InputBundle>> {
+    prepare_source_with_registry_and_options(
+        main,
+        attachments,
+        ctx,
+        registry,
+        &ReadOptions::default(),
+    )
+}
+
+pub fn prepare_source_with_options(
+    main: &PreparedFile,
+    attachments: &[PreparedFile],
+    ctx: &RunContext,
+    options: &ReadOptions,
+) -> Result<Vec<InputBundle>> {
+    prepare_source_with_registry_and_options(
+        main,
+        attachments,
+        ctx,
+        &FormatRegistry::builtins(),
+        options,
+    )
+}
+
+fn prepare_source_with_registry_and_options(
+    main: &PreparedFile,
+    attachments: &[PreparedFile],
+    ctx: &RunContext,
+    registry: &FormatRegistry,
+    options: &ReadOptions,
 ) -> Result<Vec<InputBundle>> {
     ctx.control.check()?;
     if ctx.limits.resource_buffer_bytes == 0 {
@@ -68,12 +100,16 @@ pub fn prepare_source_with_registry(
         } else {
             files.push(LogicalFile {
                 name: logical_path(&source.display_name)?,
-                path: source.path.clone(),
+                path: source.path.canonicalize()?,
                 id: source.id.clone(),
                 primary: index == 0,
+                local_root: source.path.canonicalize()?.parent().map(Path::to_path_buf),
             });
         }
     }
+    let dependencies = super::includes::dependencies(&mut files, ctx, options)?;
+    let included: std::collections::BTreeSet<usize> =
+        dependencies.iter().flatten().copied().collect();
     if files.len() > ctx.limits.max_archive_entries {
         return Err(
             ConverterError::new("archive_limit", "Слишком много файлов источников")
@@ -122,6 +158,7 @@ pub fn prepare_source_with_registry(
     let mut mains = Vec::new();
     for (index, file) in files.iter().enumerate() {
         if file.primary
+            && !included.contains(&index)
             && let Some(format) = &formats[index]
             && !registry.get(format)?.is_auxiliary(&file.name)
         {
@@ -178,7 +215,7 @@ pub fn prepare_source_with_registry(
         let resources = files
             .iter()
             .enumerate()
-            .filter(|(index, _)| formats[*index].is_none())
+            .filter(|(index, _)| formats[*index].is_none() && !included.contains(index))
             .filter_map(|(_, file)| {
                 let name = if file.primary {
                     file.name.strip_prefix(&prefix)?
@@ -192,6 +229,10 @@ pub fn prepare_source_with_registry(
             })
             .collect();
         bundles.push(InputBundle {
+            includes: dependencies[*index]
+                .iter()
+                .map(|part| prepared(&files[*part]))
+                .collect(),
             main: prepared(source),
             abbreviations: abbreviation.map(prepared),
             resources: unique_resources(resources, ctx)?,
@@ -256,6 +297,7 @@ fn gather_folder(
                 path,
                 id: format!("{}-{}", source.id, files.len()),
                 primary: false,
+                local_root: Some(root.clone()),
             });
             if files.len() > ctx.limits.max_archive_entries {
                 return Err(

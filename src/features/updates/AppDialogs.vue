@@ -20,11 +20,11 @@ const localization = useLocalization();
 const languageId = useId();
 const changingLanguage = ref(false);
 const languageChoice = ref<LanguagePreference>(localization.preferences.language);
-const languageOptions = [
-  { label: 'Системный / System', value: 'system' },
+const languageOptions = computed(() => [
+  { label: t('app.system_language'), value: 'system' },
   { label: 'Русский', value: 'ru' },
   { label: 'English', value: 'en' },
-];
+]);
 async function changeLanguage(language: LanguagePreference) {
   changingLanguage.value = true;
   actionError.value = '';
@@ -148,7 +148,7 @@ onBeforeUnmount(() => {
         >
       </div>
       <div class="about-language">
-        <label :id="`${languageId}-label`" :for="languageId">Язык / Language</label>
+        <label :id="`${languageId}-label`" :for="languageId">{{ t('app.language') }}</label>
         <Select
           :input-id="languageId"
           :aria-labelledby="`${languageId}-label`"

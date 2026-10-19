@@ -1,7 +1,13 @@
 {
   "default_locale": "en",
   "locales": {
-    "ru": { "label": "Русский", "support_url": "https://pay.cloudtips.ru/p/7e782291" },
-    "en": { "label": "English", "support_url": null }
+    "ru": {
+      "label": "Русский",
+      "support_url": "https://pay.cloudtips.ru/p/7e782291"
+    },
+    "en": {
+      "label": "English",
+      "support_url": "https://hipolink.net/darkbear_ru/tips"
+    }
   }
 }

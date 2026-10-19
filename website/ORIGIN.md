@@ -9,3 +9,5 @@
 ## English interface (localization)
 
 `interface-en.jpg` is a 740×500 Chromium capture of the running Vue application with `lang=en`, light system theme and the `localized-preview` harness scenario. Dictionary names, entry counts and warnings are synthetic. It is captured from the application's actual components and CSS; no source dictionary content or private file paths are included.
+
+The English capture was refreshed on 2026-10-19 after configuring Hipolink support; the header now includes the same donation icon as the running application.

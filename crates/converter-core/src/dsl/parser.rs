@@ -1,5 +1,6 @@
 use super::{
     decoder::{ResolvedEncoding, SourceLine, decode_lines, open_source},
+    includes::include_directive,
     lexer::Lexer,
     metadata::directive,
 };
@@ -7,6 +8,7 @@ use crate::{formats::ReadSummary, model::*};
 
 #[derive(Debug)]
 pub struct ArticleAst {
+    pub source_name: String,
     pub id: u64,
     pub source_line: u64,
     pub parent_id: Option<u64>,
@@ -44,37 +46,53 @@ pub(super) fn parse_raw(
     sink: &mut dyn AstSink,
     ctx: &RunContext,
 ) -> Result<ReadSummary> {
-    let mut parser = Parser {
-        source: &bundle.main.display_name,
-        ctx,
-        sink,
-        lexer: Lexer::default(),
-        group: None,
-        heads: Vec::new(),
-        head_line: 0,
-        next_id: 0,
-        summary: ReadSummary::default(),
-    };
-    decode_lines(open_source(&bundle.main)?, encoding.encoding, ctx, |line| {
-        parser.line(line)?;
-        Ok(true)
-    })?;
-    if parser.lexer.in_comment {
-        return Err(parser.error(
-            "messages.dsl_unclosed_comment",
-            "Не закрыт комментарий",
-            parser.head_line,
-        ));
+    let mut summary = ReadSummary::default();
+    let mut next_id = 0;
+    for file in bundle.includes.iter().chain(std::iter::once(&bundle.main)) {
+        let part_encoding = if file.id == bundle.main.id {
+            encoding.clone()
+        } else {
+            super::includes::resolve_part_encoding(
+                file,
+                &EncodingChoice::Manual(encoding.encoding_name.clone()),
+                ctx,
+            )?
+        };
+        let mut parser = Parser {
+            source: &file.display_name,
+            ctx,
+            sink,
+            lexer: Lexer::default(),
+            group: None,
+            heads: Vec::new(),
+            head_line: 0,
+            next_id,
+            summary: ReadSummary::default(),
+        };
+        decode_lines(open_source(file)?, part_encoding.encoding, ctx, |line| {
+            parser.line(line)?;
+            Ok(true)
+        })?;
+        if parser.lexer.in_comment {
+            return Err(parser.error(
+                "messages.dsl_unclosed_comment",
+                "Не закрыт комментарий",
+                parser.head_line,
+            ));
+        }
+        parser.flush_group()?;
+        if !parser.heads.is_empty() {
+            return Err(parser.error(
+                "messages.dsl_heading_without_body",
+                "У заголовка нет тела статьи",
+                parser.head_line,
+            ));
+        }
+        next_id = parser.next_id;
+        summary.source_articles += parser.summary.source_articles;
+        summary.warnings += parser.summary.warnings;
     }
-    parser.flush_group()?;
-    if !parser.heads.is_empty() {
-        return Err(parser.error(
-            "messages.dsl_heading_without_body",
-            "У заголовка нет тела статьи",
-            parser.head_line,
-        ));
-    }
-    if parser.summary.source_articles == 0 {
+    if summary.source_articles == 0 {
         return Err(
             ConverterError::new("empty_dictionary", "Словарь не содержит статей").with_message(
                 "messages.empty_dictionary_2",
@@ -82,7 +100,7 @@ pub(super) fn parse_raw(
             ),
         );
     }
-    Ok(parser.summary)
+    Ok(summary)
 }
 
 impl Parser<'_> {
@@ -108,6 +126,9 @@ impl Parser<'_> {
                     "Директива находится после начала статьи",
                     line.number,
                 ));
+            }
+            if include_directive(&text)?.is_some() {
+                return Ok(());
             }
             if !directive(&text, &mut DictionaryMetadata::default())
                 .map_err(|e| e.at(self.source, line.number))?
@@ -178,6 +199,7 @@ impl Parser<'_> {
                 ));
             }
             let root = ArticleAst {
+                source_name: self.source.into(),
                 id: self.next_id,
                 source_line: self.head_line,
                 parent_id: None,
@@ -238,6 +260,7 @@ impl Parser<'_> {
                     .map_err(|error| error.at(self.source, line.number))?,
                 );
                 group.child = Some(ArticleAst {
+                    source_name: self.source.into(),
                     id: self.next_id,
                     source_line: line.number,
                     parent_id: Some(group.root.id),

@@ -19,7 +19,7 @@ pub(super) struct LinkIndex {
 impl LinkIndex {
     pub fn new(path: &Path) -> Result<Self> {
         let connection = Connection::open(path).map_err(sql_error)?;
-        connection.execute_batch("PRAGMA journal_mode=OFF; PRAGMA synchronous=OFF; PRAGMA temp_store=FILE; PRAGMA cache_size=-1024; CREATE TABLE keys (normalized TEXT PRIMARY KEY) WITHOUT ROWID; CREATE TABLE refs (target TEXT NOT NULL, normalized TEXT NOT NULL, line BLOB NOT NULL); BEGIN;").map_err(sql_error)?;
+        connection.execute_batch("PRAGMA journal_mode=OFF; PRAGMA synchronous=OFF; PRAGMA temp_store=FILE; PRAGMA cache_size=-1024; CREATE TABLE keys (normalized TEXT PRIMARY KEY) WITHOUT ROWID; CREATE TABLE refs (target TEXT NOT NULL, normalized TEXT NOT NULL, line BLOB NOT NULL, source TEXT NOT NULL); BEGIN;").map_err(sql_error)?;
         Ok(Self { connection })
     }
     pub fn key(&self, key: &str) -> Result<()> {
@@ -30,19 +30,20 @@ impl LinkIndex {
             .map_err(sql_error)?;
         Ok(())
     }
-    pub fn references(&self, html: &str, line: u64) -> Result<()> {
+    pub fn references(&self, html: &str, line: u64, source: &str) -> Result<()> {
         for part in html.split("href=\"entry://").skip(1) {
             let Some((encoded, _)) = part.split_once('"') else {
                 continue;
             };
             let target = decode_uri(encoded)?;
             self.connection
-                .prepare_cached("INSERT INTO refs VALUES (?1, ?2, ?3)")
+                .prepare_cached("INSERT INTO refs VALUES (?1, ?2, ?3, ?4)")
                 .map_err(sql_error)?
                 .execute(params![
                     target,
                     mdx_sort_key(&target),
-                    &line.to_be_bytes()[..]
+                    &line.to_be_bytes()[..],
+                    source
                 ])
                 .map_err(sql_error)?;
         }
@@ -65,7 +66,7 @@ impl LinkIndex {
                 .err()
                 .unwrap_or_else(|| sql_error(error))
         })?;
-        let mut query = self.connection.prepare("SELECT target, line FROM refs WHERE NOT EXISTS (SELECT 1 FROM keys WHERE keys.normalized=refs.normalized)").map_err(sql_error)?;
+        let mut query = self.connection.prepare("SELECT target, line, source FROM refs WHERE NOT EXISTS (SELECT 1 FROM keys WHERE keys.normalized=refs.normalized)").map_err(sql_error)?;
         let mut rows = query.query([]).map_err(sql_error)?;
         while let Some(row) = rows.next().map_err(|error| {
             ctx.control
@@ -80,6 +81,7 @@ impl LinkIndex {
                 ConverterError::new("corrupt_spool", "Повреждён номер строки в индексе ссылок")
                     .with_message("messages.corrupt_spool_2", crate::model::message_args([]))
             })?);
+            let entry_source: String = row.get(2).map_err(sql_error)?;
             emit(Diagnostic {
                 message_key: Some("messages.missing_reference".into()),
                 message_args: serde_json::from_value(crate::model::message_args([(
@@ -92,7 +94,11 @@ impl LinkIndex {
                 severity: DiagnosticSeverity::Warning,
                 occurrences: 1,
                 source_location: Some(SourceLocation {
-                    source: source.into(),
+                    source: if entry_source.is_empty() {
+                        source.into()
+                    } else {
+                        entry_source
+                    },
                     line,
                 }),
             })?;
@@ -141,7 +147,7 @@ mod tests {
         let index = LinkIndex::new(&temp.path().join("links.sqlite"))?;
         index.key("exists")?;
         for _ in 0..500_000 {
-            index.references("<a href=\"entry://exists\">ссылка</a>", 1)?;
+            index.references("<a href=\"entry://exists\">ссылка</a>", 1, "")?;
         }
         let ctx = RunContext::new(temp.path().to_owned());
         let control = ctx.control.clone();

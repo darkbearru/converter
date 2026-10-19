@@ -201,7 +201,12 @@
       "failed": "Failed",
       "cancelled": "Cancelled",
       "interrupted": "Interrupted"
-    }
+    },
+    "language": "Language",
+    "system_language": "System",
+    "archive_password_title": "Archive password",
+    "password": "Password",
+    "continue": "Continue"
   },
   "native": {
     "about": "About Converter",
@@ -443,7 +448,16 @@
     "mdict_index_summary": "The key index does not match the summary",
     "mdict_record_geometry": "Invalid record layout",
     "mdict_record_limit": "The record block exceeds the limit",
-    "mdict_record_length": "The dictionary length or record range does not match"
+    "mdict_record_length": "The dictionary length or record range does not match",
+    "invalid_include": "#INCLUDE must contain a quoted filename",
+    "include_not_found": "DSL part not found: {target}",
+    "unsafe_include_path": "Unsafe #INCLUDE path: {target}",
+    "include_cycle": "Circular DSL include: {target}",
+    "include_limit": "The DSL include limit was exceeded",
+    "include_ambiguous": "Ambiguous DSL part: {target}",
+    "archive_password_required": "A password is required for {name}",
+    "archive_password_invalid": "The password for {name} is incorrect or the archive is damaged",
+    "archive_password_not_requested": "This job is not waiting for a password for this archive"
   },
   "issues": {
     "title": "Problem in Converter",
@@ -459,7 +473,13 @@
     "report": "\nFull log: attach conversion-report.json from the output folder manually. Review its contents before publishing.\n"
   },
   "primevue": {
-    "fileSizeTypes": ["bytes", "KB", "MB", "GB", "TB"],
+    "fileSizeTypes": [
+      "bytes",
+      "KB",
+      "MB",
+      "GB",
+      "TB"
+    ],
     "choose": "Choose",
     "upload": "Upload",
     "cancel": "Cancel",

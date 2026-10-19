@@ -50,3 +50,10 @@ export const isActive = (state: JobState) =>
     'validating',
     'publishing',
   ].includes(state);
+
+// Только отображение: внутренний canonical Windows-путь остаётся неизменным.
+export function displayPath(value: string): string {
+  if (/^\\\\\?\\UNC\\/i.test(value)) return `\\\\${value.slice(8)}`;
+  if (/^\\\\\?\\[a-z]:\\/i.test(value)) return value.slice(4);
+  return value;
+}

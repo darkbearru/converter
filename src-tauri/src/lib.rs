@@ -75,6 +75,7 @@ pub fn run() {
             commands::pick_output,
             commands::create_job,
             commands::start_job,
+            commands::provide_archive_password,
             commands::pause_download,
             commands::resume_download,
             commands::cancel_job,

@@ -198,6 +198,7 @@ export interface NativeBridge {
   pickOutput(): Promise<OutputChoice | null>;
   createJob(draft: JobDraft): Promise<JobSnapshot>;
   startJob(id: string): Promise<JobSnapshot>;
+  provideArchivePassword(id: string, archiveId: string, password: string): Promise<JobSnapshot>;
   pauseDownload(id: string): Promise<JobSnapshot>;
   resumeDownload(id: string): Promise<JobSnapshot>;
   cancelJob(id: string): Promise<JobSnapshot>;

@@ -31,6 +31,7 @@ import DiagnosticsList from './features/results/DiagnosticsList.vue';
 import AdditionalDictionariesDialog from './features/jobs/AdditionalDictionariesDialog.vue';
 import { useLocalization } from './shared/i18n';
 import AppDialogs from './features/updates/AppDialogs.vue';
+import ArchivePasswordDialog from './features/jobs/ArchivePasswordDialog.vue';
 const props = defineProps<{ bridge?: NativeBridge }>();
 const bridge = props.bridge ?? nativeBridge;
 const localization = useLocalization();
@@ -74,6 +75,38 @@ const history = computed(() =>
     .reverse(),
 );
 const selected = ref<string | null>(null);
+const dismissedPasswords = ref(new Set<string>());
+const passwordError = ref<unknown>(null);
+const passwordKey = (job: JobSnapshot) => `${job.id}:${job.generation}`;
+const needsPassword = (job: JobSnapshot) =>
+  job.state === 'awaiting_input' &&
+  ['archive_password_required', 'archive_password_invalid'].includes(job.error?.code ?? '');
+const passwordJob = computed(
+  () =>
+    jobs.value.find(
+      (job) => needsPassword(job) && !dismissedPasswords.value.has(passwordKey(job)),
+    ) ?? null,
+);
+function dismissPassword() {
+  if (passwordJob.value) dismissedPasswords.value.add(passwordKey(passwordJob.value));
+  passwordError.value = null;
+}
+function repairJob(id: string) {
+  const job = store.jobs[id];
+  if (job && needsPassword(job)) {
+    dismissedPasswords.value.delete(passwordKey(job));
+    passwordError.value = null;
+  } else selected.value = id;
+}
+async function submitPassword(password: string) {
+  const job = passwordJob.value;
+  const archiveId = job?.error?.message_args?.archive_id;
+  if (!job || typeof archiveId !== 'string') return;
+  passwordError.value = null;
+  if (!(await store.provideArchivePassword(job.id, archiveId, password)))
+    passwordError.value = error.source.value;
+}
+
 const deleting = ref<JobSnapshot | null>(null);
 const deleteError = errorState();
 const additionalError = errorState();
@@ -138,7 +171,10 @@ async function save(update: JobOptionsUpdate) {
 </script>
 <template>
   <div class="app-shell">
-    <AppDialogs :bridge="bridge" :busy="Boolean(selected || deleting || presentedOffer)" />
+    <AppDialogs
+      :bridge="bridge"
+      :busy="Boolean(selected || deleting || presentedOffer || passwordJob)"
+    />
     <header class="app-header">
       <div class="app-identity">
         <img class="app-logo" :src="bookIcon" alt="" width="40" height="36" />
@@ -171,7 +207,7 @@ async function save(update: JobOptionsUpdate) {
           @open="store.openResult"
           @export="store.exportResult"
           @retry="store.startJob"
-          @repair="selected = $event"
+          @repair="repairJob"
           @remove="requestDelete"
         />
         <ActiveTasks
@@ -188,6 +224,13 @@ async function save(update: JobOptionsUpdate) {
         <SourceComposer :bridge="bridge" :jobs="jobs" @snapshot="store.mergeSnapshot" />
       </div>
     </main>
+    <ArchivePasswordDialog
+      :job="passwordJob"
+      :busy="Boolean(passwordJob && store.pending[passwordJob.id])"
+      :error="passwordError"
+      @close="dismissPassword"
+      @submit="submitPassword"
+    />
     <AdditionalDictionariesDialog
       :offer="additionalOffer"
       :busy="Boolean(additionalOffer && store.pending[`offer:${additionalOffer.id}`])"

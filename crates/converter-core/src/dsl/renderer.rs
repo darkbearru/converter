@@ -79,7 +79,11 @@ pub(super) fn render_with_context(
     renderer.write("</div></article>").map_err(|error| *error)?;
     for diagnostic in &mut renderer.result.diagnostics {
         diagnostic.source_location = Some(SourceLocation {
-            source: bundle.main.display_name.clone(),
+            source: if ast.source_name.is_empty() {
+                bundle.main.display_name.clone()
+            } else {
+                ast.source_name.clone()
+            },
             line: ast.source_line,
         });
     }
