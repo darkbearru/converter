@@ -44,7 +44,7 @@ const state = computed(() => {
         <span
           >{{ formatBytes(progress.received_bytes)
           }}<template v-if="progress.total_bytes !== null">
-            {{ t('app.of') }} {{ formatBytes(progress.total_bytes) }}</template
+            {{ ` ${t('app.of')} ${formatBytes(progress.total_bytes)}` }}</template
           ></span
         ><strong v-if="percent !== undefined">{{ Math.round(percent) }}%</strong
         ><span v-else class="muted"> {{ t('app.size_unknown') }} </span>
@@ -62,7 +62,7 @@ const state = computed(() => {
           <p v-if="progress.files.length > 1" class="muted">
             {{ formatBytes(file.received_bytes)
             }}<template v-if="file.total_bytes !== null">
-              {{ t('app.of') }} {{ formatBytes(file.total_bytes) }} ·
+              {{ ` ${t('app.of')} ${formatBytes(file.total_bytes)}` }} ·
               {{
                 Math.min(
                   100,

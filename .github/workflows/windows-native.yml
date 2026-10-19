@@ -34,6 +34,7 @@ jobs:
           gh run download $run --pattern 'Converter-x86_64-pc-windows-msvc-*' --dir .work/windows-package
           $infoFile = Get-ChildItem .work/windows-package -Recurse -Filter build-info.json | Select-Object -First 1
           $info = Get-Content $infoFile.FullName -Raw | ConvertFrom-Json
+          if ($info.commit -ne $env:GITHUB_SHA -or $info.source_dirty -or $info.target -ne 'x86_64-pc-windows-msvc') { throw 'Installer source does not match the workflow commit' }
           $installer = Get-ChildItem .work/windows-package -Recurse -Filter '*-setup.exe' | Select-Object -First 1
           $expected = ($info.artifacts | Where-Object file -eq $installer.Name).sha256
           if ((Get-FileHash $installer.FullName -Algorithm SHA256).Hash.ToLower() -ne $expected) { throw 'Installer SHA mismatch' }

@@ -11,6 +11,16 @@ if (process.platform !== 'win32') throw new Error('Этот smoke запуска
 const application = resolve(process.argv[2]);
 const output = resolve('.work/windows-native');
 await mkdir(output, { recursive: true });
+const catalogs = Object.fromEntries(
+  await Promise.all(
+    ['ru', 'en'].map(async (locale) => [
+      locale,
+      JSON.parse(await readFile(new URL(`../locales/${locale}.json`, import.meta.url), 'utf8')).app,
+    ]),
+  ),
+);
+let locale;
+const label = (key) => catalogs[locale][key];
 // GitHub завершает дочерний процесс PowerShell при выходе шага.
 // Драйвер принадлежит тому же живому процессу, что и его проверки.
 const driver = spawn('tauri-driver', ['--native-driver', process.env.CONVERTER_NATIVE_DRIVER], {
@@ -138,7 +148,7 @@ async function clickText(text) {
   const element = await wait(
     () =>
       execute(
-        'return Array.from(document.querySelectorAll("button")).find(b => b.textContent.trim() === arguments[0] && !b.disabled) || null',
+        'return Array.from(document.querySelectorAll("button")).find(b => (b.getAttribute("aria-label") === arguments[0] || b.textContent.trim() === arguments[0]) && !b.disabled && b.getClientRects().length) || null',
         [text],
       ),
     text,
@@ -149,21 +159,18 @@ async function clickText(text) {
   );
 }
 async function select(selector) {
-  const element = await request(`/session/${session}/element`, {
-    using: 'css selector',
-    value: selector,
-  });
+  const element = await wait(
+    () => request(`/session/${session}/element`, { using: 'css selector', value: selector }),
+    selector,
+  );
   return element['element-6066-11e4-a52e-4f735466cecf'];
 }
 async function newSource(url) {
-  await request(
-    `/session/${session}/element/${await select('input[type="radio"][value="url"]')}/click`,
-    {},
-  );
+  await clickText(label('add_url'));
   await request(`/session/${session}/element/${await select('input[type="url"]')}/value`, {
     text: url,
   });
-  await clickText('Добавить и начать');
+  await clickText(label('download'));
 }
 const hasText = (text) => execute('return document.body.innerText.includes(arguments[0])', [text]);
 async function screenshot(name) {
@@ -176,6 +183,11 @@ async function open() {
   });
   session = value.sessionId;
   await wait(() => hasText('Converter'), 'native frontend');
+  locale = await wait(
+    () => execute('return document.documentElement.lang || null'),
+    'resolved interface language',
+  );
+  assert.ok(catalogs[locale], `Unsupported interface language: ${locale}`);
 }
 try {
   await wait(async () => {
@@ -184,9 +196,21 @@ try {
   }, 'tauri-driver');
   await open();
   await newSource(sourceUrl);
-  await wait(() => hasText('1 Мб'), 'checkpoint');
-  await clickText('Приостановить скачивание');
-  await wait(() => hasText('Подтверждено и сохранено: 1 Мб'), 'paused checkpoint');
+  await wait(
+    async () =>
+      (await readJobs()).some((job) => job.snapshot.download.confirmed_bytes >= checkpoint),
+    'checkpoint',
+  );
+  await clickText(label('pause_download'));
+  const paused = await wait(
+    async () =>
+      (await readJobs()).find(
+        (job) =>
+          job.snapshot.state === 'download_paused' &&
+          job.snapshot.download.confirmed_bytes === checkpoint,
+      ),
+    'paused checkpoint',
+  );
   await screenshot('paused.png');
   await request(`/session/${session}`, undefined, 'DELETE');
   session = undefined;
@@ -198,34 +222,49 @@ try {
     'reopen application',
     45000,
   );
-  await wait(() => hasText('Подтверждено и сохранено: 1 Мб'), 'restored checkpoint');
-  await clickText('Продолжить скачивание');
+  await wait(
+    async () =>
+      (await readJobs()).some(
+        (job) =>
+          job.snapshot.id === paused.snapshot.id &&
+          job.snapshot.state === 'download_paused' &&
+          job.snapshot.download.confirmed_bytes === checkpoint,
+      ),
+    'restored checkpoint',
+  );
+  await clickText(label('resume_download'));
   await wait(
     () => requests.some((r) => r.range === `bytes=${checkpoint}-` && r.if_range === '"native-v1"'),
     'HTTP Range/If-Range',
   );
   released = true;
   for (const item of held) if (!item.cancel) item.response.end(payload.subarray(item.cut));
-  await wait(() => hasText('dictionary.mdx'), 'conversion result', 90000);
-  assert.equal(
-    await execute(
-      'return document.querySelector("[role=progressbar][aria-label=Скачивание]").getAttribute("aria-valuenow")',
-    ),
-    '100',
+  await wait(
+    async () =>
+      (await readJobs()).some(
+        (job) => job.snapshot.id === paused.snapshot.id && job.snapshot.state === 'ready',
+      ),
+    'download ready',
+    90000,
   );
-  assert.equal(
-    await execute(
-      'return document.querySelector("[role=progressbar][aria-label=Конвертация]").getAttribute("aria-valuenow")',
-    ),
-    '100',
+  await clickText(label('convert'));
+  const firstJob = await wait(
+    async () =>
+      (await readJobs()).find(
+        (job) =>
+          job.snapshot.id === paused.snapshot.id &&
+          job.published &&
+          job.snapshot.state === 'succeeded',
+      ),
+    'conversion result',
+    90000,
   );
+  assert.equal(firstJob.snapshot.download.percent, 100);
+  await request(`/session/${session}/element/${await select('.p-accordionheader')}/click`, {});
+  await wait(() => hasText('dictionary.mdx'), 'visible result');
   await screenshot('result.png');
   const beforeRepeat = requests.length;
-  const firstJob = (await readJobs()).find(
-    (item) => item.published && item.snapshot.state === 'succeeded',
-  );
-  assert.ok(firstJob);
-  await clickText('Повторить конвертацию');
+  await clickText(label('retry'));
   await wait(
     async () =>
       (await readJobs()).some(
@@ -237,6 +276,7 @@ try {
     'persisted cached generation',
     90000,
   );
+  await request(`/session/${session}/element/${await select('.p-accordionheader')}/click`, {});
   await wait(() => hasText('dictionary.mdx'), 'cached conversion', 90000);
   assert.equal(requests.length, beforeRepeat, 'Повтор из кэша не должен создавать GET');
   const stored = await Promise.all(
@@ -251,15 +291,24 @@ try {
   );
   assert.equal(report.sources[0].sha256, expectedSha);
   assert.equal(report.summary.source_articles, 60001);
-  await clickText('Добавить');
   await newSource(sourceUrl.replace('/dictionary', '/cancel'));
-  await wait(() => hasText('1 Мб'), 'cancel checkpoint');
-  await clickText('Отменить задание');
-  await wait(() => hasText('Запустить заново'), 'cancelled');
+  const cancelling = await wait(
+    async () =>
+      (await readJobs()).find(
+        (job) =>
+          job.snapshot.id !== firstJob.snapshot.id &&
+          job.snapshot.download.confirmed_bytes >= checkpoint,
+      ),
+    'cancel checkpoint',
+  );
+  await clickText(label('cancel_download'));
   await wait(
-    () =>
-      execute(
-        'return document.querySelector(".transfer-list")?.innerText.includes("Отменено") && !document.querySelector(".transfer-list")?.innerText.includes("Скачивается")',
+    async () =>
+      (await readJobs()).some(
+        (job) =>
+          job.snapshot.id === cancelling.snapshot.id &&
+          job.snapshot.state === 'cancelled' &&
+          job.snapshot.download.files.every((file) => file.state === 'cancelled'),
       ),
     'cancelled download status',
   );
@@ -268,6 +317,7 @@ try {
     JSON.stringify(
       {
         application,
+        locale,
         expected_sha256: expectedSha,
         bytes: payload.length,
         confirmed_before_close: checkpoint,

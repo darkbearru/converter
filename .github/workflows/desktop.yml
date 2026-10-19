@@ -6,6 +6,8 @@ on:
     branches: [develop]
     paths:
       - 'src/**'
+      - 'locales/**'
+      - 'config/**'
       - 'src-tauri/**'
       - 'crates/**'
       - 'Cargo.*'

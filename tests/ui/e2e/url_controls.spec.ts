@@ -1,6 +1,16 @@
 import { expect, test } from '@playwright/test';
 import { screenUrl } from './helpers';
 
+for (const [language, expected] of [
+  ['ru', '4 Гб из 8 Гб'],
+  ['en', '4 GB of 8 GB'],
+]) {
+  test(`счётчик загрузки отделяет предлог пробелами: ${language}`, async ({ page }) => {
+    await page.goto(screenUrl('downloading') + `&lang=${language}`);
+    await expect(page.locator('.transfer-caption > span').last()).toHaveText(expected);
+  });
+}
+
 test('ссылка получает текст буфера внутри поля; шапка сохраняет компактные размеры', async ({
   page,
   browserName,

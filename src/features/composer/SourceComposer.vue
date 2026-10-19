@@ -344,7 +344,7 @@ async function transferAction() {
             ><span
               >{{ formatBytes(progress.received_bytes)
               }}<template v-if="progress.total_bytes !== null">
-                {{ t('app.of') }} {{ formatBytes(progress.total_bytes) }}</template
+                {{ ` ${t('app.of')} ${formatBytes(progress.total_bytes)}` }}</template
               ></span
             >
           </div>
