@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -29,10 +29,11 @@ async function context(t) {
   t.after(() => rm(root, { recursive: true, force: true }));
   return { root, output: join(root, 'site') };
 }
-function run(output, data) {
+function run(output, data, base) {
   return spawnSync(process.execPath, [script, '--output', output], {
     input: JSON.stringify(data),
     encoding: 'utf8',
+    env: { ...process.env, ...(base ? { PAGES_BASE_URL: base } : {}) },
   });
 }
 
@@ -58,6 +59,45 @@ test('страница сразу содержит два прямых уста�
     assert.ok(html.includes('language.js'));
     await readFile(join(output, 'book.svg'));
     await readFile(join(output, 'style.css'));
+  }
+});
+
+test('предпросмотр остаётся внутри своего адреса и сохраняет опубликованную главную', async (t) => {
+  const { output } = await context(t);
+  await mkdir(output, { recursive: true });
+  await writeFile(join(output, 'index.html'), 'Published home');
+  const preview = join(output, 'preview');
+  const result = run(preview, release(), 'https://darkbearru.github.io/converter/preview/');
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(await readFile(join(output, 'index.html'), 'utf8'), 'Published home');
+  for (const language of ['ru', 'en']) {
+    const html = await readFile(join(preview, language, 'index.html'), 'utf8');
+    assert.ok(html.includes(`href="https://darkbearru.github.io/converter/preview/${language}/"`));
+    assert.ok(html.includes('content="https://darkbearru.github.io/converter/preview/interface'));
+    assert.ok(!html.includes('href="https://darkbearru.github.io/converter/ru/"'));
+    for (const asset of [...html.matchAll(/(?:src|href)="([^"]+)"/g)]
+      .map((match) => match[1])
+      .filter((value) => !value.startsWith('http') && !value.startsWith('#'))) {
+      await readFile(
+        resolve(preview, language, asset.endsWith('/') ? asset + 'index.html' : asset),
+      );
+    }
+  }
+});
+
+test('неправильный базовый адрес не затирает существующую сборку', async (t) => {
+  const { output } = await context(t);
+  assert.equal(run(output, release()).status, 0);
+  const original = await readFile(join(output, 'index.html'), 'utf8');
+  for (const base of [
+    'http://example.com/preview/',
+    'https://example.com/preview',
+    'https://example.com/preview/?query=1',
+    'https://example.com/preview/#anchor',
+    'https://user:password@example.com/preview/',
+  ]) {
+    assert.notEqual(run(output, release(), base).status, 0, base);
+    assert.equal(await readFile(join(output, 'index.html'), 'utf8'), original);
   }
 });
 

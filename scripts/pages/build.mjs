@@ -48,7 +48,17 @@ const escape = (value) =>
     (character) =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character],
   );
-const base = 'https://darkbearru.github.io/converter/';
+const base = process.env.PAGES_BASE_URL ?? 'https://darkbearru.github.io/converter/';
+const baseUrl = new URL(base);
+if (
+  baseUrl.protocol !== 'https:' ||
+  baseUrl.username ||
+  baseUrl.password ||
+  baseUrl.search ||
+  baseUrl.hash ||
+  !base.endsWith('/')
+)
+  throw new Error('PAGES_BASE_URL must be an HTTPS directory URL without credentials or query');
 const pages = [];
 for (const [directory, locale] of [['', 'en'], ...languages.map((locale) => [locale, locale])]) {
   const copy = JSON.parse(await readFile(join(root, `website/locales/${locale}.json`), 'utf8'));
