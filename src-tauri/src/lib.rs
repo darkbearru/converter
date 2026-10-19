@@ -65,7 +65,7 @@ pub fn run() {
             commands::get_app_preferences,
             commands::set_app_language,
             commands::check_for_updates,
-            commands::open_release_page,
+            commands::download_update,
             commands::read_clipboard_text,
             commands::open_support_page,
             commands::open_issue,

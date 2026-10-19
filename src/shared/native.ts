@@ -18,7 +18,7 @@ export const nativeBridge: NativeBridge = {
   setAppLanguage: (language) => call('set_app_language', { language }),
   getAppVersion: () => call('get_app_version'),
   checkForUpdates: () => call('check_for_updates'),
-  openReleasePage: () => call('open_release_page'),
+  downloadUpdate: (version) => call('download_update', { version }),
   async onAboutRequested(callback) {
     if (!isTauri()) unavailable();
     return listen('app:about', callback);

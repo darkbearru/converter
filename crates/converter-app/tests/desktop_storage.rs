@@ -6,6 +6,110 @@ use converter_core::{model::*, pipeline::convert_to_staging};
 use std::{path::Path, sync::Arc};
 mod support;
 
+#[cfg(target_os = "macos")]
+#[tokio::test]
+async fn публикация_снимает_скрытость_папки_и_файлов_сохраняя_остальные_флаги()
+-> std::result::Result<(), Box<dyn std::error::Error>> {
+    use std::os::darwin::fs::MetadataExt;
+    let temp = tempfile::tempdir()?;
+    let chosen = temp.path().join("Выбранная папка");
+    std::fs::create_dir(&chosen)?;
+    let storage = DesktopStorage::open(temp.path().join("app"))?;
+    let output = storage.grant_output(&chosen)?;
+    let ready = artifacts(&storage, temp.path(), &output)?;
+    let paths = [&ready.directory, &ready.mdx, &ready.mdd, &ready.report];
+    // Воспроизводим флаги результата, обнаруженные в каталоге iCloud Desktop.
+    assert!(
+        std::process::Command::new("/usr/bin/chflags")
+            .args(["-h", "hidden,nodump"])
+            .args(paths)
+            .status()?
+            .success()
+    );
+    let mdx = std::fs::read(&ready.mdx)?;
+    let result = storage
+        .publish(
+            ready,
+            &output,
+            &RunContext::new(temp.path().join("scratch")),
+        )
+        .await?;
+    assert_eq!(
+        result.directory.parent(),
+        Some(chosen.canonicalize()?.as_path())
+    );
+    for path in std::iter::once(result.directory.clone()).chain(
+        ["dictionary.mdx", "dictionary.mdd", "conversion-report.json"]
+            .map(|n| result.directory.join(n)),
+    ) {
+        let flags = std::fs::metadata(&path)?.st_flags();
+        assert_eq!(flags & 0x8000, 0, "Finder должен видеть {}", path.display());
+        assert_ne!(flags & 1, 0, "Флаг nodump должен сохраниться");
+    }
+    assert_eq!(std::fs::read(result.directory.join("dictionary.mdx"))?, mdx);
+    assert_eq!(
+        std::fs::read_dir(temp.path().join("app/results"))?.count(),
+        0
+    );
+    // Результат предыдущей версии восстанавливает видимость при открытии папки.
+    assert!(
+        std::process::Command::new("/usr/bin/chflags")
+            .args(["-h", "hidden"])
+            .arg(&result.directory)
+            .arg(result.directory.join("dictionary.mdx"))
+            .status()?
+            .success()
+    );
+    storage.checked_result_directory(&result.directory)?;
+    assert_eq!(std::fs::metadata(&result.directory)?.st_flags() & 0x8000, 0);
+    assert_eq!(
+        std::fs::metadata(result.directory.join("dictionary.mdx"))?.st_flags() & 0x8000,
+        0
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn локальный_файл_и_url_сохраняются_в_выбранную_папку()
+-> std::result::Result<(), Box<dyn std::error::Error>> {
+    use converter_test_support::http::{FixtureServer, Scenario};
+    for remote in [false, true] {
+        let temp = tempfile::tempdir()?;
+        let root = temp.path().join("app");
+        let chosen = temp.path().join("Мои словари");
+        std::fs::create_dir(&chosen)?;
+        let storage = Arc::new(DesktopStorage::open(root.clone())?);
+        let manager = JobManager::open(root.clone(), storage.clone())?;
+        let server = FixtureServer::spawn(
+            Scenario::StableRange,
+            b"#NAME \"Remote\"\nalpha\n\tBody\n".to_vec(),
+        )
+        .await;
+        let mut draft = if remote {
+            support::draft(support::remote(server.url()))
+        } else {
+            support::local(&manager, temp.path(), "local.dsl").await
+        };
+        draft.output = storage.grant_output(&chosen)?;
+        draft.prepare_only = remote;
+        let job = manager.create(draft).await?;
+        manager.start(&job.id).await?;
+        if remote {
+            support::wait(&manager, &job.id, &[JobState::Ready]).await;
+            manager.start(&job.id).await?;
+        }
+        support::wait(&manager, &job.id, &[JobState::Succeeded]).await;
+        let directory = manager.result_directory(&job.id)?;
+        assert_eq!(directory.parent(), Some(chosen.canonicalize()?.as_path()));
+        for name in ["dictionary.mdx", "dictionary.mdd", "conversion-report.json"] {
+            assert!(std::fs::metadata(directory.join(name))?.len() > 0);
+        }
+        assert_eq!(std::fs::read_dir(root.join("results"))?.count(), 0);
+        manager.shutdown().await?;
+    }
+    Ok(())
+}
+
 #[tokio::test]
 async fn экспортирует_готовое_задание_после_очистки_и_перезапуска()
 -> std::result::Result<(), Box<dyn std::error::Error>> {

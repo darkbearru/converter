@@ -120,6 +120,7 @@ impl DesktopStorage {
     }
     pub fn checked_result_directory(&self, directory: &Path) -> AppResult<PathBuf> {
         self.check_result(directory)?;
+        converter_core::pipeline::ensure_visible_result(directory)?;
         Ok(directory.canonicalize()?)
     }
 }

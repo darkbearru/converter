@@ -83,8 +83,10 @@ async function openPage(kind: 'release' | 'support') {
   opening.value = true;
   actionError.value = '';
   try {
-    if (kind === 'release') await props.bridge.openReleasePage();
-    else await props.bridge.openSupportPage();
+    if (kind === 'release') {
+      if (!available.value) return;
+      await props.bridge.downloadUpdate(available.value);
+    } else await props.bridge.openSupportPage();
     if (kind === 'release') notification.value = false;
   } catch (error) {
     actionError.value = error;

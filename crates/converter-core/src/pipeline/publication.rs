@@ -27,6 +27,46 @@ fn basename(value: &str) -> String {
     }
 }
 
+/// Готовый результат должен быть виден в Finder, включая файлы из скрытого staging.
+pub fn ensure_visible_result(directory: &Path) -> io::Result<()> {
+    #[cfg(target_os = "macos")]
+    {
+        use std::os::darwin::fs::MetadataExt;
+        let paths = std::iter::once(directory.to_path_buf())
+            .chain(
+                ["dictionary.mdx", "dictionary.mdd", "conversion-report.json"]
+                    .map(|n| directory.join(n)),
+            )
+            .collect::<Vec<_>>();
+        let mut hidden = Vec::new();
+        for path in paths {
+            let metadata = std::fs::symlink_metadata(&path)?;
+            if metadata.file_type().is_symlink() {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "Результат не может быть ссылкой",
+                ));
+            }
+            if metadata.st_flags() & 0x8000 != 0 {
+                hidden.push(path);
+            }
+        }
+        if !hidden.is_empty() {
+            // Только UF_HIDDEN, без рекурсии и без изменения остальных флагов.
+            let status = std::process::Command::new("/usr/bin/chflags")
+                .args(["-h", "nohidden"])
+                .args(&hidden)
+                .status()?;
+            if !status.success() {
+                return Err(io::Error::other("Не удалось сделать результат видимым"));
+            }
+        }
+    }
+    #[cfg(not(target_os = "macos"))]
+    let _ = directory;
+    Ok(())
+}
+
 #[cfg(any(
     target_os = "macos",
     target_os = "ios",
@@ -123,6 +163,7 @@ pub fn publish_local(
         )
     })?;
     drop(report);
+    ensure_visible_result(&source)?;
     let base = basename(name);
     for suffix in 0..10_000u32 {
         ctx.control.check()?;
@@ -143,6 +184,11 @@ pub fn publish_local(
         ctx.control.check()?;
         match rename_exclusive(&source, &target) {
             Ok(()) => {
+                // Облачная папка может обновить флаги во время переименования.
+                if let Err(error) = ensure_visible_result(&target) {
+                    rename_exclusive(&target, &source)?;
+                    return Err(error.into());
+                }
                 ctx.emit(CoreEvent::StageCompleted(StageProgress {
                     stage: ConversionStage::Publish,
                     completed: 1,

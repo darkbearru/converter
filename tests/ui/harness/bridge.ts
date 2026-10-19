@@ -211,7 +211,7 @@ export function createHarness(scenario: string | null) {
       if (updateOffline) throw new Error('Не удалось проверить обновления');
       return { version: scenario === 'update-available' ? '0.3.0' : null };
     },
-    async openReleasePage() {
+    async downloadUpdate(_version) {
       releaseOpened = true;
     },
     async onAboutRequested(callback) {

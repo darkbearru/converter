@@ -19,15 +19,15 @@ pub async fn check_for_updates(app: AppHandle) -> AppResult<crate::updates::Upda
 }
 
 #[tauri::command]
-pub fn open_release_page(app: AppHandle) -> AppResult<()> {
-    app.opener()
-        .open_url(crate::updates::RELEASE_PAGE, None::<&str>)
-        .map_err(|_| {
-            AppError::new("open_failed", "Не удалось открыть страницу релиза").with_message(
-                "messages.open_failed",
-                converter_core::model::message_args([]),
-            )
-        })
+pub async fn download_update(app: AppHandle, version: String) -> AppResult<()> {
+    let url =
+        crate::updates::download_url(&version, &app.package_info().version.to_string()).await?;
+    app.opener().open_url(url, None::<&str>).map_err(|_| {
+        AppError::new("open_failed", "Не удалось открыть ссылку на установщик").with_message(
+            "messages.open_installer_failed",
+            converter_core::model::message_args([]),
+        )
+    })
 }
 
 #[tauri::command]

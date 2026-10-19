@@ -188,7 +188,7 @@ export interface NativeBridge {
   setAppLanguage(language: LanguagePreference): Promise<AppPreferences>;
   getAppVersion(): Promise<string>;
   checkForUpdates(): Promise<{ version: string | null }>;
-  openReleasePage(): Promise<void>;
+  downloadUpdate(version: string): Promise<void>;
   onAboutRequested(callback: () => void): Promise<() => void>;
   readClipboardText(): Promise<string>;
   openSupportPage(): Promise<void>;

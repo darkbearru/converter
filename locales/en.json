@@ -457,7 +457,9 @@
     "include_ambiguous": "Ambiguous DSL part: {target}",
     "archive_password_required": "A password is required for {name}",
     "archive_password_invalid": "The password for {name} is incorrect or the archive is damaged",
-    "archive_password_not_requested": "This job is not waiting for a password for this archive"
+    "archive_password_not_requested": "This job is not waiting for a password for this archive",
+    "update_installer_unavailable": "The installer for this version is not available for your system",
+    "open_installer_failed": "Could not open the installer download link"
   },
   "issues": {
     "title": "Problem in Converter",

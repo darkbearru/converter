@@ -457,7 +457,9 @@
     "include_ambiguous": "Найдено несколько частей DSL: {target}",
     "archive_password_required": "Для архива «{name}» требуется пароль",
     "archive_password_invalid": "Пароль архива «{name}» не подошёл или архив повреждён",
-    "archive_password_not_requested": "Задание не ожидает пароль этого архива"
+    "archive_password_not_requested": "Задание не ожидает пароль этого архива",
+    "update_installer_unavailable": "Установщик этой версии для вашей системы недоступен",
+    "open_installer_failed": "Не удалось открыть ссылку на установщик"
   },
   "issues": {
     "title": "Проблема в Converter",

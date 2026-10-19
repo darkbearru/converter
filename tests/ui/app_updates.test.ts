@@ -1,10 +1,11 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/vue';
 import App from '../../src/App.vue';
 import { createHarness } from './harness/bridge';
 
 it('предлагает новый релиз один раз при запуске, сведения остаются в окне о программе', async () => {
   const harness = createHarness('update-available');
+  const download = vi.spyOn(harness.bridge, 'downloadUpdate');
   render(App, { props: { bridge: harness.bridge } });
   const notice = await screen.findByRole('dialog', { name: 'Доступно обновление' });
   expect(within(notice).getByText(/0\.3\.0/)).toBeVisible();
@@ -21,6 +22,29 @@ it('предлагает новый релиз один раз при запус
   );
   await fireEvent.click(within(about).getByRole('button', { name: 'Скачать' }));
   expect(harness.openedRelease()).toBe(true);
+  expect(download).toHaveBeenCalledWith('0.3.0');
+});
+
+it('скачивает показанную версию из стартового диалога и позволяет повторить при ошибке', async () => {
+  const harness = createHarness('update-available');
+  const download = vi.spyOn(harness.bridge, 'downloadUpdate').mockRejectedValueOnce({
+    code: 'update_installer_unavailable',
+    message: 'Установщик этой версии для вашей системы недоступен',
+    message_key: 'messages.update_installer_unavailable',
+  });
+  render(App, { props: { bridge: harness.bridge } });
+  const notice = await screen.findByRole('dialog', { name: 'Доступно обновление' });
+  await fireEvent.click(within(notice).getByRole('button', { name: 'Скачать' }));
+  expect(
+    await within(notice).findByText('Установщик этой версии для вашей системы недоступен'),
+  ).toBeVisible();
+  expect(notice).toBeVisible();
+  await fireEvent.click(within(notice).getByRole('button', { name: 'Скачать' }));
+  await waitFor(() =>
+    expect(screen.queryByRole('dialog', { name: 'Доступно обновление' })).toBeNull(),
+  );
+  expect(download).toHaveBeenNthCalledWith(1, '0.3.0');
+  expect(download).toHaveBeenNthCalledWith(2, '0.3.0');
 });
 
 it('ошибка проверки не прерывает запуск, ручная проверка может восстановиться', async () => {
