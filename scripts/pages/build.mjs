@@ -52,7 +52,7 @@ let html = await readFile(join(root, 'website/index.html'), 'utf8');
 for (const [key, value] of Object.entries(values)) html = html.replaceAll(`{{${key}}}`, value);
 if (/\{\{[^}]+\}\}/.test(html)) throw new Error('Не все данные страницы заполнены');
 await mkdir(output, { recursive: true });
-for (const name of ['style.css', 'interface.jpg'])
+for (const name of ['style.css', 'interface.jpg', '126__cash.svg'])
   await copyFile(join(root, 'website', name), join(output, name));
 await copyFile(join(root, 'book.svg'), join(output, 'book.svg'));
 await copyFile(join(root, 'src/assets/icons/027__download.svg'), join(output, 'download.svg'));

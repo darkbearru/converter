@@ -60,6 +60,20 @@ test('страница сразу содержит два прямых уста�
   }
 });
 
+test('все локальные изображения и стили страницы доступны в публичной сборке', async (t) => {
+  const { output } = await context(t);
+  const result = run(output, release());
+  assert.equal(result.status, 0, result.stderr);
+  const html = await readFile(join(output, 'index.html'), 'utf8');
+  const localAssets = [...html.matchAll(/(?:src|href)="([^"]+)"/g)]
+    .map((match) => match[1])
+    .filter((url) => !url.startsWith('https:') && !url.startsWith('#') && url !== './');
+  for (const asset of new Set(localAssets)) {
+    const content = await readFile(join(output, asset));
+    assert.ok(content.length > 0, `Пустой ресурс: ${asset}`);
+  }
+});
+
 test('неполный, предварительный или подменённый релиз не затирает рабочую страницу', async (t) => {
   const { output } = await context(t);
   assert.equal(run(output, release()).status, 0);
