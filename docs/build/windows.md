@@ -10,6 +10,8 @@ cargo test --locked -p converter-app --test desktop_storage
 npm run build:windows
 ```
 
+Эта команда автоматически увеличивает третье число версии и синхронизирует манифесты npm, Rust и Tauri. Если версия уже подготовлена сборкой macOS для того же выпуска, используйте `npm run build:windows -- --reuse-version`. GitHub Actions всегда использует подготовленную версию из коммита. Подробнее о нумерации — в [инструкции macOS](macos.md).
+
 Настоящий NSIS installer получается в `target/x86_64-pc-windows-msvc/release/bundle/nsis/`. Копия, сведения о сборке и SHA-256 — в `.work/packages/x86_64-pc-windows-msvc/`. Тот же набор собирается Windows job в `desktop.yml`; конфигурация на macOS сама по себе не считается подтверждением Windows-сборки.
 
 `tauri.windows.conf.json` задаёт установку для текущего пользователя, русский/английский интерфейс и `offlineInstaller`: полный установщик WebView2 включается в NSIS. Для получения самого пакета требуется интернет при сборке. Готовый пакет рассчитан на установку без скачивания WebView2; это режим, описанный в [документации Tauri](https://v2.tauri.app/distribute/windows-installer/#offline-installer). Его проверка на системе без runtime фиксируется отдельно от обычного запуска на runner с уже установленным WebView2.

@@ -177,6 +177,10 @@ export interface DiagnosticPage {
 }
 export type SourcePurpose = 'dictionaries' | 'resources' | 'resource_directory';
 export interface NativeBridge {
+  getAppVersion(): Promise<string>;
+  checkForUpdates(): Promise<{ version: string | null }>;
+  openReleasePage(): Promise<void>;
+  onAboutRequested(callback: () => void): Promise<() => void>;
   readClipboardText(): Promise<string>;
   openSupportPage(): Promise<void>;
   openIssue(id?: string): Promise<void>;

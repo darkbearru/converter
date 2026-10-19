@@ -5,7 +5,12 @@ import Icon from './Icon.vue';
 import type { NativeBridge } from '../contracts';
 import { errorMessage } from '../format';
 
-const props = defineProps<{ bridge: NativeBridge; jobId?: string; disabled?: boolean }>();
+const props = defineProps<{
+  bridge: NativeBridge;
+  jobId?: string;
+  disabled?: boolean;
+  outlined?: boolean;
+}>();
 const emit = defineEmits<{ error: [message: string] }>();
 const opening = ref(false);
 async function report() {
@@ -23,8 +28,10 @@ async function report() {
 </script>
 <template>
   <Button
-    class="icon-button issue-button"
-    text
+    class="issue-button"
+    :class="{ 'icon-button': !outlined }"
+    :text="!outlined"
+    :outlined="outlined"
     severity="secondary"
     aria-label="Сообщить о проблеме"
     title="Сообщить о проблеме"

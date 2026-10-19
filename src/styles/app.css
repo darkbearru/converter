@@ -97,10 +97,15 @@ h3 {
 .app-header-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  margin-right: 3px;
 }
 .conversion-workspace {
   --history-max-share: 70%;
+  --panel-shadow: 0 -2px 6px rgb(0 0 0 / 12%);
+  --task-row-height: 30px;
+  --panel-overlap: 24px;
+  --stack-step: 10px;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -142,9 +147,13 @@ h3 {
   flex: 1;
 }
 .app-icon.history-warning {
+  width: 18px;
+  height: 18px;
+  color: var(--p-primary-600);
+}
+.app-icon.history-chevron {
   width: 16px;
   height: 16px;
-  color: var(--p-primary-600);
 }
 .history-chevron {
   flex-shrink: 0;
@@ -173,29 +182,41 @@ h3 {
   position: relative;
   display: flex;
   flex-direction: column;
-  max-height: 170px;
+  max-height: calc(170px + var(--panel-overlap));
   overflow: auto;
-  padding-top: 6px;
-  margin-bottom: -18px;
+  padding: 6px 4px 0;
+  margin: -6px -4px calc(-1 * var(--panel-overlap));
 }
 .task-stack:empty {
   display: none;
 }
 .active-task {
+  --stack-inset: min(calc(var(--stack-depth) * var(--stack-step)), 25%);
   position: relative;
-  display: flex;
-  align-items: center;
-  flex: 0 0 68px;
-  gap: 12px;
+  flex: 0 0 calc(var(--task-row-height) + var(--panel-overlap));
+  height: calc(var(--task-row-height) + var(--panel-overlap));
   margin-inline: var(--stack-inset);
-  padding: 8px 12px 26px;
-  border: 1px solid var(--border);
-  border-radius: 18px 18px 0 0;
+  padding: 0 0 var(--panel-overlap);
+  border: 1px solid color-mix(in srgb, var(--task-surface), white 15%);
+  border-bottom: 0;
+  border-radius: 12px 12px 0 0;
   background: var(--task-surface);
   min-width: 0;
 }
 .active-task + .active-task {
-  margin-top: -16px;
+  margin-top: calc(-1 * var(--panel-overlap));
+}
+.task-working-row {
+  display: flex;
+  align-items: center;
+  height: calc(var(--task-row-height) - 1px);
+  gap: 12px;
+  padding: 2px 10px;
+  min-width: 0;
+}
+.active-task,
+.source-composer {
+  box-shadow: var(--panel-shadow);
 }
 .task-name.p-button {
   flex: 0 1 130px;
@@ -234,6 +255,14 @@ h3 {
   flex-shrink: 0;
   color: var(--muted);
 }
+.task-controls .icon-button.p-button {
+  width: 24px;
+  height: 24px;
+}
+.task-controls .app-icon {
+  width: 14px;
+  height: 14px;
+}
 .icon-button.support-button.p-button,
 .icon-button.support-button.p-button:is(:hover, :active),
 .icon-button.issue-button.p-button,
@@ -251,13 +280,9 @@ h3 {
   color: var(--accent);
 }
 .icon-button.support-button .app-icon,
-.icon-button.issue-button .app-icon,
-.icon-button.paste-url .app-icon {
+.icon-button.issue-button .app-icon {
   width: 16px;
   height: 16px;
-}
-.icon-button.paste-url .app-icon {
-  mask-size: contain;
 }
 .icon-button.paste-url.p-button:hover:not(:disabled) {
   color: var(--text);
@@ -272,7 +297,7 @@ h3 {
   flex-shrink: 0;
   background: currentColor;
   mask-image: var(--icon-image);
-  mask-size: 200%;
+  mask-size: contain;
   mask-repeat: no-repeat;
   mask-position: center;
   vertical-align: middle;
@@ -307,6 +332,9 @@ h3 {
   border: 0;
   background: transparent;
 }
+.p-fileupload-header .composer-tools {
+  margin: 8px 12px;
+}
 .composer-tools {
   --tool-size: 24px;
   display: flex;
@@ -325,6 +353,11 @@ h3 {
 .composer-tools .app-icon {
   width: var(--tool-size);
   height: var(--tool-size);
+}
+.composer-tools .clear-source .app-icon,
+.transfer-pause .app-icon {
+  width: 16px;
+  height: 16px;
 }
 .composer-tools .icon-button.p-button:hover:not(:disabled) {
   color: var(--text);
@@ -361,8 +394,8 @@ h3 {
   text-align: center;
 }
 .source-dropzone .app-icon {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
 }
 .source-dropzone span:last-child {
   max-width: 420px;
@@ -413,8 +446,8 @@ h3 {
   border: 0;
 }
 .round-action .app-icon {
-  width: 38px;
-  height: 38px;
+  width: 24px;
+  height: 24px;
 }
 .convert-action.p-button {
   background: var(--accent);
@@ -481,7 +514,8 @@ h3 {
 }
 .app-dialog {
   --close-button-size: 24px;
-  --close-icon-size: 16px;
+  --dialog-icon-size: 14px;
+  --dialog-close-icon-size: 11px;
   width: min(520px, calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
 }
@@ -502,6 +536,47 @@ h3 {
 }
 .app-dialog [tabindex='-1'][autofocus]:focus {
   outline: none;
+}
+.about-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.about-identity h2 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+.about-identity p,
+.about-updates p {
+  margin: 0;
+}
+.about-description {
+  margin: 16px 0;
+}
+.about-copyright {
+  margin: 0 0 8px;
+}
+.about-thanks {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+  text-underline-offset: 3px;
+}
+.about-thanks .app-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+}
+.about-updates {
+  margin-top: 20px;
+  color: var(--muted);
+}
+.about-dialog .p-dialog-footer {
+  flex-wrap: wrap;
+}
+.update-description {
+  color: var(--muted);
 }
 .dialog-fields,
 .field-stack,
@@ -602,6 +677,10 @@ h3 {
   font-size: 12px;
   padding: 7px 8px;
 }
+.history-actions .issue-button .app-icon {
+  width: 18px;
+  height: 18px;
+}
 .delete-filename {
   font-weight: 600;
   overflow-wrap: anywhere;
@@ -676,9 +755,18 @@ h3 {
   height: var(--close-button-size);
   padding: 0;
 }
+.app-dialog .p-button .app-icon,
+.app-dialog .p-select-dropdown .app-icon {
+  width: var(--dialog-icon-size);
+  height: var(--dialog-icon-size);
+}
 .app-dialog .p-dialog-close-button .app-icon {
-  width: var(--close-icon-size);
-  height: var(--close-icon-size);
+  width: var(--dialog-close-icon-size);
+  height: var(--dialog-close-icon-size);
+}
+.app-dialog .icon-button.paste-url .app-icon {
+  width: 18px;
+  height: 18px;
 }
 .diagnostics-dialog .p-dialog-content {
   display: flex;
@@ -827,7 +915,7 @@ h3 {
 }
 .task-leave-active {
   position: absolute;
-  inset-inline: var(--stack-inset);
+  inset-inline: 0;
 }
 .task-leave-to {
   transform: translateY(-12px);
@@ -840,8 +928,8 @@ h3 {
     font-size: 13px;
   }
   .source-dropzone .app-icon {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
   }
   .source-ready {
     padding-block: 36px 24px;
@@ -875,7 +963,7 @@ h3 {
     flex-basis: 95px;
     font-size: 12px;
   }
-  .active-task {
+  .task-working-row {
     gap: 8px;
     padding-inline: 10px;
   }

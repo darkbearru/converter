@@ -123,6 +123,7 @@ function warning(job: JobSnapshot) {
               "
             />
             <ProblemReportButton
+              outlined
               :bridge="bridge"
               :job-id="job.id"
               :disabled="pending[job.id]"

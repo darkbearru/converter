@@ -12,14 +12,24 @@ npm run build:macos
 
 Apple Silicon: `target/aarch64-apple-darwin/release/bundle/macos/Converter.app`, DMG рядом в `bundle/dmg`. Переносить приложение можно из DMG в Applications обычным способом; исходники и словари внутри `.app` не хранятся.
 
-Для Intel:
+Intel временно исключён из CI и обязательных файлов релиза. Отдельная сборка при необходимости:
 
 ```sh
 rustup target add x86_64-apple-darwin
 npm run build:macos:intel
 ```
 
-Эта команда добавляет desktop Rust target. Мобильные SDK/targets не требуются. CI отдельно собирает ARM на `macos-15` и Intel на `macos-15-intel`, по [матрице GitHub](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
+Каждая новая локальная сборка через `build:macos`, `build:macos:intel` или `build:windows` автоматически увеличивает patch: `0.2.0 → 0.2.1`. Major/minor сохраняются. До запуска Tauri синхронизируются `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock` и `tauri.conf.json`. Эти изменения входят в следующий коммит. Проверки, `npm run build` (только Vue) и dev-режим версию не меняют. При ошибке упаковки зарезервированный номер сохраняется.
+
+Остальные платформы того же выпуска, а также повтор после ошибки собираются с уже подготовленной версией:
+
+```sh
+npm run build:macos -- --reuse-version
+```
+
+Сборки в одном checkout запускаются последовательно. GitHub Actions использует версию из коммита с `--reuse-version`, поэтому macOS Apple Silicon и Windows одного выпуска получают один номер. Перед отправкой нового выпуска нужно сначала подготовить его локальной сборкой; для подготовки номера без упаковки есть `node scripts/build-version.mjs`. Повтор workflow сохраняет тот же номер. Для отдельной сборки Intel того же выпуска используйте `npm run build:macos:intel -- --reuse-version`. Проверка механизма: `npm run test:build`.
+
+`rustup target add` добавляет desktop Rust target. Мобильные SDK/targets не требуются. CI собирает macOS только на ARM runner `macos-15`; готовое приложение подписывается ad-hoc и проверяется через `codesign --verify --deep --strict`.
 
 Собранные DMG и ZIP с `.app`, сохраняющий права и ресурсы через `ditto`, копируются в `.work/packages/<target>/`. `build-info.json` содержит commit, признак изменённых исходников, версии инструментов и SHA-256 lock-файлов. `SHA256SUMS` относится к готовым архивам. Сборка использует `cargo --locked`; CI сохраняет пакеты как artifacts на 14 дней и не публикует release.
 

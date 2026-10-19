@@ -96,7 +96,7 @@ test('крестик предупреждений компактный и зак
     };
   });
   expect(sizes.button).toBeLessThanOrEqual(24);
-  expect(sizes.icon).toBeLessThanOrEqual(16);
+  expect(sizes.icon).toBe(11);
   await close.click();
   await expect(dialog).toBeHidden();
   await expect(link).toBeFocused();

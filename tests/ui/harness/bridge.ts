@@ -12,6 +12,10 @@ const copy = <T>(value: T): T => JSON.parse(JSON.stringify(value));
 export function createHarness(scenario: string | null) {
   const jobs = new Map<string, JobSnapshot>();
   const listeners = new Set<(event: JobEvent) => void>();
+  const aboutListeners = new Set<() => void>();
+  let updateOffline = scenario === 'update-offline';
+  let checkCount = 0;
+  let releaseOpened = false;
   let currentId = samples.local.id;
   let nextSequence = 110;
   let nextId = 0;
@@ -44,6 +48,19 @@ export function createHarness(scenario: string | null) {
     job.display_name = 'main.dsl';
     if (['downloading', 'paused', 'unknown'].includes(scenario)) job.prepare_only = true;
     jobs.set(currentId, job);
+  }
+  if (scenario === 'preview') {
+    for (const [index, name] of ['Англо-русский.dsl', 'Толковый.dsl'].entries()) {
+      const job = copy(samples.succeeded);
+      job.id = `preview-${index}`;
+      job.display_name = name;
+      if (index === 1) {
+        job.state = 'succeeded_with_warnings';
+        job.diagnostic_count = 1;
+        job.result!.summary.warnings = 1;
+      }
+      jobs.set(job.id, job);
+    }
   }
   if (scenario === 'ready' || scenario === 'ready-resources') {
     const job = copy(samples.local);
@@ -144,6 +161,23 @@ export function createHarness(scenario: string | null) {
     jobs.set(currentId, job);
   }
   const bridge: NativeBridge = {
+    async getAppVersion() {
+      return '0.2.3';
+    },
+    async checkForUpdates() {
+      checkCount++;
+      if (updateOffline) throw new Error('Не удалось проверить обновления');
+      return { version: scenario === 'update-available' ? '0.3.0' : null };
+    },
+    async openReleasePage() {
+      releaseOpened = true;
+    },
+    async onAboutRequested(callback) {
+      aboutListeners.add(callback);
+      return () => {
+        aboutListeners.delete(callback);
+      };
+    },
     async readClipboardText() {
       return 'https://example.org/pasted.dsl';
     },
@@ -290,9 +324,11 @@ export function createHarness(scenario: string | null) {
               ? offset + index === 0
                 ? 'Отсутствует ресурс: voice.wav'
                 : 'Не найдено сокращение: rare.'
-              : scenario === 'warning'
-                ? 'Не найдена статья для ссылки: 儿'
-                : `Предупреждение ${offset + index + 1}${offset + index === 0 ? ': <img src=x onerror=alert(1)>' : ''}`,
+              : scenario === 'preview'
+                ? 'Не найдена статья для ссылки: пример'
+                : scenario === 'warning'
+                  ? 'Не найдена статья для ссылки: 儿'
+                  : `Предупреждение ${offset + index + 1}${offset + index === 0 ? ': <img src=x onerror=alert(1)>' : ''}`,
           source_location: { source: 'Словарь.dsl', line: offset + index + 10 },
         })),
         next_offset: end < total ? end : null,
@@ -302,6 +338,12 @@ export function createHarness(scenario: string | null) {
   };
   return {
     bridge,
+    openAbout: () => aboutListeners.forEach((callback) => callback()),
+    openedRelease: () => releaseOpened,
+    updateChecks: () => checkCount,
+    restoreUpdates: () => {
+      updateOffline = false;
+    },
     advance: () => {
       if (finishAdditional) {
         const finish = finishAdditional;

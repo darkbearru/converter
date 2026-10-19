@@ -82,11 +82,49 @@ test('новые задачи образуют стопку, отмена и red
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(screenUrl('stack'));
   await expect(page.locator('.active-task')).toHaveCount(2);
-  for (let i = 0; i < 3; i++) {
+  const panels = await page.locator('.active-task').all();
+  const upper = (await panels[0]!.boundingBox())!;
+  const lower = (await panels[1]!.boundingBox())!;
+  const composer = (await page.locator('.source-composer').boundingBox())!;
+  expect(upper.x - lower.x).toBe(10);
+  expect(lower.x - composer.x).toBe(10);
+  expect(lower.width - upper.width).toBe(20);
+  expect(composer.width - lower.width).toBe(20);
+  expect(lower.y - upper.y).toBe(30);
+  expect(composer.y - lower.y).toBe(30);
+  expect(lower.y + lower.height).toBeGreaterThan(composer.y);
+  const overlap = await page.evaluate(() => {
+    const row = document.querySelector('.active-task:last-child')!;
+    const source = document.querySelector('.source-composer')!;
+    const rowBox = row.getBoundingClientRect();
+    const box = source.getBoundingClientRect();
+    return {
+      center: !!document
+        .elementFromPoint(box.x + box.width / 2, box.y + 1)
+        ?.closest('.source-composer'),
+      corner: !document.elementFromPoint(rowBox.x + 2, box.y + 1)?.closest('.source-composer'),
+    };
+  });
+  expect(overlap).toEqual({ center: true, corner: true });
+  for (const row of await page.locator('.active-task').all()) {
+    const bounds = (await row.boundingBox())!;
+    const cancel = row.getByRole('button', { name: /^Отменить/ });
+    const button = (await cancel.boundingBox())!;
+    expect(button.y).toBeGreaterThanOrEqual(bounds.y);
+    expect(button.y + button.height).toBeLessThanOrEqual(bounds.y + 30);
+    const icon = (await cancel.locator('.app-icon').boundingBox())!;
+    expect(icon.width).toBe(14);
+    expect(icon.height).toBe(14);
+    await expect(cancel).toBeInViewport({ ratio: 1 });
+  }
+  for (let i = 0; i < 6; i++) {
     await page.getByRole('button', { name: 'Выбрать словари', exact: true }).click();
     await page.getByRole('button', { name: 'Конвертировать', exact: true }).click();
   }
-  await expect(page.locator('.active-task')).toHaveCount(5);
+  await expect(page.locator('.active-task')).toHaveCount(8);
+  expect(
+    await page.locator('.task-stack').evaluate((el) => el.scrollHeight - el.clientHeight),
+  ).toBeGreaterThan(0);
   await expect
     .poll(() =>
       page
@@ -107,7 +145,7 @@ test('новые задачи образуют стопку, отмена и red
     .last()
     .getByRole('button', { name: 'Отменить main.dsl', exact: true })
     .click();
-  await expect(page.locator('.active-task')).toHaveCount(4);
+  await expect(page.locator('.active-task')).toHaveCount(7);
   await page.locator('.p-accordionheader').click();
   await expect(page.getByRole('button', { name: 'Повторить', exact: true })).toBeVisible();
 });

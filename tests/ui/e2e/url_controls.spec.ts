@@ -26,10 +26,14 @@ test('ссылка получает текст буфера внутри пол�
   await expect(page.getByLabel('SHA-256 (необязательно)')).toHaveCount(0);
   const input = page.getByLabel('Ссылка на словарь', { exact: true });
   const paste = page.getByRole('button', { name: 'Вставить из буфера обмена' });
-  const inputBox = (await input.boundingBox())!;
-  const pasteBox = (await paste.boundingBox())!;
-  expect(pasteBox.x).toBeGreaterThan(inputBox.x);
-  expect(pasteBox.x + pasteBox.width).toBeLessThan(inputBox.x + inputBox.width);
+  // Оба размера снимаются в одном кадре: диалог ещё может масштабироваться при открытии.
+  const placement = await input.evaluate((element) => {
+    const field = element.getBoundingClientRect();
+    const icon = element.parentElement!.querySelector('.paste-url')!.getBoundingClientRect();
+    return { left: icon.left - field.left, right: field.right - icon.right };
+  });
+  expect(placement.left).toBeGreaterThan(0);
+  expect(placement.right).toBeGreaterThan(0);
   await paste.click();
   await expect(input).toHaveValue('https://example.org/pasted.dsl');
   await expect(page.getByRole('dialog', { name: 'Скачать словарь' })).toBeVisible();

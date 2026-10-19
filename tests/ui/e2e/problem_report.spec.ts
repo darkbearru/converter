@@ -12,7 +12,7 @@ test('обе кнопки сообщения компактны, доступн�
   await page.getByRole('button', { name: 'main.dsl' }).click();
   const actions = page.getByRole('group', { name: 'Действия с конвертацией' });
   const report = actions.getByRole('button', { name: 'Сообщить о проблеме' });
-  for (const button of [general, report]) {
+  for (const button of [general]) {
     await expect(button).toHaveAttribute('title', 'Сообщить о проблеме');
     expect(
       await button.evaluate((element) => {
@@ -33,6 +33,14 @@ test('обе кнопки сообщения компактны, доступн�
     await button.click();
     await expect(page.getByRole('alert')).toHaveCount(0);
   }
+  await expect(report).toHaveClass(/p-button-outlined/);
+  await expect(report).toHaveClass(/p-button-secondary/);
+  await expect(report.locator('.app-icon')).toHaveCSS('width', '18px');
+  await expect(report.locator('.app-icon')).toHaveCSS('height', '18px');
+  const heights = await actions
+    .getByRole('button')
+    .evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().height));
+  expect(Math.max(...heights) - Math.min(...heights)).toBeLessThan(1);
   await page.screenshot({ path: testInfo.outputPath('problem-report.png') });
   await page.setViewportSize({ width: 540, height: 400 });
   await expect(report).toBeInViewport();

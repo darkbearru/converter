@@ -13,6 +13,13 @@ async function call<T>(command: string, args?: Record<string, unknown>): Promise
   return invoke<T>(command, args);
 }
 export const nativeBridge: NativeBridge = {
+  getAppVersion: () => call('get_app_version'),
+  checkForUpdates: () => call('check_for_updates'),
+  openReleasePage: () => call('open_release_page'),
+  async onAboutRequested(callback) {
+    if (!isTauri()) unavailable();
+    return listen('app:about', callback);
+  },
   readClipboardText: () => call('read_clipboard_text'),
   openSupportPage: () => call('open_support_page'),
   openIssue: (id) => call('open_issue', { id: id ?? null }),

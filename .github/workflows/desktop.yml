@@ -13,6 +13,8 @@ on:
       - 'package*.json'
       - 'vite.config.ts'
       - 'scripts/collect-packages.mjs'
+      - 'scripts/build-*.mjs'
+      - 'scripts/package-files.mjs'
       - '.github/workflows/desktop.yml'
 
 permissions:
@@ -32,9 +34,6 @@ jobs:
           - os: macos-15
             target: aarch64-apple-darwin
             script: build:macos
-          - os: macos-15-intel
-            target: x86_64-apple-darwin
-            script: build:macos:intel
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             script: build:windows
@@ -67,7 +66,18 @@ jobs:
       - name: Windows desktop publication
         if: runner.os == 'Windows'
         run: cargo test --locked -p converter-app --test desktop_storage
-      - run: npm run ${{ matrix.script }}
+      # Версия уже подготовлена локальной сборкой и закоммичена для всего выпуска.
+      - name: Build macOS Apple Silicon
+        if: runner.os == 'macOS'
+        env:
+          APPLE_SIGNING_IDENTITY: '-'
+        run: npm run ${{ matrix.script }} -- --reuse-version
+      - name: Verify macOS app signature
+        if: runner.os == 'macOS'
+        run: codesign --verify --deep --strict --verbose=2 target/${{ matrix.target }}/release/bundle/macos/Converter.app
+      - name: Build Windows x64
+        if: runner.os == 'Windows'
+        run: npm run ${{ matrix.script }} -- --reuse-version
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: Converter-${{ matrix.target }}-${{ github.sha }}

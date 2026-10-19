@@ -9,6 +9,23 @@ use tauri_plugin_clipboard_manager::ClipboardExt;
 use tauri_plugin_opener::OpenerExt;
 
 #[tauri::command]
+pub fn get_app_version(app: AppHandle) -> String {
+    app.package_info().version.to_string()
+}
+
+#[tauri::command]
+pub async fn check_for_updates(app: AppHandle) -> AppResult<crate::updates::UpdateInfo> {
+    crate::updates::check(&app.package_info().version.to_string()).await
+}
+
+#[tauri::command]
+pub fn open_release_page(app: AppHandle) -> AppResult<()> {
+    app.opener()
+        .open_url(crate::updates::RELEASE_PAGE, None::<&str>)
+        .map_err(|_| AppError::new("open_failed", "Не удалось открыть страницу релиза"))
+}
+
+#[tauri::command]
 pub fn read_clipboard_text(app: AppHandle) -> AppResult<String> {
     app.clipboard().read_text().map_err(|_| {
         AppError::new(

@@ -1,8 +1,9 @@
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { mkdir, readFile, readdir, copyFile, stat, writeFile } from 'node:fs/promises';
+import { readFile, stat, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { join, basename, resolve } from 'node:path';
+import { collectPackageFiles } from './package-files.mjs';
 
 const target = process.argv[2];
 if (!['aarch64-apple-darwin', 'x86_64-apple-darwin', 'x86_64-pc-windows-msvc'].includes(target))
@@ -21,25 +22,13 @@ async function sha256(path) {
   return hash.digest('hex');
 }
 const destination = resolve('.work/packages', target);
-await mkdir(destination, { recursive: true });
-const artifacts = [];
-async function walk(path) {
-  for (const entry of await readdir(path, { withFileTypes: true })) {
-    const source = join(path, entry.name);
-    if (entry.isDirectory() && entry.name.endsWith('.app')) {
-      const archive = join(destination, `Converter_${target}.app.zip`);
-      run('ditto', ['-c', '-k', '--sequesterRsrc', '--keepParent', source, archive]);
-      artifacts.push(archive);
-    } else if (entry.isDirectory()) await walk(source);
-    else if (entry.name.endsWith('.dmg') || entry.name.endsWith('-setup.exe')) {
-      const output = join(destination, basename(source));
-      await copyFile(source, output);
-      artifacts.push(output);
-    }
-  }
-}
-await walk(join('target', target, 'release', 'bundle'));
-if (artifacts.length === 0) throw new Error('Нативные пакеты не найдены');
+const version = JSON.parse(await readFile('package.json', 'utf8')).version;
+const artifacts = await collectPackageFiles(
+  join('target', target, 'release', 'bundle'),
+  destination,
+  target,
+  version,
+);
 const lockfiles = {};
 for (const name of ['Cargo.lock', 'package-lock.json', 'rust-toolchain.toml'])
   lockfiles[name] = await sha256(name);
@@ -57,10 +46,11 @@ const dirty = run('git', [
   'package-lock.json',
   'vite.config.ts',
   'rust-toolchain.toml',
+  'scripts',
 ]);
 const info = {
   application: 'Converter',
-  version: JSON.parse(await readFile('package.json', 'utf8')).version,
+  version,
   commit: run('git', ['rev-parse', 'HEAD']),
   source_dirty: Boolean(dirty),
   target,

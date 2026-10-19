@@ -53,60 +53,62 @@ function label(job: JobSnapshot) {
       v-for="(job, index) in jobs"
       :key="job.id"
       class="active-task"
-      :style="{ '--stack-inset': `${Math.min(jobs.length - index - 1, 3) * 8}px` }"
+      :style="{ '--stack-depth': jobs.length - index }"
     >
-      <Button
-        class="task-name"
-        text
-        :label="job.display_name"
-        :title="`${job.display_name} — ${label(job)}`"
-        @click="
-          focusDialogOpener($event);
-          $emit('details', job.id);
-        "
-      />
-      <div class="task-progress">
-        <ProgressBar
-          :aria-label="`${job.display_name}: ${label(job)}`"
-          :mode="percent(job) === null ? 'indeterminate' : 'determinate'"
-          :value="percent(job) ?? undefined"
-          :show-value="false"
-        /><span class="sr-only" role="status"
-          >{{ label(job)
-          }}<template v-if="percent(job) !== null">
-            {{ Math.round(percent(job)!) }}%</template
-          ></span
-        >
-      </div>
-      <div class="task-controls">
+      <div class="task-working-row">
         <Button
-          class="icon-button"
-          :aria-label="`Отменить ${job.display_name}`"
-          title="Отменить задачу"
+          class="task-name"
           text
-          rounded
-          :disabled="pending[job.id]"
-          @click="$emit('cancel', job.id)"
-          ><Icon name="remove" /></Button
-        ><Button
-          v-if="['downloading', 'download_retry_wait'].includes(job.state)"
-          class="icon-button"
-          :aria-label="`Приостановить скачивание ${job.display_name}`"
-          text
-          rounded
-          :disabled="pending[job.id]"
-          @click="$emit('pause', job.id)"
-          ><Icon name="pause" /></Button
-        ><Button
-          v-if="['download_paused', 'download_failed'].includes(job.state)"
-          class="icon-button"
-          :aria-label="`Продолжить скачивание ${job.display_name}`"
-          text
-          rounded
-          :disabled="pending[job.id]"
-          @click="$emit('resume', job.id)"
-          ><Icon name="play"
-        /></Button>
+          :label="job.display_name"
+          :title="`${job.display_name} — ${label(job)}`"
+          @click="
+            focusDialogOpener($event);
+            $emit('details', job.id);
+          "
+        />
+        <div class="task-progress">
+          <ProgressBar
+            :aria-label="`${job.display_name}: ${label(job)}`"
+            :mode="percent(job) === null ? 'indeterminate' : 'determinate'"
+            :value="percent(job) ?? undefined"
+            :show-value="false"
+          /><span class="sr-only" role="status"
+            >{{ label(job)
+            }}<template v-if="percent(job) !== null">
+              {{ Math.round(percent(job)!) }}%</template
+            ></span
+          >
+        </div>
+        <div class="task-controls">
+          <Button
+            class="icon-button"
+            :aria-label="`Отменить ${job.display_name}`"
+            title="Отменить задачу"
+            text
+            rounded
+            :disabled="pending[job.id]"
+            @click="$emit('cancel', job.id)"
+            ><Icon name="remove" /></Button
+          ><Button
+            v-if="['downloading', 'download_retry_wait'].includes(job.state)"
+            class="icon-button"
+            :aria-label="`Приостановить скачивание ${job.display_name}`"
+            text
+            rounded
+            :disabled="pending[job.id]"
+            @click="$emit('pause', job.id)"
+            ><Icon name="pause" /></Button
+          ><Button
+            v-if="['download_paused', 'download_failed'].includes(job.state)"
+            class="icon-button"
+            :aria-label="`Продолжить скачивание ${job.display_name}`"
+            text
+            rounded
+            :disabled="pending[job.id]"
+            @click="$emit('resume', job.id)"
+            ><Icon name="play"
+          /></Button>
+        </div>
       </div>
     </article>
   </TransitionGroup>

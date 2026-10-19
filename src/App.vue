@@ -24,6 +24,7 @@ import DownloadProgress from './features/progress/DownloadProgress.vue';
 import ConversionProgress from './features/progress/ConversionProgress.vue';
 import DiagnosticsList from './features/results/DiagnosticsList.vue';
 import AdditionalDictionariesDialog from './features/jobs/AdditionalDictionariesDialog.vue';
+import AppDialogs from './features/updates/AppDialogs.vue';
 const props = defineProps<{ bridge?: NativeBridge }>();
 const bridge = props.bridge ?? nativeBridge;
 const store = createJobStore(bridge);
@@ -130,6 +131,7 @@ async function save(update: JobOptionsUpdate) {
 </script>
 <template>
   <div class="app-shell">
+    <AppDialogs :bridge="bridge" :busy="Boolean(selected || deleting || presentedOffer)" />
     <header class="app-header">
       <div class="app-identity">
         <img class="app-logo" :src="bookIcon" alt="" width="40" height="36" />

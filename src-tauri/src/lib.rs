@@ -1,7 +1,10 @@
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+mod app_menu;
 mod commands;
 mod events;
 mod issue_report;
 mod storage;
+mod updates;
 use converter_app::{JobManager, storage::desktop::DesktopStorage};
 use std::sync::{
     Arc,
@@ -38,6 +41,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .setup(|app| {
+            #[cfg(not(any(target_os = "android", target_os = "ios")))]
+            app_menu::install(app)?;
             let root = app.path().app_data_dir()?;
             let storage = Arc::new(DesktopStorage::open(root.clone())?);
             let manager = JobManager::open(root, storage.clone())?;
@@ -46,6 +51,9 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            commands::get_app_version,
+            commands::check_for_updates,
+            commands::open_release_page,
             commands::read_clipboard_text,
             commands::open_support_page,
             commands::open_issue,
