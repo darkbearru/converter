@@ -1,5 +1,7 @@
 # Converter
 
+[Описание и скачивание для macOS и Windows](https://darkbearru.github.io/converter/)
+
 Локальный конвертер Lingvo DSL в бинарные словари MDict v2: **MDX + MDD** с изображениями, озвучкой и оформлением. Tauri 2, Vue 3/TypeScript, Rust. Для работы собранного приложения PHP, Python и Node.js не требуются.
 
 Готовые установщики для macOS Apple Silicon и Windows x64 доступны в [релизах GitHub](https://github.com/darkbearru/converter/releases). Сборки для macOS Intel временно исключены из автоматического выпуска; при необходимости их можно собрать отдельно.
