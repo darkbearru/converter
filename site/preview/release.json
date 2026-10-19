@@ -1,0 +1,11 @@
+{
+  "version": "0.2.6",
+  "macos": {
+    "url": "https://github.com/darkbearru/converter/releases/download/v0.2.6/Converter_0.2.6_aarch64.dmg",
+    "bytes": 7584218
+  },
+  "windows": {
+    "url": "https://github.com/darkbearru/converter/releases/download/v0.2.6/Converter_0.2.6_x64-setup.exe",
+    "bytes": 222140015
+  }
+}
