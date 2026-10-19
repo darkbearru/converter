@@ -52,11 +52,13 @@ test('страница сразу содержит два прямых уста�
         `${repository}/releases/download/v${version}/Converter_${version}_x64-setup.exe`,
       ),
     );
-    assert.equal((html.match(/class="download-link"/g) ?? []).length, 2);
+    assert.equal((html.match(/class="download-link download-alternative"/g) ?? []).length, 2);
     assert.ok(!html.includes('SHA256SUMS'));
     assert.ok(!html.includes('{{'));
     assert.ok(!html.includes('api.github.com'));
     assert.ok(html.includes('language.js'));
+    assert.ok(html.includes('downloads.js'));
+    await readFile(join(output, 'downloads.js'));
     await readFile(join(output, 'book.svg'));
     await readFile(join(output, 'style.css'));
   }

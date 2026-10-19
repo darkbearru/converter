@@ -114,6 +114,7 @@ await mkdir(output, { recursive: true });
 for (const name of [
   'style.css',
   'language.js',
+  'downloads.js',
   'interface.jpg',
   'interface-en.jpg',
   '126__cash.svg',

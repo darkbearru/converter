@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="{{ASSET_PREFIX}}style.css" />
     {{ALTERNATE_LINKS}}
     <script src="{{ASSET_PREFIX}}language.js" defer></script>
+    <script src="{{ASSET_PREFIX}}downloads.js" defer></script>
     <title>{{TEXT.title}}</title>
   </head>
   <body>
@@ -39,14 +40,27 @@
             <h1 id="headline">{{TEXT.headline}}<br /><span>{{TEXT.headline_accent}}</span></h1>
             <p class="intro">{{TEXT.intro}}</p>
             <div class="downloads" id="downloads" aria-label="{{TEXT.downloads}}">
-              <a class="download-link" href="{{MAC_URL}}">
-                <span class="download-symbol" aria-hidden="true"></span>
-                <span><strong>macOS Apple Silicon</strong><small>DMG · {{MAC_SIZE}}</small></span>
-              </a>
-              <a class="download-link" href="{{WIN_URL}}">
-                <span class="download-symbol" aria-hidden="true"></span>
-                <span><strong>Windows x64</strong><small>EXE · {{WIN_SIZE}}</small></span>
-              </a>
+              <div class="download-options">
+                <a
+                  class="download-link download-alternative"
+                  data-download-system="macos"
+                  href="{{MAC_URL}}"
+                >
+                  <span class="download-symbol" aria-hidden="true"></span>
+                  <span><strong>macOS Apple Silicon</strong><small>DMG · {{MAC_SIZE}}</small></span>
+                </a>
+                <a
+                  class="download-link download-alternative"
+                  data-download-system="windows"
+                  href="{{WIN_URL}}"
+                >
+                  <span class="download-symbol" aria-hidden="true"></span>
+                  <span><strong>Windows x64</strong><small>EXE · {{WIN_SIZE}}</small></span>
+                </a>
+              </div>
+              <details class="other-systems" hidden>
+                <summary>{{TEXT.other_systems}}</summary>
+              </details>
             </div>
             <p class="release">
               {{TEXT.version}} {{VERSION}}<span aria-hidden="true"> · </span
