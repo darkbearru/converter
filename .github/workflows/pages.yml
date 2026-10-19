@@ -5,6 +5,7 @@ on:
     branches: [develop]
     paths:
       - 'website/**'
+      - 'config/**'
       - 'scripts/pages/**'
       - 'tests/pages/**'
       - 'book.svg'

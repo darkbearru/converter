@@ -332,3 +332,14 @@ h1 span {
     transform: none;
   }
 }
+
+.site-languages {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.site-languages [aria-current='page'] {
+  font-weight: 600;
+  text-decoration: none;
+}

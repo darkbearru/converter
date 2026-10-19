@@ -39,20 +39,75 @@ function installer(name) {
 }
 const mac = installer(`Converter_${version}_aarch64.dmg`);
 const windows = installer(`Converter_${version}_x64-setup.exe`);
-const megabytes = (bytes) =>
-  `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(bytes / 1_000_000)} Мб`;
-const values = {
-  VERSION: version,
-  MAC_URL: mac.url,
-  WIN_URL: windows.url,
-  MAC_SIZE: megabytes(mac.bytes),
-  WIN_SIZE: megabytes(windows.bytes),
-};
-let html = await readFile(join(root, 'website/index.html'), 'utf8');
-for (const [key, value] of Object.entries(values)) html = html.replaceAll(`{{${key}}}`, value);
-if (/\{\{[^}]+\}\}/.test(html)) throw new Error('Не все данные страницы заполнены');
+const config = JSON.parse(await readFile(join(root, 'config/locales.json'), 'utf8'));
+const languages = Object.keys(config.locales);
+const template = await readFile(join(root, 'website/index.html'), 'utf8');
+const escape = (value) =>
+  String(value).replace(
+    /[&<>"']/g,
+    (character) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character],
+  );
+const base = 'https://darkbearru.github.io/converter/';
+const pages = [];
+for (const [directory, locale] of [['', 'en'], ...languages.map((locale) => [locale, locale])]) {
+  const copy = JSON.parse(await readFile(join(root, `website/locales/${locale}.json`), 'utf8'));
+  const prefix = directory ? '../' : '';
+  const image = locale === 'ru' ? 'interface.jpg' : `interface-${locale}.jpg`;
+  const size = (bytes) =>
+    `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(bytes / 1_000_000)} ${locale === 'ru' ? 'Мб' : 'MB'}`;
+  const support = config.locales[locale].support_url;
+  if (support !== null && new URL(support).protocol !== 'https:')
+    throw new Error('Support URL must use HTTPS');
+  const supportLink = (className) =>
+    support
+      ? `<a class="${className}" href="${escape(support)}"><img src="${prefix}126__cash.svg" alt="" width="18" height="18" />${escape(copy.thanks)}</a>`
+      : '';
+  const values = {
+    VERSION: version,
+    MAC_URL: mac.url,
+    WIN_URL: windows.url,
+    MAC_SIZE: size(mac.bytes),
+    WIN_SIZE: size(windows.bytes),
+    LANG: locale,
+    PAGE_URL: base + locale + '/',
+    IMAGE_URL: base + image,
+    IMAGE_FILE: image,
+    IMAGE_WIDTH: locale === 'ru' ? 1280 : 740,
+    IMAGE_HEIGHT: locale === 'ru' ? 720 : 500,
+    ASSET_PREFIX: prefix,
+    LANGUAGE_ROOT: String(!directory),
+    SUPPORTED_LANGUAGES: languages.join(','),
+    ALTERNATE_LINKS: [
+      ...languages.map(
+        (language) =>
+          `<link rel="alternate" hreflang="${escape(language)}" href="${base}${escape(language)}/" />`,
+      ),
+      `<link rel="alternate" hreflang="x-default" href="${base}" />`,
+    ].join('\n    '),
+    LANGUAGE_LINKS: `<nav class="site-languages" aria-label="${escape(copy.language)}">${languages.map((language) => `<a href="${prefix}${language}/" data-site-language="${escape(language)}" lang="${escape(language)}"${language === locale ? ' aria-current="page"' : ''}>${escape(config.locales[language].label)}</a>`).join('')}</nav>`,
+    SUPPORT_HEADER: supportLink('source-link important-link'),
+    SUPPORT_FOOTER: supportLink('important-link'),
+  };
+  const html = template.replace(/\{\{(TEXT\.)?([A-Z_a-z]+)\}\}/g, (_, text, key) => {
+    const value = text ? copy[key] : values[key];
+    if (value === undefined) throw new Error(`Missing page value: ${locale}/${key}`);
+    return !text &&
+      ['ALTERNATE_LINKS', 'LANGUAGE_LINKS', 'SUPPORT_HEADER', 'SUPPORT_FOOTER'].includes(key)
+      ? value
+      : escape(value);
+  });
+  if (/\{\{[^}]+\}\}/.test(html)) throw new Error('Не все данные страницы заполнены');
+  pages.push({ directory, html });
+}
 await mkdir(output, { recursive: true });
-for (const name of ['style.css', 'interface.jpg', '126__cash.svg'])
+for (const name of [
+  'style.css',
+  'language.js',
+  'interface.jpg',
+  'interface-en.jpg',
+  '126__cash.svg',
+])
   await copyFile(join(root, 'website', name), join(output, name));
 await copyFile(join(root, 'book.svg'), join(output, 'book.svg'));
 await copyFile(join(root, 'src/assets/icons/027__download.svg'), join(output, 'download.svg'));
@@ -60,5 +115,8 @@ await writeFile(
   join(output, 'release.json'),
   JSON.stringify({ version, macos: mac, windows }, null, 2) + '\n',
 );
-await writeFile(join(output, 'index.html'), html);
+for (const { directory, html } of pages) {
+  await mkdir(join(output, directory), { recursive: true });
+  await writeFile(join(output, directory, 'index.html'), html);
+}
 console.log(`Страница Converter ${version}: ${output}`);

@@ -42,7 +42,7 @@ test('страница сразу содержит два прямых уста�
     const result = run(output, release(version));
     assert.equal(result.status, 0, result.stderr);
     const html = await readFile(join(output, 'index.html'), 'utf8');
-    assert.ok(html.includes(`Версия ${version}`));
+    assert.ok(html.includes(`Version ${version}`));
     assert.ok(
       html.includes(`${repository}/releases/download/v${version}/Converter_${version}_aarch64.dmg`),
     );
@@ -54,7 +54,8 @@ test('страница сразу содержит два прямых уста�
     assert.equal((html.match(/class="download-link"/g) ?? []).length, 2);
     assert.ok(!html.includes('SHA256SUMS'));
     assert.ok(!html.includes('{{'));
-    assert.ok(!html.includes('<script'));
+    assert.ok(!html.includes('api.github.com'));
+    assert.ok(html.includes('language.js'));
     await readFile(join(output, 'book.svg'));
     await readFile(join(output, 'style.css'));
   }
@@ -69,7 +70,9 @@ test('все локальные изображения и стили стран�
     .map((match) => match[1])
     .filter((url) => !url.startsWith('https:') && !url.startsWith('#') && url !== './');
   for (const asset of new Set(localAssets)) {
-    const content = await readFile(join(output, asset));
+    const content = await readFile(
+      join(output, asset.endsWith('/') ? asset + 'index.html' : asset),
+    );
     assert.ok(content.length > 0, `Пустой ресурс: ${asset}`);
   }
 });
@@ -95,5 +98,28 @@ test('неполный, предварительный или подменённ
   for (const data of invalid) {
     assert.notEqual(run(output, data).status, 0);
     assert.equal(await readFile(join(output, 'index.html'), 'utf8'), original);
+  }
+});
+
+test('оба языка имеют одинаковые установщики, свои метаданные и отдельную поддержку', async (t) => {
+  const { output } = await context(t);
+  const result = run(output, release('0.2.6'));
+  assert.equal(result.status, 0, result.stderr);
+  for (const lang of ['ru', 'en']) {
+    const html = await readFile(join(output, lang, 'index.html'), 'utf8');
+    assert.ok(html.includes(`lang="${lang}"`));
+    assert.ok(html.includes(`/converter/${lang}/`));
+    assert.ok(html.includes('hreflang="ru"') && html.includes('hreflang="en"'));
+    assert.ok(
+      html.includes('Converter_0.2.6_aarch64.dmg') &&
+        html.includes('Converter_0.2.6_x64-setup.exe'),
+    );
+    assert.equal(html.includes('pay.cloudtips.ru'), lang === 'ru');
+    assert.ok(!html.includes('{{'));
+    for (const asset of [...html.matchAll(/(?:src|href)="([^"]+)"/g)]
+      .map((m) => m[1])
+      .filter((value) => !value.startsWith('http') && !value.startsWith('#'))) {
+      await readFile(resolve(output, lang, asset.endsWith('/') ? asset + 'index.html' : asset));
+    }
   }
 });
