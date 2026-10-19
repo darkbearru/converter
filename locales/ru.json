@@ -411,7 +411,39 @@
     "restart_etag": "Изменился ресурс или его надёжный ETag; загрузка начнётся заново",
     "restart_wait": "Сервер просит подождать больше пяти минут; продолжите позже",
     "restart_full": "Сервер вернул полный файл; загрузка начнётся заново",
-    "support_unavailable": "Ссылка поддержки для этого языка пока не настроена"
+    "support_unavailable": "Ссылка поддержки для этого языка пока не настроена",
+    "dsl_unclosed_comment": "Не закрыт комментарий",
+    "dsl_heading_without_body": "У заголовка нет тела статьи",
+    "dsl_directive_after_entry": "Директива находится после начала статьи",
+    "dsl_body_without_heading": "Тело статьи не имеет заголовка",
+    "dsl_unclosed_subentry": "Подстатья не закрыта маркером {'@'}",
+    "dsl_empty_body": "У статьи нет тела",
+    "mdict_size_overflow": "Переполнение размера MDict",
+    "mdict_short_block": "Слишком короткий блок MDict",
+    "mdict_zlib_block": "Ожидался блок zlib MDict v2",
+    "mdict_block_header": "Заголовок блока",
+    "mdict_block_size": "Блок превышает объявленный размер",
+    "mdict_block_checksum": "Не совпала длина или контрольная сумма блока MDict",
+    "mdict_odd_utf16": "Нечётная длина ключа UTF-16",
+    "mdict_utf16_key": "Неправильный ключ UTF-16",
+    "mdict_utf8_key": "Неправильный ключ UTF-8",
+    "mdict_key_terminator": "Нет терминатора в сводке ключей",
+    "mdict_long_key": "Слишком длинный ключ MDict",
+    "mdict_empty_key": "Пустой ключ или NUL внутри ключа",
+    "mdict_header_length": "Неверная длина заголовка MDict",
+    "mdict_corrupt_header": "Повреждён заголовок словаря",
+    "mdict_version": "Ожидался заголовок MDict v2",
+    "mdict_key_geometry": "Повреждена геометрия ключей",
+    "mdict_key_sizes": "Неверные счётчики или размеры ключей",
+    "mdict_key_summary": "Неверная сводка блока ключей",
+    "mdict_summary_mismatch": "Сводка не совпадает с ключами блока",
+    "mdict_record_offsets": "Нарушен порядок смещений записей",
+    "mdict_unsorted_keys": "Ключи MDict не отсортированы",
+    "mdict_trailing_key_data": "Лишние данные в блоке ключей",
+    "mdict_index_summary": "Индекс ключей не совпадает со сводкой",
+    "mdict_record_geometry": "Неверная геометрия записей",
+    "mdict_record_limit": "Блок записей превышает лимит",
+    "mdict_record_length": "Не совпала длина словаря или диапазон записей"
   },
   "issues": {
     "title": "Проблема в Converter",
@@ -441,6 +473,8 @@
       "lastPageLabel": "Последняя страница",
       "prevPageLabel": "Предыдущая страница",
       "nextPageLabel": "Следующая страница"
-    }
+    },
+    "selectionMessage": "Выбран {0} элемент",
+    "emptySelectionMessage": "Ничего не выбрано"
   }
 }

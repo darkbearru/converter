@@ -411,7 +411,39 @@
     "restart_etag": "The resource or its strong ETag changed; the download will restart",
     "restart_wait": "The server requests a wait of more than five minutes; resume later",
     "restart_full": "The server returned the complete file; the download will restart",
-    "support_unavailable": "The support link for this language is not configured yet"
+    "support_unavailable": "The support link for this language is not configured yet",
+    "dsl_unclosed_comment": "Unclosed comment",
+    "dsl_heading_without_body": "The heading has no entry body",
+    "dsl_directive_after_entry": "A directive appears after the entry has started",
+    "dsl_body_without_heading": "The entry body has no heading",
+    "dsl_unclosed_subentry": "The subentry is not closed with an {'@'} marker",
+    "dsl_empty_body": "The entry has no body",
+    "mdict_size_overflow": "The MDict size overflowed",
+    "mdict_short_block": "The MDict block is too short",
+    "mdict_zlib_block": "An MDict v2 zlib block was expected",
+    "mdict_block_header": "Invalid block header",
+    "mdict_block_size": "The block exceeds its declared size",
+    "mdict_block_checksum": "The MDict block length or checksum does not match",
+    "mdict_odd_utf16": "The UTF-16 key has an odd length",
+    "mdict_utf16_key": "Invalid UTF-16 key",
+    "mdict_utf8_key": "Invalid UTF-8 key",
+    "mdict_key_terminator": "A key summary terminator is missing",
+    "mdict_long_key": "The MDict key is too long",
+    "mdict_empty_key": "The key is empty or contains NUL",
+    "mdict_header_length": "Invalid MDict header length",
+    "mdict_corrupt_header": "The dictionary header is corrupted",
+    "mdict_version": "An MDict v2 header was expected",
+    "mdict_key_geometry": "The key layout is corrupted",
+    "mdict_key_sizes": "Invalid key counts or sizes",
+    "mdict_key_summary": "Invalid key block summary",
+    "mdict_summary_mismatch": "The summary does not match the block keys",
+    "mdict_record_offsets": "Record offsets are out of order",
+    "mdict_unsorted_keys": "MDict keys are not sorted",
+    "mdict_trailing_key_data": "Unexpected trailing data in the key block",
+    "mdict_index_summary": "The key index does not match the summary",
+    "mdict_record_geometry": "Invalid record layout",
+    "mdict_record_limit": "The record block exceeds the limit",
+    "mdict_record_length": "The dictionary length or record range does not match"
   },
   "issues": {
     "title": "Problem in Converter",
@@ -441,6 +473,8 @@
       "lastPageLabel": "Last page",
       "prevPageLabel": "Previous page",
       "nextPageLabel": "Next page"
-    }
+    },
+    "selectionMessage": "{0} item selected",
+    "emptySelectionMessage": "No item selected"
   }
 }

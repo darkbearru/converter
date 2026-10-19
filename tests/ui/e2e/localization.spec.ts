@@ -13,6 +13,7 @@ test('основной язык и ручной выбор переключаю�
   await dialog.getByRole('combobox', { name: 'Язык / Language' }).click();
   await page.getByRole('option', { name: 'Русский', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'О программе' })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Язык / Language' })).toBeFocused();
   await expect(page.getByText('Сказать спасибо')).toBeVisible();
   await page
     .getByRole('dialog', { name: 'О программе' })
@@ -55,6 +56,11 @@ test('смена языка сохраняет введённую ссылку �
       .getByRole('dialog', { name: 'Скачать словарь', exact: true })
       .getByLabel('Ссылка на словарь'),
   ).toHaveValue(url);
+  await expect(
+    page
+      .getByRole('dialog', { name: 'Скачать словарь', exact: true })
+      .getByLabel('Ссылка на словарь'),
+  ).toBeFocused();
   await page
     .getByRole('dialog', { name: 'Скачать словарь', exact: true })
     .getByRole('button', { name: 'Отмена', exact: true })

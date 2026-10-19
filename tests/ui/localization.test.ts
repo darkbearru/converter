@@ -1,4 +1,6 @@
 import { formatBytes, formatQuantity } from '../../src/shared/format';
+import { nextTick } from 'vue';
+import { syncPrimeVue } from '../../src/shared/i18n/primevue';
 import { formatMessage } from '../../src/shared/i18n/messages';
 import { describe, expect, it, vi } from 'vitest';
 import { createLocalization, resolveLocale } from '../../src/shared/i18n';
@@ -67,4 +69,29 @@ it('форматирует количества и размеры по выбр�
   expect(formatQuantity(1, 'articles')).toBe('1 entry');
   expect(formatQuantity(2, 'articles')).toBe('2 entries');
   expect(formatBytes(1024)).toBe('1 KB');
+});
+
+it('сохраняет defaults PrimeVue и переводит объявления выбора', async () => {
+  const localization = createLocalization(
+    { language: 'ru', locale: 'ru', support_url: null },
+    createHarness('local').bridge,
+  );
+  const target = {
+    locale: {
+      startsWith: 'Starts with',
+      selectionMessage: 'default',
+      emptySelectionMessage: 'default',
+      aria: { filter: 'Filter', close: 'Close' },
+    },
+  };
+  const stop = syncPrimeVue(localization, target);
+  expect(target.locale.startsWith).toBe('Starts with');
+  expect(target.locale.aria.filter).toBe('Filter');
+  expect(target.locale.selectionMessage).toBe('Выбран {0} элемент');
+  expect(target.locale.emptySelectionMessage).toBe('Ничего не выбрано');
+  await localization.setLanguage('en');
+  await nextTick();
+  expect(target.locale.selectionMessage).toBe('{0} item selected');
+  expect(target.locale.emptySelectionMessage).toBe('No item selected');
+  stop();
 });

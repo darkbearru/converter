@@ -31,3 +31,16 @@ test('английская поддержка выключена до настр
   assert.equal(config.locales.en.support_url, null);
   assert.equal(config.locales.ru.support_url, 'https://pay.cloudtips.ru/p/7e782291');
 });
+
+test('все сообщения приложения имеют корректный синтаксис Vue I18n', async () => {
+  const { baseCompile } = await import('@intlify/message-compiler');
+  for (const lang of ['ru', 'en']) {
+    const catalog = flatten(JSON.parse(await readFile(`locales/${lang}.json`, 'utf8')));
+    for (const [key, value] of Object.entries(catalog)) {
+      if (typeof value !== 'string') continue;
+      const errors = [];
+      baseCompile(value, { jit: true, onError: (error) => errors.push(error.message) });
+      assert.deepEqual(errors, [], `${lang}/${key}`);
+    }
+  }
+});

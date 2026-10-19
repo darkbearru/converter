@@ -60,11 +60,19 @@ pub(super) fn parse_raw(
         Ok(true)
     })?;
     if parser.lexer.in_comment {
-        return Err(parser.error("Не закрыт комментарий", parser.head_line));
+        return Err(parser.error(
+            "messages.dsl_unclosed_comment",
+            "Не закрыт комментарий",
+            parser.head_line,
+        ));
     }
     parser.flush_group()?;
     if !parser.heads.is_empty() {
-        return Err(parser.error("У заголовка нет тела статьи", parser.head_line));
+        return Err(parser.error(
+            "messages.dsl_heading_without_body",
+            "У заголовка нет тела статьи",
+            parser.head_line,
+        ));
     }
     if parser.summary.source_articles == 0 {
         return Err(
@@ -78,8 +86,10 @@ pub(super) fn parse_raw(
 }
 
 impl Parser<'_> {
-    fn error(&self, message: &str, line: u64) -> ConverterError {
-        ConverterError::new("invalid_dsl", message).at(self.source, line)
+    fn error(&self, key: &str, message: &str, line: u64) -> ConverterError {
+        ConverterError::new("invalid_dsl", message)
+            .with_message(key, crate::model::message_args([]))
+            .at(self.source, line)
     }
 
     fn line(&mut self, line: SourceLine) -> Result<()> {
@@ -93,7 +103,11 @@ impl Parser<'_> {
         }
         if text.starts_with('#') {
             if self.group.is_some() || !self.heads.is_empty() {
-                return Err(self.error("Директива находится после начала статьи", line.number));
+                return Err(self.error(
+                    "messages.dsl_directive_after_entry",
+                    "Директива находится после начала статьи",
+                    line.number,
+                ));
             }
             if !directive(&text, &mut DictionaryMetadata::default())
                 .map_err(|e| e.at(self.source, line.number))?
@@ -157,7 +171,11 @@ impl Parser<'_> {
         }
         if self.group.is_none() {
             if self.heads.is_empty() {
-                return Err(self.error("Тело статьи не имеет заголовка", line.number));
+                return Err(self.error(
+                    "messages.dsl_body_without_heading",
+                    "Тело статьи не имеет заголовка",
+                    line.number,
+                ));
             }
             let root = ArticleAst {
                 id: self.next_id,
@@ -280,10 +298,18 @@ impl Parser<'_> {
             return Ok(());
         };
         if let Some(child) = group.child {
-            return Err(self.error("Подстатья не закрыта маркером @", child.source_line));
+            return Err(self.error(
+                "messages.dsl_unclosed_subentry",
+                "Подстатья не закрыта маркером @",
+                child.source_line,
+            ));
         }
         if group.root.body.trim().is_empty() {
-            return Err(self.error("У статьи нет тела", group.root.source_line));
+            return Err(self.error(
+                "messages.dsl_empty_body",
+                "У статьи нет тела",
+                group.root.source_line,
+            ));
         }
         self.emit(group.root)?;
         for child in group.children {
