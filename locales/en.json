@@ -1,6 +1,8 @@
 {
   "app": {
     "close": "Close",
+    "included_dictionaries": "Dictionaries already included",
+    "already_included": "These files are already included in “{name}”. Separate conversion was skipped.",
     "support": "Support the developer",
     "report_issue": "Report an issue",
     "delete_history": "Remove from history",
@@ -292,6 +294,7 @@
     "invalid_dsl": "The {name} directive requires a quoted value",
     "invalid_headword": "The subentry has no key",
     "unsupported_encoding": "Unsupported encoding: {label}",
+    "external_dictionary_reference": "Link to dictionary “{dictionary}”: dictionary selection depends on the reader application",
     "encoding_required": "The source looks like UTF-16 without a BOM. Choose its encoding manually",
     "invalid_encoding": "Invalid {arg0} sequence near byte {arg1}",
     "size_overflow_7": "The source size overflowed",
@@ -475,13 +478,7 @@
     "report": "\nFull log: attach conversion-report.json from the output folder manually. Review its contents before publishing.\n"
   },
   "primevue": {
-    "fileSizeTypes": [
-      "bytes",
-      "KB",
-      "MB",
-      "GB",
-      "TB"
-    ],
+    "fileSizeTypes": ["bytes", "KB", "MB", "GB", "TB"],
     "choose": "Choose",
     "upload": "Upload",
     "cancel": "Cancel",

@@ -59,19 +59,22 @@ describe('Добавление источника', () => {
     );
     expect(native.createJob).not.toHaveBeenCalled();
   });
-  it('использует идентификатор выбранного файла и ручную кодировку', async () => {
-    const native = bridge();
-    render(SourceForm, { props: { bridge: native } });
-    await fireEvent.click(screen.getByRole('button', { name: 'Выбрать словари' }));
-    await screen.findByText('Словарь.dsl');
-    await fireEvent.update(screen.getByLabelText('Кодировка DSL'), 'windows-1251');
-    await fireEvent.click(screen.getByRole('button', { name: 'Добавить и начать' }));
-    await waitFor(() => expect(native.createJob).toHaveBeenCalledOnce());
-    expect(native.createJob).toHaveBeenCalledWith(
-      expect.objectContaining({
-        source: { kind: 'local', import_id: 'source-1' },
-        options: { encoding: { manual: 'windows-1251' } },
-      }),
-    );
-  });
+  it.each(['windows-1251', 'windows-1250', 'windows-1252', 'windows-874'])(
+    'использует идентификатор файла и ручную кодировку %s',
+    async (encoding) => {
+      const native = bridge();
+      render(SourceForm, { props: { bridge: native } });
+      await fireEvent.click(screen.getByRole('button', { name: 'Выбрать словари' }));
+      await screen.findByText('Словарь.dsl');
+      await fireEvent.update(screen.getByLabelText('Кодировка DSL'), encoding);
+      await fireEvent.click(screen.getByRole('button', { name: 'Добавить и начать' }));
+      await waitFor(() => expect(native.createJob).toHaveBeenCalledOnce());
+      expect(native.createJob).toHaveBeenCalledWith(
+        expect.objectContaining({
+          source: { kind: 'local', import_id: 'source-1' },
+          options: { encoding: { manual: encoding } },
+        }),
+      );
+    },
+  );
 });

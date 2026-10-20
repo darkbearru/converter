@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { displayPath } from '../../shared/format';
+import { manualEncodings } from '../../shared/encodings';
 import { errorState } from '../../shared/i18n/errors';
 
 import { useI18n } from 'vue-i18n';
@@ -228,10 +229,9 @@ async function submit() {
           <label :for="`${id}-encoding`"> {{ t('app.encoding') }} </label
           ><select :id="`${id}-encoding`" v-model="encoding">
             <option value="auto">{{ t('app.auto_encoding') }}</option>
-            <option value="utf-8">UTF-8</option>
-            <option value="utf-16le">UTF-16 LE</option>
-            <option value="utf-16be">UTF-16 BE</option>
-            <option value="windows-1251">Windows-1251</option>
+            <option v-for="item in manualEncodings" :key="item.value" :value="item.value">
+              {{ item.label }}
+            </option>
           </select>
         </div>
         <div>

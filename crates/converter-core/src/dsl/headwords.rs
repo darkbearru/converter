@@ -4,7 +4,7 @@ use std::{collections::HashSet, iter::Peekable, str::Chars};
 enum Part {
     Text(String),
     Optional(Vec<Part>),
-    Unsorted(Vec<Part>),
+    Unsorted,
 }
 pub struct HeadwordAst {
     parts: Vec<Part>,
@@ -80,7 +80,7 @@ fn parse_parts(
                 parts.push(if ch == '(' {
                     Part::Optional(nested)
                 } else {
-                    Part::Unsorted(nested)
+                    Part::Unsorted
                 });
             }
             _ => text.push(ch),
@@ -104,7 +104,7 @@ fn expand(parts: &[Part], limit: usize) -> Result<Vec<String>> {
                     value.push_str(text);
                 }
             }
-            Part::Unsorted(_) => {}
+            Part::Unsorted => {}
             Part::Optional(nested) => {
                 let suffixes = expand(nested, limit)?;
                 let mut next = values.clone();
@@ -151,16 +151,39 @@ pub fn expand_headwords(raw: &str, limit: usize) -> Result<Vec<String>> {
     Ok(values)
 }
 
-pub fn display_headword(raw: &str) -> Result<String> {
-    fn display(parts: &[Part], out: &mut String) {
-        for part in parts {
-            match part {
-                Part::Text(text) => out.push_str(text),
-                Part::Optional(parts) | Part::Unsorted(parts) => display(parts, out),
+pub(super) fn display_source(raw: &str) -> Result<String> {
+    // Проверяем структуру, но сохраняем экранирование для разбора разметки.
+    // Поисковые варианты раскрываются отдельно; в карточке круглые скобки видны.
+    HeadwordAst::parse(raw)?;
+    let mut value = String::new();
+    let mut chars = raw.chars();
+    while let Some(ch) = chars.next() {
+        match ch {
+            '\\' => {
+                value.push(ch);
+                value.push(chars.next().ok_or_else(invalid)?);
             }
+            '{' | '}' => {}
+            '^' | '~' => {
+                // Эти команды действуют в теле статьи, а не в первом заголовке.
+                value.push('\\');
+                value.push(ch);
+            }
+            _ => value.push(ch),
         }
     }
-    let mut value = String::new();
-    display(&HeadwordAst::parse(raw)?.parts, &mut value);
     Ok(value.trim().to_owned())
+}
+
+pub fn display_headword(raw: &str) -> Result<String> {
+    let source = display_source(raw)?;
+    if !source.contains(['[', '\\', '<', '^']) {
+        return Ok(source);
+    }
+    let (nodes, _) = super::markup::parse(
+        &source,
+        "~",
+        &crate::model::RunContext::new(std::env::temp_dir()),
+    )?;
+    Ok(super::markup::plain(&nodes))
 }

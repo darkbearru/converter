@@ -739,7 +739,7 @@ dependencies = [
 
 [[package]]
 name = "converter-app"
-version = "0.3.1"
+version = "0.3.3"
 dependencies = [
  "async-trait",
  "atomicwrites",
@@ -758,7 +758,7 @@ dependencies = [
 
 [[package]]
 name = "converter-cli"
-version = "0.3.1"
+version = "0.3.3"
 dependencies = [
  "clap",
  "converter-core",
@@ -777,7 +777,7 @@ dependencies = [
 
 [[package]]
 name = "converter-core"
-version = "0.3.1"
+version = "0.3.3"
 dependencies = [
  "adler2",
  "atomicwrites",
@@ -797,7 +797,7 @@ dependencies = [
 
 [[package]]
 name = "converter-desktop"
-version = "0.3.1"
+version = "0.3.3"
 dependencies = [
  "atomicwrites",
  "converter-app",
@@ -819,7 +819,7 @@ dependencies = [
 
 [[package]]
 name = "converter-download"
-version = "0.3.1"
+version = "0.3.3"
 dependencies = [
  "atomicwrites",
  "converter-test-support",
@@ -836,7 +836,7 @@ dependencies = [
 
 [[package]]
 name = "converter-test-support"
-version = "0.3.1"
+version = "0.3.3"
 dependencies = [
  "tokio",
 ]

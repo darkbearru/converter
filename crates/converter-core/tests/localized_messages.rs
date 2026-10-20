@@ -10,6 +10,7 @@ fn ошибки_структуры_dsl_содержат_ключ_перевод�
     let temp = tempfile::tempdir()?;
     let path = temp.path().join("source.dsl");
     let bundle = InputBundle {
+        annotation: None,
         includes: vec![],
         main: PreparedFile {
             id: "main".into(),

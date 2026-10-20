@@ -2,7 +2,7 @@ use super::{
     decoder,
     markup::{reference_end, token_end},
     metadata, parser,
-    references::{argument, inline_text},
+    references::{argument, literal_text},
 };
 use crate::{formats::SourceRelationships, model::*};
 use std::collections::BTreeSet;
@@ -36,7 +36,7 @@ impl parser::AstSink for References<'_> {
                     if name.eq_ignore_ascii_case("ref")
                         && let Some(target) = argument(args, "dict")
                     {
-                        let target = inline_text(target, "~");
+                        let target = literal_text(target);
                         if !target.trim().is_empty() {
                             self.names.insert(target);
                         }

@@ -14,7 +14,11 @@ pub(crate) fn include_directive(text: &str) -> Result<Option<String>> {
         )
         .with_message("messages.invalid_include", message_args([])));
     }
-    Ok(Some(value[1..value.len() - 1].to_owned()))
+    Ok(Some(
+        value[1..value.len() - 1]
+            .replace("\\\\", "\\")
+            .replace("\\\"", "\""),
+    ))
 }
 
 pub(crate) fn inspect(

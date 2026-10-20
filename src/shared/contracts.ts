@@ -32,6 +32,14 @@ export interface JobDraft {
   auto_start: boolean;
   prepare_only?: boolean;
 }
+export interface IncludedDictionaryNotice {
+  main_name: string;
+  dictionary_names: string[];
+}
+export interface CreateJobsResult {
+  jobs: JobSnapshot[];
+  included: IncludedDictionaryNotice[];
+}
 export interface JobOptionsUpdate {
   options?: ReadOptions;
   metadata_override?: DictionaryMetadata;
@@ -197,6 +205,7 @@ export interface NativeBridge {
   pickSources(purpose: SourcePurpose): Promise<ImportedSourceInfo[]>;
   pickOutput(): Promise<OutputChoice | null>;
   createJob(draft: JobDraft): Promise<JobSnapshot>;
+  createJobs(drafts: JobDraft[]): Promise<CreateJobsResult>;
   startJob(id: string): Promise<JobSnapshot>;
   provideArchivePassword(id: string, archiveId: string, password: string): Promise<JobSnapshot>;
   pauseDownload(id: string): Promise<JobSnapshot>;

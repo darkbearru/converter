@@ -9,7 +9,7 @@ fn скобки_в_несортируемом_тексте_сохраняютс�
         expand_headwords("{(note) }colo(u)r", 64)?,
         ["color", "colour"]
     );
-    assert_eq!(display_headword("{(note) }colo(u)r")?, "(note) colour");
+    assert_eq!(display_headword("{(note) }colo(u)r")?, "(note) colo(u)r");
     assert_eq!(expand_headwords("word({(}s{)})", 64)?, ["word", "words"]);
     Ok(())
 }
@@ -43,7 +43,7 @@ fn несортируемая_пунктуация_не_отменяет_про�
 fn разворачивает_варианты_без_потери_дубликатов() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(expand_headwords("colo(u)r", 64)?, ["color", "colour"]);
     assert_eq!(expand_headwords("{the }colo(u)r", 64)?, ["color", "colour"]);
-    assert_eq!(display_headword("{the }colo(u)r")?, "the colour");
+    assert_eq!(display_headword("{the }colo(u)r")?, "the colo(u)r");
     assert_eq!(expand_headwords("a(b(c))", 64)?, ["a", "ab", "abc"]);
     assert_eq!(expand_headwords(r"word\(s\)\{x\}", 64)?, ["word(s){x}"]);
     assert_eq!(

@@ -9,6 +9,7 @@ fn request(root: &std::path::Path, body: &str, abbreviations: Option<&str>) -> C
     std::fs::write(&source, body).expect("Исходный словарь");
     ConversionRequest {
         bundle: InputBundle {
+            annotation: None,
             includes: vec![],
             main: PreparedFile {
                 id: "main".into(),

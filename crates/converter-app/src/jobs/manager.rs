@@ -27,6 +27,7 @@ use std::{
 };
 use tokio::sync::{Notify, Semaphore, broadcast};
 
+mod batch;
 mod package;
 
 struct Runtime {
@@ -103,6 +104,7 @@ fn refresh_downloads(job: &mut StoredJob) {
     );
 }
 struct Inner {
+    submissions: tokio::sync::Mutex<()>,
     store: Store,
     storage: Arc<dyn PlatformStorage>,
     runtime: Mutex<Runtime>,
@@ -198,6 +200,7 @@ impl JobManager {
         let (events, _) = broadcast::channel(256);
         Ok(Self {
             inner: Arc::new(Inner {
+                submissions: tokio::sync::Mutex::new(()),
                 store,
                 storage,
                 runtime: Mutex::new(Runtime {
@@ -384,6 +387,10 @@ impl JobManager {
         }
     }
     pub async fn create(&self, draft: JobDraft) -> AppResult<JobSnapshot> {
+        let _submission = self.inner.submissions.lock().await;
+        self.create_unchecked(draft).await
+    }
+    async fn create_unchecked(&self, draft: JobDraft) -> AppResult<JobSnapshot> {
         let mut sources = vec![self.register(&draft.source)?];
         sources.extend(
             draft
@@ -456,6 +463,7 @@ impl JobManager {
             selected_main: None,
             selected_main_fingerprint: None,
             ready: None,
+            prepared_sources: None,
             staging_path: None,
             additional_dictionaries: None,
         };
@@ -610,6 +618,7 @@ impl JobManager {
             job.snapshot.error = None;
             job.snapshot.result = None;
             if job.ready.is_none() {
+                job.prepared_sources = None;
                 job.snapshot.conversion = ConversionJobProgress::default();
                 job.snapshot.diagnostic_count = 0;
             }
@@ -963,6 +972,7 @@ impl JobManager {
                 child.selected_main = Some(choice.id.clone());
                 child.selected_main_fingerprint = None;
                 child.ready = None;
+                child.prepared_sources = None;
                 child.staging_path = None;
                 if let Some(options) = &update.options {
                     child.draft.options = options.clone();
@@ -999,6 +1009,7 @@ impl JobManager {
                         != serde_json::to_value(&job.draft.options).ok()
                     {
                         job.ready = None;
+                        job.prepared_sources = None;
                     }
                     job.draft.options = options;
                     job.snapshot.options = job.draft.options.clone();
@@ -1008,6 +1019,7 @@ impl JobManager {
                         != serde_json::to_value(&job.draft.metadata_override).ok()
                     {
                         job.ready = None;
+                        job.prepared_sources = None;
                     }
                     job.snapshot.metadata = Some(metadata.clone());
                     job.draft.metadata_override = Some(metadata);
@@ -1024,6 +1036,7 @@ impl JobManager {
                 }
                 if let Some(resources) = resources {
                     job.ready = None;
+                    job.prepared_sources = None;
                     job.sources.truncate(1);
                     job.sources.extend(resources);
                     refresh_downloads(job);
@@ -1275,6 +1288,7 @@ impl JobManager {
                 // поэтому повтор строит ready заново уже рядом с новым назначением.
                 self.mutate(id, Some((generation, run)), true, |job| {
                     job.ready = None;
+                    job.prepared_sources = None;
                     job.staging_path = None;
                 })?;
             } else {
@@ -1610,6 +1624,12 @@ impl JobManager {
             )
         })??;
         self.mutate(id, Some((generation, run)), true, |job| {
+            job.prepared_sources = Some(
+                std::iter::once(&bundle.main)
+                    .chain(&bundle.includes)
+                    .map(|file| file.path.clone())
+                    .collect(),
+            );
             job.snapshot.state = JobState::Converting;
             job.snapshot.conversion.status = ConversionStatus::Running;
             job.snapshot.display_name = bundle.main.display_name.clone();
@@ -1620,7 +1640,9 @@ impl JobManager {
                 if !overrides.title.is_empty() {
                     info.title.clone_from(&overrides.title);
                 }
-                info.description.clone_from(&overrides.description);
+                if !overrides.description.is_empty() {
+                    info.description.clone_from(&overrides.description);
+                }
                 if !overrides.index_language.is_empty() {
                     info.index_language.clone_from(&overrides.index_language);
                 }

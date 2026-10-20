@@ -30,6 +30,7 @@ export const nativeBridge: NativeBridge = {
   pickSources: (purpose) => call('pick_sources', { purpose }),
   pickOutput: () => call('pick_output'),
   createJob: (draft) => call('create_job', { draft }),
+  createJobs: (drafts) => call('create_jobs', { drafts }),
   startJob: (id) => call('start_job', { id }),
   provideArchivePassword: (id, archiveId, password) =>
     call('provide_archive_password', { id, archiveId, password }),

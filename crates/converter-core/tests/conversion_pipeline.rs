@@ -74,6 +74,7 @@ fn fixture(
     }
     Ok(ConversionRequest {
         bundle: InputBundle {
+            annotation: None,
             includes: vec![],
             main: PreparedFile {
                 id: "main".into(),

@@ -46,6 +46,8 @@ pub struct StoredJob {
     pub selected_main_fingerprint: Option<String>,
     pub ready: Option<ConvertedArtifacts>,
     #[serde(default)]
+    pub prepared_sources: Option<Vec<PathBuf>>,
+    #[serde(default)]
     pub staging_path: Option<PathBuf>,
     #[serde(default)]
     pub additional_dictionaries: Option<StoredAdditionalDictionaries>,

@@ -173,6 +173,16 @@ pub async fn create_job(state: State<'_, NativeState>, draft: JobDraft) -> AppRe
     state.manager.create(draft).await
 }
 #[tauri::command]
+pub async fn create_jobs(
+    state: State<'_, NativeState>,
+    drafts: Vec<JobDraft>,
+) -> AppResult<converter_app::CreateJobsResult> {
+    for draft in &drafts {
+        state.storage.validate_output(&draft.output)?;
+    }
+    state.manager.create_batch(drafts).await
+}
+#[tauri::command]
 pub async fn start_job(state: State<'_, NativeState>, id: String) -> AppResult<JobSnapshot> {
     state.manager.start(&id).await
 }

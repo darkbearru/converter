@@ -308,3 +308,66 @@ fn include_использует_собственную_кодировку_каж
     );
     Ok(())
 }
+
+#[test]
+fn общий_индекс_ссылок_видит_три_включения_в_обе_стороны_и_не_делит_фразу_по_запятой() -> TestResult
+{
+    use converter_core::pipeline::convert_to_staging;
+    use mdictlib::MdxFile;
+    let temp = tempfile::tempdir()?;
+    let main = temp.path().join("main.dsl");
+    for (name, text) in [
+        (
+            "main.dsl",
+            "#INCLUDE \"first.dsl\"\n#INCLUDE \"middle.dsl\"\n#INCLUDE \"last.dsl\"\nroot\n [ref]first[/ref] [ref]last, phrase[/ref]\n",
+        ),
+        ("first.dsl", "first\n [ref]root[/ref] [ref]middle[/ref]\n"),
+        (
+            "middle.dsl",
+            "middle\n [ref]first[/ref] [ref]last, phrase[/ref]\n",
+        ),
+        (
+            "last.dsl",
+            "last, phrase\n [ref]first[/ref] [ref]middle[/ref]\n",
+        ),
+    ] {
+        std::fs::write(temp.path().join(name), text)?;
+    }
+    let ctx = RunContext::new(temp.path().join("work"));
+    let bundle = prepare_source(&source(main), &[], &ctx)?.remove(0);
+    assert_eq!(bundle.includes.len(), 3);
+    let result = convert_to_staging(
+        &ConversionRequest {
+            bundle,
+            options: ReadOptions::default(),
+            metadata_override: None,
+            staging_dir: temp.path().join("ready"),
+        },
+        &ctx,
+    )?;
+    assert_eq!(result.summary.source_articles, 4);
+    assert_eq!(result.summary.output_keys, 4);
+    let dictionary = MdxFile::open(result.mdx)?;
+    for (key, links) in [
+        ("root", ["entry://first", "entry://last%2C%20phrase"]),
+        ("first", ["entry://root", "entry://middle"]),
+        ("middle", ["entry://first", "entry://last%2C%20phrase"]),
+        ("last, phrase", ["entry://first", "entry://middle"]),
+    ] {
+        let entry = dictionary.lookup(key)?.ok_or("Статья общей части")?;
+        for link in links {
+            assert!(entry.text().contains(link), "{key}: {link}");
+        }
+    }
+    assert!(dictionary.lookup("last")?.is_none());
+    assert!(dictionary.lookup("phrase")?.is_none());
+    let report: serde_json::Value = serde_json::from_reader(File::open(result.report)?)?;
+    assert!(
+        !report["diagnostics"]
+            .as_array()
+            .ok_or("Диагностика")?
+            .iter()
+            .any(|d| d["code"] == "missing_reference")
+    );
+    Ok(())
+}

@@ -70,7 +70,9 @@ pub fn convert_to_staging_with_registry(
         if !override_meta.title.is_empty() {
             metadata.title.clone_from(&override_meta.title);
         }
-        metadata.description.clone_from(&override_meta.description);
+        if !override_meta.description.is_empty() {
+            metadata.description.clone_from(&override_meta.description);
+        }
         if !override_meta.index_language.is_empty() {
             metadata
                 .index_language

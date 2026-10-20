@@ -64,6 +64,7 @@ fn additional_child(parent: &StoredJob, plan: &AdditionalDictionaryChild) -> Sto
     child.selected_main_fingerprint = plan.fingerprint.clone();
     child.published = None;
     child.ready = None;
+    child.prepared_sources = None;
     child.staging_path = None;
     child.additional_dictionaries = None;
     child

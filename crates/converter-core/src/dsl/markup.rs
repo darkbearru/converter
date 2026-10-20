@@ -1,4 +1,4 @@
-use super::references::inline_text;
+use super::references::{inline_text, toggle_first};
 use crate::model::{ConverterError, Diagnostic, DiagnosticSeverity, Result, RunContext};
 
 pub(super) fn token_end(text: &str) -> Option<usize> {
@@ -95,6 +95,7 @@ fn known(name: &str) -> bool {
             | "s"
             | "'"
             | "*"
+            | "br"
     )
 }
 
@@ -216,6 +217,25 @@ impl MarkupParser<'_> {
                 } else {
                     text.push('\\');
                 }
+            } else if ch == '^' {
+                self.position += 1;
+                if let Some(next) = self.source[self.position..].chars().next() {
+                    if next == '~' || next.is_alphabetic() {
+                        let toggled = if next == '~' {
+                            toggle_first(self.display)
+                        } else {
+                            toggle_first(&next.to_string())
+                        };
+                        text.push_str(&toggled);
+                        self.position += next.len_utf8();
+                    } else {
+                        // В старых базах ^ часто записан литерально перед тегом.
+                        // Он не должен поглощать начало следующей DSL-конструкции.
+                        text.push(ch);
+                    }
+                } else {
+                    text.push(ch);
+                }
             } else if ch == '~' {
                 text.push_str(self.display);
                 self.position += 1;
@@ -273,6 +293,17 @@ impl MarkupParser<'_> {
                 }
                 if !text.is_empty() {
                     self.push(&mut frames, Node::Text(std::mem::take(&mut text)))?;
+                }
+                if name == "br" && !closing {
+                    self.push(
+                        &mut frames,
+                        Node::Element {
+                            name,
+                            argument: String::new(),
+                            children: vec![],
+                        },
+                    )?;
+                    continue;
                 }
                 if closing {
                     let matching = frames
@@ -446,7 +477,13 @@ pub(super) fn plain(nodes: &[Node]) -> String {
     for node in nodes {
         match node {
             Node::Text(text) | Node::Reference(text) => output.push_str(text),
-            Node::Element { children, .. } => output.push_str(&plain(children)),
+            Node::Element { name, children, .. } => {
+                if name == "br" {
+                    output.push('\n');
+                } else {
+                    output.push_str(&plain(children));
+                }
+            }
         }
     }
     output

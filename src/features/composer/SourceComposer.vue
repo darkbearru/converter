@@ -18,6 +18,7 @@ import SettingsDialog from './SettingsDialog.vue';
 import { defaultSettings, directUrl } from './model';
 import type {
   ImportedSourceInfo,
+  IncludedDictionaryNotice,
   JobSnapshot,
   NativeBridge,
   SourceInput,
@@ -29,6 +30,7 @@ const id = useId();
 const settings = reactive(defaultSettings());
 const resourcesChanged = ref(false);
 const files = ref<ImportedSourceInfo[]>([]);
+const included = ref<IncludedDictionaryNotice[]>([]);
 const busy = ref(false);
 const error = errorState();
 const linkDialog = ref(false);
@@ -229,11 +231,12 @@ async function convert() {
       emit('submitted', current.id);
       remoteId.value = null;
     } else {
-      for (const file of [...files.value]) {
-        const job = await props.bridge.createJob(
-          draft({ kind: 'local', import_id: file.import_id }, false),
-        );
-        files.value = files.value.filter((item) => item.import_id !== file.import_id);
+      const result = await props.bridge.createJobs(
+        files.value.map((file) => draft({ kind: 'local', import_id: file.import_id }, false)),
+      );
+      files.value = [];
+      included.value = result.included;
+      for (const job of result.jobs) {
         emit('snapshot', job);
         emit('submitted', job.id);
       }
@@ -475,5 +478,27 @@ async function transferAction() {
       :resources-locked="transferring"
       @resources-change="resourcesChanged = true"
     />
+    <Dialog
+      :visible="included.length > 0"
+      :header="t('app.included_dictionaries')"
+      :close-button-props="dialogCloseButtonProps"
+      :focus-on-show="false"
+      modal
+      class="app-dialog"
+      @update:visible="!$event && (included = [])"
+    >
+      <template #closeicon><Icon name="close" /></template>
+      <div class="dialog-fields">
+        <div v-for="(notice, index) in included" :key="index">
+          <p>{{ t('app.already_included', { name: notice.main_name }) }}</p>
+          <ul class="additional-dictionary-list">
+            <li v-for="name in notice.dictionary_names" :key="name">{{ name }}</li>
+          </ul>
+        </div>
+      </div>
+      <template #footer
+        ><Button :label="t('app.close')" severity="secondary" outlined @click="included = []"
+      /></template>
+    </Dialog>
   </section>
 </template>

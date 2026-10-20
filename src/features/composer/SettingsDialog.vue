@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { displayPath } from '../../shared/format';
+import { manualEncodings } from '../../shared/encodings';
 import { errorState } from '../../shared/i18n/errors';
 
 import { useI18n } from 'vue-i18n';
@@ -26,10 +27,7 @@ const id = useId();
 const error = errorState();
 const encodings = computed(() => [
   { label: t('app.auto_encoding'), value: 'auto' },
-  { label: 'UTF-8', value: 'utf-8' },
-  { label: 'UTF-16 LE', value: 'utf-16le' },
-  { label: 'UTF-16 BE', value: 'utf-16be' },
-  { label: 'Windows-1251', value: 'windows-1251' },
+  ...manualEncodings,
 ]);
 async function output() {
   error.value = '';

@@ -42,6 +42,7 @@ fn сохраняет_семантику_и_экранирует_текст() ->
     std::fs::write(&image, b"PNG")?;
     std::fs::write(&audio, b"MP3")?;
     let bundle = InputBundle {
+        annotation: None,
         includes: vec![],
         main: prepared(&main),
         abbreviations: Some(prepared(&abrv)),
@@ -73,7 +74,7 @@ fn сохраняет_семантику_и_экранирует_текст() ->
     assert!(
         rendered
             .html
-            .contains("<strong>the colour <em>курсив</em></strong>")
+            .contains("<strong>the colo(u)r <em>курсив</em></strong>")
     );
     assert!(rendered.html.contains("[b]буквально[/b] ~"));
     assert!(rendered.html.contains("entry://"));
@@ -130,6 +131,7 @@ fn сохраняет_семантику_и_экранирует_текст() ->
 fn незакрытый_тег_и_слишком_большой_html_дают_ошибку() -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let bundle = InputBundle {
+        annotation: None,
         includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: None,
@@ -155,6 +157,7 @@ fn незакрытый_тег_и_слишком_большой_html_дают_о
 fn экранирование_и_подстановка_работают_в_целях_ссылок() -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let bundle = InputBundle {
+        annotation: None,
         includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: None,
@@ -166,7 +169,7 @@ fn экранирование_и_подстановка_работают_в_це
         &ReadOptions::default(),
     )?;
     assert!(rendered.html.contains("entry://a%5Db"));
-    assert!(rendered.html.contains("entry://the%20colour"));
+    assert!(rendered.html.contains("entry://the%20colo%28u%29r"));
     assert!(rendered.html.contains("entry://~"));
     assert!(rendered.html.contains("entry://a%3E%3Eb"));
     Ok(())
@@ -177,6 +180,7 @@ fn восстанавливает_пересечение_форматирова�
 -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let bundle = InputBundle {
+        annotation: None,
         includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: None,
@@ -221,6 +225,7 @@ fn закрытие_сокращения_сохраняет_его_цель_пр
     let abrv = temp.path().join("main_abrv.dsl");
     std::fs::write(&abrv, "обр.\n образное выражение\n")?;
     let bundle = InputBundle {
+        annotation: None,
         includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: Some(prepared(&abrv)),
@@ -249,6 +254,7 @@ fn пересекающиеся_сокращения_остаются_целым
         "прям.\n прямое значение\nперен.\n переносное значение\n",
     )?;
     let bundle = InputBundle {
+        annotation: None,
         includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: Some(prepared(&abrv)),
@@ -289,6 +295,7 @@ fn пересекающиеся_сокращения_остаются_целым
 fn оформление_продолжается_через_границы_абзацев() -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let bundle = InputBundle {
+        annotation: None,
         includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: None,
@@ -330,6 +337,7 @@ fn ударение_сохраняет_букву_и_цель_ссылки_бе�
 -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let bundle = InputBundle {
+        annotation: None,
         includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: None,
@@ -360,6 +368,7 @@ fn ударение_сохраняет_букву_и_цель_ссылки_бе�
 fn факультативная_зона_сохраняет_весь_пример_видимым() -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let bundle = InputBundle {
+        annotation: None,
         includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: None,
@@ -384,6 +393,7 @@ fn восстановление_оформления_не_подменяет_о�
 {
     let temp = tempfile::tempdir()?;
     let bundle = InputBundle {
+        annotation: None,
         includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: None,
@@ -415,6 +425,7 @@ fn восстановление_соблюдает_границы_вложенн
     let temp = tempfile::tempdir()?;
     let path = temp.path().join("main.dsl");
     let bundle = InputBundle {
+        annotation: None,
         includes: vec![],
         main: prepared(&path),
         abbreviations: None,
@@ -453,6 +464,7 @@ fn восстановление_оформления_не_исправляет_�
 -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let bundle = InputBundle {
+        annotation: None,
         includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: None,
@@ -478,6 +490,7 @@ fn неизвестный_тип_ресурса_не_становится_исп
     let path = temp.path().join("page.html");
     std::fs::write(&path, "<script>alert(1)</script>")?;
     let bundle = InputBundle {
+        annotation: None,
         includes: vec![],
         main: prepared(&temp.path().join("main.dsl")),
         abbreviations: None,
@@ -510,6 +523,7 @@ fn читатель_подключает_рендерер_и_сохраняет_
         "colo(u)r\n~ test\n [b]~[/b]\n @child\n  [i]дочерняя[/i]\n @\ncolor\n второе значение\n",
     )?;
     let bundle = InputBundle {
+        annotation: None,
         includes: vec![],
         main: prepared(&path),
         abbreviations: None,
@@ -527,7 +541,7 @@ fn читатель_подключает_рендерер_и_сохраняет_
         sink.entries[0].headwords,
         ["color", "colour", "color test", "colour test"]
     );
-    assert!(sink.entries[0].html.contains("<strong>colour</strong>"));
+    assert!(sink.entries[0].html.contains("<strong>colo(u)r</strong>"));
     assert_eq!(sink.entries[1].parent_id, Some(sink.entries[0].id));
     assert!(sink.entries[1].html.contains("<em>дочерняя</em>"));
     assert_eq!(sink.entries[2].headwords, ["color"]);
@@ -542,6 +556,7 @@ fn отступ_m_заканчивается_следующим_абзацем_�
     let file = temp.path().join("main.dsl");
     std::fs::write(&file, "word\n [m2]opening[m1]first[/m][m1]last\n")?;
     let bundle = InputBundle {
+        annotation: None,
         includes: vec![],
         main: PreparedFile {
             id: "main".into(),
@@ -570,6 +585,7 @@ fn повторное_закрытие_абзаца_не_теряет_текст
     let path = temp.path().join("main.dsl");
     std::fs::write(&path, "word\n [m2]before[m1]first[/m]after[/m]\n")?;
     let bundle = InputBundle {
+        annotation: None,
         includes: vec![],
         main: prepared(&path),
         abbreviations: None,

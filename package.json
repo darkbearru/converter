@@ -1,6 +1,6 @@
 {
   "name": "converter",
-  "version": "0.3.1",
+  "version": "0.3.3",
   "private": true,
   "type": "module",
   "packageManager": "npm@12.2.0",

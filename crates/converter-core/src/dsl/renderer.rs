@@ -1,17 +1,39 @@
 use super::{
     abbreviations,
-    headwords::display_headword,
+    headwords::display_source,
     markup::{self, Node},
     parser::ArticleAst,
-    references::{argument, escape_html, inline_text, uri},
+    references::{argument, escape_html, inline_text, literal_text, uri},
 };
 use crate::{model::*, prepare::resolve_resource};
 use std::collections::{HashMap, HashSet};
+use unicode_normalization::UnicodeNormalization;
 
 pub const CONVERTER_CSS: &str = include_str!("../../assets/converter.css");
 
+fn dictionary_key(value: &str) -> String {
+    value.trim().nfc().flat_map(char::to_lowercase).collect()
+}
+
+#[derive(Default)]
+pub(super) struct RenderCache {
+    abbreviations: abbreviations::AbbreviationCache,
+    dictionaries: HashSet<String>,
+    reported_external: HashSet<String>,
+}
+
+impl RenderCache {
+    pub(super) fn with_dictionaries(names: Vec<String>) -> Self {
+        Self {
+            dictionaries: names.iter().map(|name| dictionary_key(name)).collect(),
+            ..Self::default()
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct RenderedArticle {
+    pub display_headword: String,
     pub html: String,
     pub resource_keys: Vec<String>,
     pub diagnostics: Vec<Diagnostic>,
@@ -28,7 +50,7 @@ pub fn render_article(
         bundle,
         options,
         &RunContext::new(std::env::temp_dir()),
-        &mut abbreviations::AbbreviationCache::default(),
+        &mut RenderCache::default(),
     )
 }
 
@@ -37,11 +59,14 @@ pub(super) fn render_with_context(
     bundle: &InputBundle,
     options: &ReadOptions,
     ctx: &RunContext,
-    cache: &mut abbreviations::AbbreviationCache,
+    cache: &mut RenderCache,
 ) -> Result<RenderedArticle> {
     ctx.control.check()?;
-    let display = display_headword(ast.headwords.first().map_or("", String::as_str))?;
-    let (nodes, diagnostics) = markup::parse(&ast.body, &display, ctx)?;
+    let source = display_source(ast.headwords.first().map_or("", String::as_str))?;
+    let (heading, mut diagnostics) = markup::parse(&source, "~", ctx)?;
+    let display = markup::plain(&heading);
+    let (nodes, body_diagnostics) = markup::parse(&ast.body, &display, ctx)?;
+    diagnostics.extend(body_diagnostics);
     let mut wanted = HashSet::new();
     fn collect(nodes: &[Node], wanted: &mut HashSet<String>) {
         for node in nodes {
@@ -53,15 +78,18 @@ pub(super) fn render_with_context(
             }
         }
     }
+    collect(&heading, &mut wanted);
     collect(&nodes, &mut wanted);
     // В памяти остаются только сокращения, использованные одной статьёй.
-    let abbreviations = cache.resolve(bundle, options, &wanted, ctx)?;
+    let abbreviations = cache.abbreviations.resolve(bundle, options, &wanted, ctx)?;
     let mut renderer = Renderer {
         bundle,
         ctx,
         display: &display,
         abbreviations,
+        cache,
         result: RenderedArticle {
+            display_headword: display.clone(),
             html: String::new(),
             resource_keys: Vec::new(),
             diagnostics,
@@ -69,9 +97,7 @@ pub(super) fn render_with_context(
         },
     };
     renderer.write("<link rel=\"stylesheet\" href=\"converter.css\"><article class=\"dsl-article\"><header class=\"dsl-headword\">").map_err(|error| *error)?;
-    renderer
-        .write(&escape_html(&display))
-        .map_err(|error| *error)?;
+    renderer.nodes(&heading).map_err(|error| *error)?;
     renderer
         .write("</header><div class=\"dsl-body\">")
         .map_err(|error| *error)?;
@@ -97,6 +123,7 @@ struct Renderer<'a> {
     ctx: &'a RunContext,
     display: &'a str,
     abbreviations: HashMap<String, String>,
+    cache: &'a mut RenderCache,
     result: RenderedArticle,
 }
 
@@ -149,7 +176,30 @@ impl Renderer<'_> {
                             || plain.trim().to_owned(),
                             |target| inline_text(target, self.display),
                         );
-                        self.write(&format!("<a href=\"entry://{}\">", uri(&target, false)))?;
+                        let dictionary = argument(arg, "dict").map(literal_text);
+                        self.write(&format!("<a href=\"entry://{}\"", uri(&target, false)))?;
+                        if let Some(dictionary) =
+                            dictionary.filter(|value| !value.trim().is_empty())
+                        {
+                            self.write(&format!(
+                                " data-dsl-dictionary=\"{}\" title=\"{}\"",
+                                escape_html(&dictionary),
+                                escape_html(&dictionary)
+                            ))?;
+                            let key = dictionary_key(&dictionary);
+                            let external = !self.cache.dictionaries.contains(&key);
+                            if external {
+                                self.write(" data-dsl-external=\"true\"")?;
+                            }
+                            if external
+                                && self.cache.reported_external.len()
+                                    < self.ctx.limits.max_archive_entries
+                                && self.cache.reported_external.insert(key)
+                            {
+                                self.warning("external_dictionary_reference", format!("Межсловарная ссылка на «{dictionary}»: выбор словаря зависит от программы чтения"), "messages.external_dictionary_reference", crate::model::message_args([("dictionary", dictionary)]));
+                            }
+                        }
+                        self.write(">")?;
                         self.nodes(children)?;
                         self.write("</a>")?;
                     }
@@ -181,6 +231,7 @@ impl Renderer<'_> {
                         }
                     }
                     "s" => self.resource(&markup::plain(children))?,
+                    "br" => self.write("<br>")?,
                     "p" => {
                         let text = markup::plain(children);
                         if let Some(title) = self.abbreviations.get(text.trim()) {

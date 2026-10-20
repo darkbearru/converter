@@ -110,6 +110,9 @@ fn prepare_source_with_registry_and_options(
     let dependencies = super::includes::dependencies(&mut files, ctx, options)?;
     let included: std::collections::BTreeSet<usize> =
         dependencies.iter().flatten().copied().collect();
+    let annotations = super::annotations::discover(&mut files, ctx)?;
+    let annotation_files: std::collections::BTreeSet<usize> =
+        annotations.iter().flatten().copied().collect();
     if files.len() > ctx.limits.max_archive_entries {
         return Err(
             ConverterError::new("archive_limit", "Слишком много файлов источников")
@@ -215,7 +218,11 @@ fn prepare_source_with_registry_and_options(
         let resources = files
             .iter()
             .enumerate()
-            .filter(|(index, _)| formats[*index].is_none() && !included.contains(index))
+            .filter(|(index, _)| {
+                formats[*index].is_none()
+                    && !included.contains(index)
+                    && !annotation_files.contains(index)
+            })
             .filter_map(|(_, file)| {
                 let name = if file.primary {
                     file.name.strip_prefix(&prefix)?
@@ -234,6 +241,13 @@ fn prepare_source_with_registry_and_options(
                 .map(|part| prepared(&files[*part]))
                 .collect(),
             main: prepared(source),
+            annotation: annotations[*index]
+                .or_else(|| {
+                    dependencies[*index]
+                        .iter()
+                        .find_map(|part| annotations[*part])
+                })
+                .map(|annotation| prepared(&files[annotation])),
             abbreviations: abbreviation.map(prepared),
             resources: unique_resources(resources, ctx)?,
         });
@@ -251,7 +265,7 @@ fn prepared(file: &LogicalFile) -> PreparedFile {
     }
 }
 
-fn unsafe_link() -> ConverterError {
+pub(super) fn unsafe_link() -> ConverterError {
     ConverterError::new(
         "unsafe_archive_path",
         "Символические ссылки в источниках ресурсов не поддерживаются",

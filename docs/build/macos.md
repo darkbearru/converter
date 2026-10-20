@@ -7,7 +7,7 @@ npm ci
 npm test -- --run
 npm run typecheck
 cargo test --locked --workspace --all-targets
-npm run build:macos
+APPLE_SIGNING_IDENTITY=- npm run build:macos
 ```
 
 Apple Silicon: `target/aarch64-apple-darwin/release/bundle/macos/Converter.app`, DMG рядом в `bundle/dmg`. Переносить приложение можно из DMG в Applications обычным способом; исходники и словари внутри `.app` не хранятся.
@@ -24,7 +24,7 @@ npm run build:macos:intel
 Остальные платформы того же выпуска, а также повтор после ошибки собираются с уже подготовленной версией:
 
 ```sh
-npm run build:macos -- --reuse-version
+APPLE_SIGNING_IDENTITY=- npm run build:macos -- --reuse-version
 ```
 
 Сборки в одном checkout запускаются последовательно. GitHub Actions использует версию из коммита с `--reuse-version`, поэтому macOS Apple Silicon и Windows одного выпуска получают один номер. Перед отправкой нового выпуска нужно сначала подготовить его локальной сборкой; для подготовки номера без упаковки есть `node scripts/build-version.mjs`. Повтор workflow сохраняет тот же номер. Для отдельной сборки Intel того же выпуска используйте `npm run build:macos:intel -- --reuse-version`. Проверка механизма: `npm run test:build`.

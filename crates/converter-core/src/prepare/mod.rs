@@ -1,3 +1,4 @@
+mod annotations;
 mod archive;
 mod bundle;
 mod includes;

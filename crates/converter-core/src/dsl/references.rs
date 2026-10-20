@@ -68,11 +68,25 @@ pub(super) fn substitute_tilde(raw: &str, replacement: &str) -> String {
 
 pub(super) fn inline_text(raw: &str, display: &str) -> String {
     let mut result = String::new();
-    let mut chars = raw.chars();
+    let mut chars = raw.chars().peekable();
     while let Some(ch) = chars.next() {
         if ch == '\\' {
             if let Some(next) = chars.next() {
                 result.push(next);
+            } else {
+                result.push(ch);
+            }
+        } else if ch == '^' {
+            if let Some(&next) = chars.peek() {
+                if next == '~' {
+                    chars.next();
+                    result.push_str(&toggle_first(display));
+                } else if next.is_alphabetic() {
+                    chars.next();
+                    result.push_str(&toggle_first(&next.to_string()));
+                } else {
+                    result.push(ch);
+                }
             } else {
                 result.push(ch);
             }
@@ -85,11 +99,40 @@ pub(super) fn inline_text(raw: &str, display: &str) -> String {
     result
 }
 
+pub(super) fn literal_text(raw: &str) -> String {
+    let mut result = String::new();
+    let mut chars = raw.chars();
+    while let Some(ch) = chars.next() {
+        if ch == '\\' {
+            result.push(chars.next().unwrap_or(ch));
+        } else {
+            result.push(ch);
+        }
+    }
+    result
+}
+
+pub(super) fn toggle_first(value: &str) -> String {
+    let mut chars = value.chars();
+    let Some(first) = chars.next() else {
+        return String::new();
+    };
+    let mut output = if first.is_uppercase() {
+        first.to_lowercase().collect::<String>()
+    } else if first.is_lowercase() {
+        first.to_uppercase().collect::<String>()
+    } else {
+        first.to_string()
+    };
+    output.push_str(chars.as_str());
+    output
+}
+
 pub(super) fn subentry_reference(raw: &str, limit: usize) -> crate::model::Result<String> {
     fn escape(value: &str) -> String {
         let mut result = String::new();
         for ch in value.chars() {
-            if matches!(ch, '\\' | '[' | ']' | '<' | '>' | '~' | '"') {
+            if matches!(ch, '\\' | '[' | ']' | '<' | '>' | '~' | '^' | '"') {
                 result.push('\\');
             }
             result.push(ch);

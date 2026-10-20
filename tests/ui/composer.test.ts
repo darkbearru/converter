@@ -20,6 +20,7 @@ function bridge() {
       ]),
       pickOutput: vi.fn(async () => ({ desktop_folder: '/selected/output' })),
       createJob: vi.fn(async () => snapshot),
+      createJobs: vi.fn(async () => ({ jobs: [snapshot], included: [] })),
       startJob: vi.fn(async () => snapshot),
       updateJob: vi.fn(async () => snapshot),
       cancelJob: vi.fn(async () => ({ ...snapshot, state: 'cancelled' })),
@@ -33,6 +34,45 @@ function bridge() {
   };
 }
 describe('Нижняя панель источника', () => {
+  it('отправляет выбранные части одним набором и объясняет пропуск включений', async () => {
+    const adapter = bridge();
+    const native = adapter.native as NativeBridge & { createJobs: ReturnType<typeof vi.fn> };
+    native.createJobs.mockResolvedValue({
+      jobs: [structuredClone(fixtures.local)],
+      included: [
+        { main_name: '大БКРС - 260610', dictionary_names: ['dabkrs_2.dsl', 'dabkrs_3.dsl'] },
+      ],
+    });
+    render(SourceComposer, { props: { bridge: native, jobs: [] } });
+    await waitFor(() => expect(native.onSourceDrop).toHaveBeenCalled());
+    adapter.drop({
+      kind: 'files',
+      files: [3, 1, 2].map((n) => ({
+        import_id: `part-${n}`,
+        display_name: `dabkrs_${n}.dsl`,
+        bytes: 1024,
+        is_directory: false,
+      })),
+    });
+    await fireEvent.click(await screen.findByRole('button', { name: 'Конвертировать' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Словари уже включены' });
+    expect(dialog).toHaveTextContent('大БКРС - 260610');
+    expect(dialog).toHaveTextContent('dabkrs_2.dsl');
+    expect(dialog).toHaveTextContent('dabkrs_3.dsl');
+    expect(native.createJobs).toHaveBeenCalledWith(
+      [3, 1, 2].map((n) =>
+        expect.objectContaining({ source: { kind: 'local', import_id: `part-${n}` } }),
+      ),
+    );
+    expect(native.createJob).not.toHaveBeenCalled();
+    await fireEvent.click(screen.getByText('Закрыть', { selector: '.p-button-label' }));
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Словари уже включены' }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole('button', { name: 'Выбрать словари' })).toBeVisible();
+  });
   it('вставляет ссылку из нативного буфера и ждёт команды скачать', async () => {
     const { native } = bridge();
     render(SourceComposer, { props: { bridge: native, jobs: [] } });
@@ -127,13 +167,13 @@ describe('Нижняя панель источника', () => {
     expect(native.createJob).not.toHaveBeenCalled();
     await fireEvent.click(screen.getByRole('button', { name: 'Конвертировать' }));
     await waitFor(() =>
-      expect(native.createJob).toHaveBeenCalledWith(
+      expect(native.createJobs).toHaveBeenCalledWith([
         expect.objectContaining({
           prepare_only: false,
           auto_start: true,
           source: { kind: 'local', import_id: 'local-1' },
         }),
-      ),
+      ]),
     );
     expect(await screen.findByRole('button', { name: 'Выбрать словари' })).toBeVisible();
   });
@@ -164,9 +204,9 @@ describe('Нижняя панель источника', () => {
     expect(await screen.findByText('drop.dsl')).toBeVisible();
     await fireEvent.click(screen.getByRole('button', { name: 'Конвертировать' }));
     await waitFor(() =>
-      expect(adapter.native.createJob).toHaveBeenCalledWith(
+      expect(adapter.native.createJobs).toHaveBeenCalledWith([
         expect.objectContaining({ source: { kind: 'local', import_id: 'drop-1' } }),
-      ),
+      ]),
     );
   });
 });

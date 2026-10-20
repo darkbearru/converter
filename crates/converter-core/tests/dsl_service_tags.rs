@@ -6,6 +6,7 @@ use std::path::Path;
 
 fn bundle(directory: &Path) -> InputBundle {
     InputBundle {
+        annotation: None,
         includes: vec![],
         main: PreparedFile {
             id: "main".into(),

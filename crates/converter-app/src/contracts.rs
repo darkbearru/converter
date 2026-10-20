@@ -102,6 +102,16 @@ pub struct JobDraft {
     #[serde(default)]
     pub prepare_only: bool,
 }
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct IncludedDictionaryNotice {
+    pub main_name: String,
+    pub dictionary_names: Vec<String>,
+}
+#[derive(Clone, Serialize, Deserialize)]
+pub struct CreateJobsResult {
+    pub jobs: Vec<JobSnapshot>,
+    pub included: Vec<IncludedDictionaryNotice>,
+}
 #[derive(Clone, Default, Serialize, Deserialize)]
 pub struct JobOptionsUpdate {
     pub options: Option<ReadOptions>,

@@ -32,9 +32,17 @@ impl LinkIndex {
     }
     pub fn references(&self, html: &str, line: u64, source: &str) -> Result<()> {
         for part in html.split("href=\"entry://").skip(1) {
-            let Some((encoded, _)) = part.split_once('"') else {
+            let Some((encoded, rest)) = part.split_once('"') else {
                 continue;
             };
+            // Явная ссылка в другой словарь не обязана существовать в локальных
+            // ключах. Renderer отдельно сообщает об ограничении переносимости.
+            if rest
+                .split_once('>')
+                .is_some_and(|(attributes, _)| attributes.contains(" data-dsl-external=\"true\""))
+            {
+                continue;
+            }
             let target = decode_uri(encoded)?;
             self.connection
                 .prepare_cached("INSERT INTO refs VALUES (?1, ?2, ?3, ?4)")

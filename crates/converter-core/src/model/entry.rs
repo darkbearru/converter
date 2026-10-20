@@ -13,6 +13,8 @@ pub struct InputBundle {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub includes: Vec<PreparedFile>,
     pub main: PreparedFile,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub annotation: Option<PreparedFile>,
     pub abbreviations: Option<PreparedFile>,
     pub resources: Vec<ResourceRecord>,
 }

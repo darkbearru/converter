@@ -1,4 +1,6 @@
 mod abbreviations;
+mod annotations;
+mod code_pages;
 pub mod decoder;
 pub mod headwords;
 pub(crate) mod includes;
@@ -118,7 +120,9 @@ impl DictionaryReader for DslReader {
             sink,
             articles: 0,
             warnings: 0,
-            abbreviations: abbreviations::AbbreviationCache::default(),
+            cache: renderer::RenderCache::with_dictionaries(metadata::dictionary_names(
+                bundle, options, ctx,
+            )?),
             missing_abbreviations_reported: false,
         };
         let mut summary = parser::parse_raw(bundle, &encoding, &mut rendered, ctx)?;
@@ -142,7 +146,7 @@ struct RenderSink<'a> {
     sink: &'a mut dyn EntrySink,
     articles: u64,
     warnings: u64,
-    abbreviations: abbreviations::AbbreviationCache,
+    cache: renderer::RenderCache,
     missing_abbreviations_reported: bool,
 }
 
@@ -177,7 +181,7 @@ impl parser::AstSink for RenderSink<'_> {
             self.bundle,
             self.options,
             self.ctx,
-            &mut self.abbreviations,
+            &mut self.cache,
         )?;
         if rendered.uses_abbreviations
             && self.bundle.abbreviations.is_none()
@@ -213,7 +217,7 @@ impl parser::AstSink for RenderSink<'_> {
             source_line: ast.source_line,
             parent_id: ast.parent_id,
             headwords,
-            display_headword: headwords::display_headword(first)?,
+            display_headword: rendered.display_headword,
             html: rendered.html,
             resource_keys: rendered.resource_keys,
         })?;

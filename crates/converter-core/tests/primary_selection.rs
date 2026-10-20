@@ -13,6 +13,7 @@ fn bundles(root: &Path, sources: &[(&str, &str)]) -> Vec<InputBundle> {
             std::fs::write(&path, format!("\u{feff}#NAME \"{name}\"\nword\n\t{body}\n"))
                 .expect("Исходник");
             InputBundle {
+                annotation: None,
                 includes: vec![],
                 main: PreparedFile {
                     id: index.to_string(),

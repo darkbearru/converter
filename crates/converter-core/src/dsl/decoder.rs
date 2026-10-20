@@ -1,3 +1,4 @@
+use super::code_pages;
 use crate::model::*;
 use encoding_rs::{DecoderResult, Encoding, UTF_8, UTF_16BE, UTF_16LE, WINDOWS_1251};
 use flate2::read::MultiGzDecoder;
@@ -38,18 +39,7 @@ pub fn resolve_encoding(
     ctx.control.check()?;
     let (encoding, needs_confirmation) = match choice {
         EncodingChoice::Manual(label) => {
-            let encoding = Encoding::for_label(label.as_bytes())
-                .filter(|e| [UTF_8, UTF_16LE, UTF_16BE, WINDOWS_1251].contains(e))
-                .ok_or_else(|| {
-                    ConverterError::new(
-                        "unsupported_encoding",
-                        format!("Кодировка не поддерживается: {label}"),
-                    )
-                    .with_message(
-                        "messages.unsupported_encoding",
-                        crate::model::message_args([("label", label.to_string())]),
-                    )
-                })?;
+            let encoding = code_pages::manual(&label)?;
             (encoding, false)
         }
         EncodingChoice::Auto => {
@@ -69,6 +59,10 @@ pub fn resolve_encoding(
                     "Источник похож на UTF-16 без BOM. Выберите кодировку вручную",
                 )
                 .with_message("messages.encoding_required", crate::model::message_args([])));
+            } else if let Some(encoding) =
+                code_pages::declaration(&prefix, prefix.len() < 64 * 1024)?
+            {
+                (encoding, false)
             } else {
                 let validation = decode_chunks(
                     open_source(main)?,

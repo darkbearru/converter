@@ -231,6 +231,13 @@ export function createHarness(scenario: string | null) {
       ];
     },
     async pickSources(purpose) {
+      if (scenario === 'included-parts' && purpose === 'dictionaries')
+        return [3, 1, 2].map((n) => ({
+          import_id: `part-${n}`,
+          display_name: `dabkrs_${n}.dsl`,
+          bytes: 1024,
+          is_directory: false,
+        }));
       return [
         {
           import_id: purpose === 'dictionaries' ? 'main' : 'resource',
@@ -242,6 +249,25 @@ export function createHarness(scenario: string | null) {
     },
     async pickOutput() {
       return { desktop_folder: '/selected/output' };
+    },
+    async createJobs(drafts) {
+      if (scenario === 'included-parts') {
+        const main = drafts.find(
+          (draft) => draft.source.kind === 'local' && draft.source.import_id === 'part-1',
+        )!;
+        const job = await bridge.createJob(main);
+        job.display_name = 'dabkrs_1.dsl';
+        return {
+          jobs: [emit(job)],
+          included: [
+            { main_name: '大БКРС - 260610', dictionary_names: ['dabkrs_2.dsl', 'dabkrs_3.dsl'] },
+          ],
+        };
+      }
+      return {
+        jobs: await Promise.all(drafts.map((draft) => bridge.createJob(draft))),
+        included: [],
+      };
     },
     async createJob(draft: JobDraft) {
       currentId = `created-${++nextId}`;
