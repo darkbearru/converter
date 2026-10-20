@@ -1,4 +1,4 @@
-name: Website language preview
+name: Website preview
 
 on:
   push:

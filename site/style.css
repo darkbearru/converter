@@ -25,9 +25,13 @@ a {
   color: inherit;
   text-underline-offset: 4px;
 }
-a:focus-visible {
+a:focus-visible,
+summary:focus-visible {
   outline: 3px solid #17698c;
   outline-offset: 5px;
+}
+[hidden] {
+  display: none !important;
 }
 ::selection {
   color: #161616;
@@ -102,17 +106,23 @@ h1 span {
 }
 .downloads {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 12px;
   margin-top: 30px;
   scroll-margin-top: 24px;
+}
+.download-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 .download-link {
   display: inline-flex;
   align-items: center;
   gap: 12px;
   min-height: 72px;
-  flex: 1 1 185px;
+  flex: none;
   padding: 14px 17px;
   border-radius: 10px;
   color: #fff;
@@ -140,6 +150,43 @@ h1 span {
   margin-top: 4px;
   font-size: 12px;
   line-height: 1.4;
+}
+.download-alternative {
+  gap: 8px;
+  min-height: 52px;
+  padding: 9px 12px;
+  color: var(--ink);
+  background: #f0f1f2;
+}
+.download-alternative:hover {
+  background: #e2e4e7;
+}
+.download-alternative strong {
+  font-size: 13px;
+}
+.download-alternative small {
+  margin-top: 2px;
+  color: var(--muted);
+}
+.download-alternative .download-symbol {
+  flex-basis: 16px;
+  width: 16px;
+  height: 16px;
+}
+.other-systems summary {
+  width: fit-content;
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+  list-style: none;
+  text-decoration: underline dotted;
+  text-underline-offset: 4px;
+}
+.other-systems summary::-webkit-details-marker {
+  display: none;
+}
+.other-systems[open] summary {
+  margin-bottom: 12px;
 }
 .download-symbol {
   display: block;
@@ -247,13 +294,6 @@ h1 span {
     gap: 32px;
     grid-template-columns: 1fr 1fr;
   }
-  .downloads {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .download-link {
-    flex-basis: auto;
-  }
 }
 @media (max-width: 760px) {
   .page {
@@ -284,12 +324,6 @@ h1 span {
   .intro {
     font-size: 16px;
     max-width: 48ch;
-  }
-  .downloads {
-    flex-direction: row;
-  }
-  .download-link {
-    flex: 1 1 180px;
   }
   .features {
     grid-template-columns: 1fr;
