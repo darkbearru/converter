@@ -39,6 +39,11 @@ function installer(name) {
 }
 const mac = installer(`Converter_${version}_aarch64.dmg`);
 const windows = installer(`Converter_${version}_x64-setup.exe`);
+const statistics = process.env.PAGES_DOWNLOAD_STATISTICS
+  ? JSON.parse(await readFile(process.env.PAGES_DOWNLOAD_STATISTICS, 'utf8'))
+  : null;
+if (statistics && (!Number.isSafeInteger(statistics.total) || statistics.total < 0))
+  throw new Error('Некорректная статистика скачиваний');
 const config = JSON.parse(await readFile(join(root, 'config/locales.json'), 'utf8'));
 const languages = Object.keys(config.locales);
 const template = await readFile(join(root, 'website/index.html'), 'utf8');
@@ -75,6 +80,8 @@ for (const [directory, locale] of [['', 'en'], ...languages.map((locale) => [loc
       : '';
   const values = {
     VERSION: version,
+    STATISTICS_HIDDEN: statistics ? '' : 'hidden',
+    STATISTICS_TOTAL: statistics ? new Intl.NumberFormat(locale).format(statistics.total) : '',
     MAC_URL: mac.url,
     WIN_URL: windows.url,
     MAC_SIZE: size(mac.bytes),
@@ -99,14 +106,16 @@ for (const [directory, locale] of [['', 'en'], ...languages.map((locale) => [loc
     SUPPORT_HEADER: supportLink('source-link important-link'),
     SUPPORT_FOOTER: supportLink('important-link'),
   };
-  const html = template.replace(/\{\{(TEXT\.)?([A-Z_a-z]+)\}\}/g, (_, text, key) => {
-    const value = text ? copy[key] : values[key];
-    if (value === undefined) throw new Error(`Missing page value: ${locale}/${key}`);
-    return !text &&
-      ['ALTERNATE_LINKS', 'LANGUAGE_LINKS', 'SUPPORT_HEADER', 'SUPPORT_FOOTER'].includes(key)
-      ? value
-      : escape(value);
-  });
+  const html = template
+    .replace(/\{\{(TEXT\.)?([A-Z_a-z]+)\}\}/g, (_, text, key) => {
+      const value = text ? copy[key] : values[key];
+      if (value === undefined) throw new Error(`Missing page value: ${locale}/${key}`);
+      return !text &&
+        ['ALTERNATE_LINKS', 'LANGUAGE_LINKS', 'SUPPORT_HEADER', 'SUPPORT_FOOTER'].includes(key)
+        ? value
+        : escape(value);
+    })
+    .replace(/^[ \t]+$/gm, '');
   if (/\{\{[^}]+\}\}/.test(html)) throw new Error('Не все данные страницы заполнены');
   pages.push({ directory, html });
 }
@@ -115,6 +124,7 @@ for (const name of [
   'style.css',
   'language.js',
   'downloads.js',
+  'statistics.js',
   'interface.jpg',
   'interface-en.jpg',
   '126__cash.svg',

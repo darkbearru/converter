@@ -29,13 +29,35 @@ async function context(t) {
   t.after(() => rm(root, { recursive: true, force: true }));
   return { root, output: join(root, 'site') };
 }
-function run(output, data, base) {
+function run(output, data, base, statistics) {
   return spawnSync(process.execPath, [script, '--output', output], {
     input: JSON.stringify(data),
     encoding: 'utf8',
-    env: { ...process.env, ...(base ? { PAGES_BASE_URL: base } : {}) },
+    env: {
+      ...process.env,
+      ...(base ? { PAGES_BASE_URL: base } : {}),
+      ...(statistics ? { PAGES_DOWNLOAD_STATISTICS: statistics } : {}),
+    },
   });
 }
+
+test('обе страницы показывают общую статистику без JavaScript с переводом и локальным форматом числа', async (t) => {
+  const { root, output } = await context(t);
+  const statistics = join(root, 'downloads.json');
+  await writeFile(statistics, JSON.stringify({ total: 12345 }));
+  const result = run(output, release(), undefined, statistics);
+  assert.equal(result.status, 0, result.stderr);
+  for (const [language, label, number] of [
+    ['ru', 'Всего скачиваний:', '12\u00a0345'],
+    ['en', 'Total downloads:', '12,345'],
+  ]) {
+    const html = await readFile(join(output, language, 'index.html'), 'utf8');
+    assert.ok(html.includes(label));
+    assert.ok(html.includes(`<span data-download-total>${number}</span>`));
+    assert.ok(!/class="download-statistics"[^>]*\shidden/.test(html));
+  }
+  await readFile(join(output, 'statistics.js'));
+});
 
 test('страница сразу содержит два прямых установщика и новую версию без JavaScript и GitHub API у посетителя', async (t) => {
   const { output } = await context(t);

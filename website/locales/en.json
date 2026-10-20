@@ -13,6 +13,8 @@
   "other_systems": "Other systems",
   "version": "Version",
   "no_registration": "No registration",
+  "download_statistics": "Total downloads:",
+  "download_statistics_hint": "DMG and EXE installer downloads across all releases. Updated hourly; repeat downloads are included.",
   "image_alt": "Converter interface: a completed dictionary with MDX and MDD files and the panel for adding a new dictionary.",
   "image_caption": "Interface preview · light and dark themes follow your system",
   "features": "Converter features",

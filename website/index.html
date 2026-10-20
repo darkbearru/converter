@@ -21,6 +21,7 @@
     {{ALTERNATE_LINKS}}
     <script src="{{ASSET_PREFIX}}language.js" defer></script>
     <script src="{{ASSET_PREFIX}}downloads.js" defer></script>
+    <script src="{{ASSET_PREFIX}}statistics.js" defer></script>
     <title>{{TEXT.title}}</title>
   </head>
   <body>
@@ -65,6 +66,14 @@
             <p class="release">
               {{TEXT.version}} {{VERSION}}<span aria-hidden="true"> · </span
               >{{TEXT.no_registration}}
+            </p>
+            <p
+              class="download-statistics"
+              data-download-statistics="https://raw.githubusercontent.com/darkbearru/converter/codex/download-statistics/downloads.json"
+              title="{{TEXT.download_statistics_hint}}"
+              {{STATISTICS_HIDDEN}}
+            >
+              {{TEXT.download_statistics}} <span data-download-total>{{STATISTICS_TOTAL}}</span>
             </p>
           </div>
           <figure class="app-preview">
