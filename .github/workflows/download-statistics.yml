@@ -1,0 +1,51 @@
+name: Download statistics
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: download-statistics
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: develop
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .node-version
+      - name: Test installer download totals
+        run: node --test scripts/tests/download-statistics.test.mjs
+      - name: Count installer downloads across every release page
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh api --paginate --slurp "repos/$GH_REPO/releases?per_page=100" > "$RUNNER_TEMP/releases.json"
+          node scripts/collect-download-statistics.mjs < "$RUNNER_TEMP/releases.json" > "$RUNNER_TEMP/downloads.json"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: codex/download-statistics
+          path: .work/download-statistics
+      - name: Publish statistics without changing the website
+        working-directory: .work/download-statistics
+        run: |
+          cp "$RUNNER_TEMP/downloads.json" downloads.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add downloads.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: refresh installer download count'
+            git push origin HEAD:codex/download-statistics
+          fi
